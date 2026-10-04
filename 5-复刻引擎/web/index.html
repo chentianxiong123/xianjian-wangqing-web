@@ -46,6 +46,7 @@
       <tr><th>方向键 / WASD</th><td>移动</td></tr>
       <tr><th>回车 / 空格</th><td>对话 / 推进</td></tr>
       <tr><th>T</th><td>传送到本图出口</td></tr>
+      <tr><th>B</th><td>测试战斗（boss1）</td></tr>
       <tr><th>G</th><td>显示网格</td></tr>
     </table>
 
@@ -72,6 +73,7 @@
 <script src="src/xj_talk.js"></script>
 <script src="src/xj_battle.js"></script>
 <script src="src/xj_view.js"></script>
+<script src="src/xj_battleview.js"></script>
 
 <script>
 (function(){
@@ -181,6 +183,12 @@
     });
   }
   document.getElementById('btnReloadEv').onclick = loadMap;
+  window.addEventListener('keydown', function(e){
+    if (e.key==='b'||e.key==='B'){
+      log('手动触发测试战斗 boss1');
+      scene.startBattle('boss1', 60);
+    }
+  });
   window.addEventListener('keydown', function(e){
     if (e.key==='t'||e.key==='T'){
       var ex = scene.world.nearestExit(scene.px, scene.py, scene.player.dir);

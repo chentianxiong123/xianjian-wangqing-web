@@ -24,6 +24,8 @@
     this.t0 = performance.now();
     this.player = { x: 0, y: 0, dir: 'down', state: '站立', ant: null, t: 0 };
     this.world = new global.XJWorld();
+    this.battleView = null;  // XJBattleView —— 进入战斗时非空
+    this.inBattle = false;
     this.dialog = null;     // 当前对话 {speaker,text,visible}
     this.dialogBox = null;  // {text, speaker, type, visible}
     this.branch = null;     // 分支选项
@@ -79,8 +81,74 @@
     return true;
   };
 
-  /** 处理一个触发区；返回是否发生了切图 */
-  Scene.prototype.fireZone = function (z) {
+  /**
+   * 进入战斗：game.fight(key, 脚本行, 回合A, 回合B)
+   * H2.str 是空的（脚本行与回合数全部无效），只用 key 组建遇敌。
+   */
+  Scene.prototype.startBattle = function (key, playerLevel) {
+    var XB = global.XJBattle;
+    var enc = XB.encounter(key, playerLevel != null ? playerLevel : 5,
+                           null, this.world);
+    if (!enc || !enc.monsters.length) {
+      this.log('战斗组建失败 key=' + key);
+      return false;
+    }
+    var b = new XB.Battle({});
+    // 主角团：暂用三英雄默认属性（后续接存档）
+    var HERO = [
+      { name: '李逍遥', hp: 300, maxHp: 300, atk: 60, def: 25, spd: 35, luk: 40, level: 5 },
+      { name: '林月如', hp: 260, maxHp: 260, atk: 55, def: 22, spd: 30, luk: 35, level: 5 },
+      { name: '赵灵儿', hp: 240, maxHp: 240, atk: 50, def: 20, spd: 28, luk: 45, level: 5 }
+    ];
+    var self = this;
+    HERO.forEach(function (h, i) {
+      var u = new XB.Unit(Object.assign({ side: 'hero', slot: i }, h));
+      u.skills = self.heroSkills(u, i);
+      b.add(u);
+    });
+    enc.monsters.forEach(function (m, i) {
+      m.side = 'foe'; m.slot = i;
+      if (!m.skills || !m.skills.normal.length)
+        m.skills = { normal: [{ name: '攻击', formula: 'atk', kindCode: 0 }], spell: [] };
+      b.add(m);
+    });
+    b.expTotal = enc.exp; b.goldTotal = enc.gold;
+    b.key = key; b.bgAnt = enc.bgAnt; b.bgm = enc.bgm;
+
+    this.battleView = new global.XJBattleView(this.cv, { battle: b, world: this.world });
+    this.battleView.setBattle(b, enc.bgAnt);
+    this.battleView.onEnd = function (result) { self.endBattle(result); };
+    this.inBattle = true;
+    this.log('进入战斗 ' + key + ' ' + b.foes.length + ' 只怪（' +
+      b.foes.map(function (u) { return u.name + ' Lv' + u.H; }).join(',') + '）');
+    return true;
+  };
+
+  /** 英雄技能：从 config_skill 拿普通攻击 + 对应仙术 */
+  Scene.prototype.heroSkills = function (u, slot) {
+    var L = (XJ.data.logic && XJ.data.logic.skillFormulas) || {};
+    var all = L.player || [];
+    var normal = all.filter(function (s) { return s.kindCode === 0; });
+    var spells = all.filter(function (s) { return s.kindCode !== 0 && s.kindCode !== 7 && s.formula !== '0'; });
+    var pick = spells.slice(slot * 2, slot * 2 + 2);
+    if (!pick.length && spells.length) pick = [spells[slot % spells.length]];
+    return { normal: normal.slice(0, 1).concat([]), spell: pick };
+  };
+
+  /** 战斗结束回地图 */
+  Scene.prototype.endBattle = function (result, settle) {
+    var bv = this.battleView;
+    this.inBattle = false;
+    this.battleView = null;
+    if (result === 'win') {
+      this.log('战斗胜利' + (settle ? ' 经验 ' + settle.exp + ' 金钱 ' + settle.gold : ''));
+      // 阵亡扣好感在 settleWin 里已经处理，这里只落事件
+    } else if (result === 'lose') {
+      this.log('战斗失败，回到进入点');
+    }
+  };
+
+  Scene.prototype.fireZoneOld = function (z) {
     var r = this.world.fireZone(z);
     // player.moveTo(-1, y) —— -1 保持不变
     if (r.moveTo) {
@@ -291,8 +359,14 @@
   }
 
   // ---------------------------------------------------------- 主循环
-  Scene.prototype.render = function () {
+  Scene.prototype.render = function (dt) {
     var ctx = this.ctx, m = this.m;
+    // 战斗中走战斗循环
+    if (this.inBattle && this.battleView) {
+      this.battleView.frame(dt || 16);
+      this.battleView.render(dt || 16);
+      return;
+    }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.cv.width, this.cv.height);
     if (!m) { this.hud('未加载地图'); return; }
@@ -367,8 +441,16 @@
       ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
       w: 'up', s: 'down', a: 'left', d: 'right'
     };
+    var K2E = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+                  w: 'up', s: 'down', a: 'left', d: 'right', Enter: 'ok', ' ': 'ok', Escape: 'cancel' };
     global.addEventListener('keydown', function (e) {
       if (e.key === 'g' || e.key === 'G') { self.showGrid = !self.showGrid; return; }
+      // 战斗中走战斗输入
+      if (self.inBattle && self.battleView) {
+        e.preventDefault();
+        if (K2E[e.key]) self.battleView.key(K2E[e.key]);
+        return;
+      }
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         self.interact();
@@ -440,8 +522,12 @@
   Scene.prototype.start = function () {
     var self = this;
     this.bindKeys();
+    var last = performance.now();
     (function loop() {
-      self.render();
+      var now = performance.now();
+      var dt = Math.min(64, now - last);
+      last = now;
+      self.render(dt);
       requestAnimationFrame(loop);
     })();
   };

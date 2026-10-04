@@ -21,11 +21,13 @@
   /* j.a(min,max,rnd)：闭区间均匀整数（j.java:135） */
   function randInt(min, max, rnd) {
     if (max < min) throw new Error('非法区间');
+    if (!rnd) return min + ((Math.random() * (max - min + 1)) | 0);
     return max - Math.abs(rnd.nextInt()) % (max - min + 1);
   }
   /* j.b(x,y,rnd)：概率 x/y（j.java:146） */
   function chance(x, y, rnd) {
     if (x * y < 0) return false;
+    if (!rnd) return Math.random() < Math.abs(x) / Math.abs(y);
     return Math.abs(rnd.nextInt()) % y < Math.abs(x);
   }
   /* j.a(n)：round(sqrt(n))（j.java:103） */
