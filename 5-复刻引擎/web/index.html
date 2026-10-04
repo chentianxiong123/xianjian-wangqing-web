@@ -44,6 +44,8 @@
     <h2>操作</h2>
     <table>
       <tr><th>方向键 / WASD</th><td>移动</td></tr>
+      <tr><th>回车 / 空格</th><td>对话 / 推进</td></tr>
+      <tr><th>T</th><td>传送到本图出口</td></tr>
       <tr><th>G</th><td>显示网格</td></tr>
     </table>
 
@@ -67,6 +69,7 @@
 <script src="src/xj.js"></script>
 <script src="src/xj_script.js"></script>
 <script src="src/xj_world.js"></script>
+<script src="src/xj_talk.js"></script>
 <script src="src/xj_battle.js"></script>
 <script src="src/xj_view.js"></script>
 
@@ -80,6 +83,7 @@
 
   var scene = new XJScene(document.getElementById('cv'));
   window.scene = scene;
+  scene.onLog = log;
 
   // ---- 地图下拉 ----
   var names = Object.keys(XJ.data.maps.maps).sort();
@@ -139,7 +143,13 @@
       '<tr><th>本帧元素</th><td>' + s.objs + '</td></tr>' +
       '<tr><th>缺资源</th><td>' + s.miss + '</td></tr>' +
       '<tr><th>精灵缓存</th><td>' + Object.keys(XJ.imgCache).length + ' 包</td></tr>' +
-      '<tr><th>加载失败</th><td>' + Object.keys(XJ.imgFailed).length + '</td></tr>';
+      '<tr><th>加载失败</th><td>' + Object.keys(XJ.imgFailed).length + '</td></tr>' +
+      '<tr><th>脚本元素</th><td>' + (scene.world.elements||[]).length + '</td></tr>' +
+      '<tr><th>触发区</th><td>' + (scene.world.zones||[]).length + '</td></tr>' +
+      '<tr><th>出口</th><td>' + (scene.m?scene.m.exits.length:0) + '</td></tr>' +
+      '<tr><th>事件标记</th><td>' + Object.keys(scene.world.events).filter(k=>scene.world.events[k]===1).length + '</td></tr>' +
+      '<tr><th>对话</th><td>' + (scene.talk ? (scene.talk.active?'进行中 p'+scene.talk.page:'已结束') : '无') + '</td></tr>' +
+      '<tr><th>对话框</th><td>' + (scene.dialogBox ? String(scene.dialogBox.text).slice(0,12) : '无') + '</td></tr>';
   }, 500);
 
   // 事件标记面板：条件驱动的 NPC 出现/离场靠它
@@ -171,6 +181,13 @@
     });
   }
   document.getElementById('btnReloadEv').onclick = loadMap;
+  window.addEventListener('keydown', function(e){
+    if (e.key==='t'||e.key==='T'){
+      var ex = scene.world.nearestExit(scene.px, scene.py, scene.player.dir);
+      if (ex){ log('出口 → ' + ex.to + ' @' + ex.x + ',' + ex.y + ' (' + ex.dir + ')'); scene.goto(ex.to, ex.x, ex.y, ex.dir); }
+      else log('本图未找到出口');
+    }
+  });
   function loadMap(){
     var n = sel.value;
     if (!scene.load(n)) { log('✗ 地图不存在 ' + n); return; }

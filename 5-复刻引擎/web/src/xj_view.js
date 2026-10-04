@@ -24,6 +24,10 @@
     this.t0 = performance.now();
     this.player = { x: 0, y: 0, dir: 'down', state: '站立', ant: null, t: 0 };
     this.world = new global.XJWorld();
+    this.dialog = null;     // 当前对话 {speaker,text,visible}
+    this.dialogBox = null;  // {text, speaker, type, visible}
+    this.branch = null;     // 分支选项
+    this.trade = null;      // 商店
     this.npcs = [];        // {x,y,dir,state,ant}
     this.showGrid = false;
     this.showHitbox = false;
@@ -39,7 +43,77 @@
     this.py = py != null ? py : Math.floor(m.rows * m.th / 2);
     // ★ 装配世界：跑地图级脚本 + 逐个对象脚本，真正把 NPC/怪物/宝箱等建出来
     this.world.build(mapName, this.px, this.py);
+    // 地图级脚本里的 world.change 是进图即切图（可能连锁），限制深度防死循环
+    if (this.world.pendingChange && (this._warpDepth || 0) < 4) {
+      var c = this.world.pendingChange;
+      this._warpDepth = (this._warpDepth || 0) + 1;
+      this._warpGuard = mapName + '>' + c.map;
+      if (this._warpGuard !== this._lastWarp) {
+        this._lastWarp = this._warpGuard;
+        this.log('剧情切图 → ' + c.map + ' @' + c.x + ',' + c.y);
+        var okWarp = this.goto(c.map, c.x, c.y, c.dir);
+        this._warpDepth--;
+        return okWarp;
+      }
+      this._warpDepth--;
+    }
+    this.checkZones();
     return true;
+  };
+
+  /**
+   * 切换地图。保留事件标记/背包/队伍等全局状态，只重装地图内容。
+   * @param mapName 目标地图
+   * @param x,y 落点（像素）；缺省用出口数据里的落点
+   */
+  Scene.prototype.goto = function (mapName, x, y, dir) {
+    var prev = this.mapName;
+    var px = x, py = y;
+    if (px == null || py == null) {
+      var ex = this.world.nearestExit(px || this.px, py || this.py, dir || this.player.dir);
+      if (ex) { px = ex.x; py = ex.y; }
+    }
+    if (!this.load(mapName, px, py)) return false;
+    if (dir) this.player.dir = dir;
+    this.log('切图 ' + prev + ' → ' + mapName + ' @' + this.px + ',' + this.py);
+    return true;
+  };
+
+  /** 处理一个触发区；返回是否发生了切图 */
+  Scene.prototype.fireZone = function (z) {
+    var r = this.world.fireZone(z);
+    // player.moveTo(-1, y) —— -1 保持不变
+    if (r.moveTo) {
+      if (r.moveTo.x != null) this.px = r.moveTo.x;
+      if (r.moveTo.y != null) this.py = r.moveTo.y;
+    }
+    if (r.dialog) {
+      this.dialogBox = { text: r.dialog.text, speaker: r.dialog.speaker, type: null, visible: true };
+    }
+    if (this.world.playerDir) { this.player.dir = this.world.playerDir; }
+    if (r.change) {
+      var c = r.change;
+      if (this.goto(c.map, c.x, c.y, c.dir)) return true;
+    }
+    return false;
+  };
+
+  /** 检查玩家当前位置的触发区 */
+  Scene.prototype.checkZones = function () {
+    var zs = this.world.zonesAt(this.px, this.py);
+    for (var i = 0; i < zs.length; i++) {
+      if (this.fireZone(zs[i])) return true;
+    }
+    return false;
+  };
+
+  /** 引擎侧日志（同时打到侧栏日志框） */
+  Scene.prototype.log = function (msg) {
+    this.messages = this.messages || [];
+    this.messages.push(msg);
+    if (this.messages.length > 200) this.messages.shift();
+    if (this.onLog) this.onLog(msg);
+    return msg;
   };
 
   Scene.prototype.mapPxW = function () { return this.m ? this.m.cols * this.m.tw : 0; };
@@ -62,6 +136,7 @@
         nx >= this.mapPxW() || ny >= this.mapPxH()) return false;
     this.px = nx; this.py = ny;
     this.player.state = '走路';
+    this.checkZones();
     return true;
   };
 
@@ -162,6 +237,59 @@
     return true;
   };
 
+  // ---------------------------------------------------------- 对话框
+  /** 画 J2ME 风格的底部对话框 */
+  Scene.prototype.drawDialog = function () {
+    var ctx = this.ctx, W = this.cv.width, H = this.cv.height;
+    var d = this.dialogBox || this.dialog;
+    if (!d || d.visible === false || !d.text) return false;
+    var pad = 4;
+    var boxH = 58, boxY = H - boxH - pad;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,.82)';
+    ctx.strokeStyle = '#6a6a8a';
+    ctx.lineWidth = 1;
+    ctx.fillRect(pad, boxY, W - pad * 2, boxH);
+    ctx.strokeRect(pad + .5, boxY + .5, W - pad * 2 - 1, boxH - 1);
+    ctx.font = '13px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textBaseline = 'top';
+    var tx = pad + 8;
+    if (d.speaker) {
+      ctx.fillStyle = '#ffd76a';
+      var name = String(d.speaker);
+      ctx.fillText(name, tx, boxY + 6);
+      var nw = ctx.measureText(name).width;
+      ctx.fillStyle = '#c8c8d0';
+      var body = String(d.text);
+      if (body.indexOf(name) === 0) body = body.slice(name.length).replace(/^[：:]/, '');
+      wrapText(ctx, body, tx + nw + 8, boxY + 6, W - pad * 2 - nw - 20, 16);
+    } else {
+      ctx.fillStyle = '#c8c8d0';
+      wrapText(ctx, String(d.text), tx, boxY + 6, W - pad * 2 - 16, 16);
+    }
+    // 右下角提示
+    if (this._blink && !this.branch) {
+      ctx.fillStyle = '#8a8aa0';
+      ctx.font = '11px monospace';
+      ctx.fillText('▼', W - pad - 14, boxY + boxH - 15);
+    }
+    ctx.restore();
+    return true;
+  };
+
+  function wrapText(ctx, text, x, y, maxW, lh) {
+    var line = '', yy = y;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      var t = line + ch;
+      if (ctx.measureText(t).width > maxW && line) {
+        ctx.fillText(line, x, yy); yy += lh; line = ch;
+      } else line = t;
+    }
+    if (line) ctx.fillText(line, x, yy);
+    return yy;
+  }
+
   // ---------------------------------------------------------- 主循环
   Scene.prototype.render = function () {
     var ctx = this.ctx, m = this.m;
@@ -184,6 +312,10 @@
       this.player.ant || m.elementAnt, 0);
     this.drawObjects(2);                       // 遮挡层盖在角色之上
 
+    // 闪烁提示
+    this._blink = ((performance.now() / 500) | 0) % 2 === 0;
+
+    this.drawDialog();
     if (this.showGrid) this.drawGrid();
     this.hud();
   };
@@ -237,11 +369,72 @@
     };
     global.addEventListener('keydown', function (e) {
       if (e.key === 'g' || e.key === 'G') { self.showGrid = !self.showGrid; return; }
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        self.interact();
+        return;
+      }
       var dir = KEY[e.key];
       if (!dir) return;
       e.preventDefault();
+      // 对话进行中不移动
+      if (self.talk && self.talk.active) return;
       self.tryMove(dir);
     });
+  };
+
+  /**
+   * 交互（回车/空格）：
+   *   ① 对话进行中 → 推进一步
+   *   ② 否则 → 查找面前 NPC 并启动对话
+   */
+  Scene.prototype.interact = function () {
+    var T = global.XJTalk;
+    if (this.talk && this.talk.active) {
+      var st = this.talk.state();
+      if (st.dialog) this.dialogBox = { text: st.dialog.text, speaker: st.dialog.speaker, type: st.dialog.type, visible: true };
+      this.talk.advance();
+      var st2 = this.talk.state();
+      if (st2.dialog) this.dialogBox = { text: st2.dialog.text, speaker: st2.dialog.speaker, type: st2.dialog.type, visible: true };
+      else if (!this.talk.active) { this.dialogBox = null; this.talk = null; }
+      return true;
+    }
+    if (!this.talk) {
+      var npc = T.facingNpc.call({ world: this.world }, this.px, this.py, this.player.dir);
+      if (npc) {
+        var d = new T.Dialog(this.world, npc.id);
+        if (d.start()) {
+          this.talk = d;
+          var s0 = d.state();
+          if (s0.dialog) this.dialogBox = { text: s0.dialog.text, speaker: s0.dialog.speaker, type: s0.dialog.type, visible: true };
+          this.log('与 ' + (s0.name || ('NPC ' + npc.id)) + ' 对话');
+          return true;
+        }
+        this.log((T.npcDef(npc.id) || {}).name + ' 没有对话');
+        return false;
+      }
+    }
+    // 没 facingNpc 时退化：找最近的有对话 NPC
+    var els = this.world.elements || [];
+    var best = null, bd = 1e9;
+    for (var i = 0; i < els.length; i++) {
+      var e2 = els[i];
+      if (e2.kind !== 'npc') continue;
+      var dd = T.npcDef(e2.id);
+      if (!dd || !T.talkScript(e2.id)) continue;
+      var dist = Math.abs(e2.x - this.px) + Math.abs(e2.y - this.py);
+      if (dist < 64 && dist < bd) { bd = dist; best = e2; }
+    }
+    if (best) {
+      var d2 = new T.Dialog(this.world, best.id);
+      if (d2.start()) {
+        this.talk = d2;
+        var s1 = d2.state();
+        if (s1.dialog) this.dialogBox = { text: s1.dialog.text, speaker: s1.dialog.speaker, type: s1.dialog.type, visible: true };
+        return true;
+      }
+    }
+    return false;
   };
 
   Scene.prototype.start = function () {

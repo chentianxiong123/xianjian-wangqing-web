@@ -26,6 +26,9 @@
     this.mapName = '';
     this.elements = [];
     this.plainObjects = [];
+    this.zones = [];
+    this.playerDir = 'down';
+    this.tasks = this.tasks || [];
     this.playerX = 0; this.playerY = 0;
     this.pending = [];         // 需要宿主处理的副作用（对话/战斗/传送…）
     this.dialog = null;        // {text, type, visible, portrait}
@@ -68,14 +71,23 @@
     var m = XJ.map(mapName);
     this.elements = [];
     this.plainObjects = [];
+    this.zones = [];
+    this.playerDir = 'down';
+    this.tasks = this.tasks || [];
     this.stats = { elements: 0, scripted: 0, plain: 0, removed: 0, unknown: 0 };
     if (!m) return this;
     this.mapName = mapName;
     this.playerX = playerX || 0;
     this.playerY = playerY || 0;
 
-    // ① 地图级脚本
+    // ① 地图级脚本。world.change 在这里是【立即切图】（e.java:2573 super.a(true)），
+    //    不是等玩家触发 —— 记录下来交给宿主（Scene.goto）处理。
+    this.pendingChange = null;
     this.interp.runAll(m.script);
+    for (var ci = 0; ci < this.interp.effects.length; ci++) {
+      var ef = this.interp.effects[ci];
+      if (ef.kind === 'world.change') this.pendingChange = ef.data;
+    }
 
     // ② 对象脚本：元素层(index 1) 优先，其次遮挡层(index 2)
     var self = this;
@@ -99,6 +111,7 @@
       }
     }
     this.stats.elements = this.elements.length;
+    this.loadZones(mapName);
     void self;
     return this;
   };
@@ -226,6 +239,123 @@
       t: 0
     };
   };
+
+  // ------------------------------------------------------------ 触发区
+  /**
+   * 收集地图的 region / trigger 矩形。
+   * 272 个 region 里带 world.change 的就是地图出口；
+   * 3526 个 trigger 多为剧情/对话触发。
+   */
+  World.prototype.loadZones = function (mapName) {
+    var m = XJ.map(mapName);
+    var self = this;
+    this.zones = [];
+    if (!m) return this;
+    for (var li = 0; li < m.layers.length; li++) {
+      var L = m.layers[li];
+      (L.r || []).forEach(function (r, i) {
+        self_zone(r, 'region', li, i);
+      });
+      (L.g || []).forEach(function (t, i) {
+        self_zone(t, 'trigger', li, i);
+      });
+    }
+    function self_zone(z, kind, layer, idx) {
+      if (!z || !z.scriptAst || !z.scriptAst.length) return;
+      var hasChange = z.scriptAst.some(function (c) {
+        return c.obj === 'world' && c.cmd === 'change';
+      });
+      self.zones.push({
+        kind: kind, layer: layer, idx: idx,
+        x: z.x, y: z.y, w: z.w, h: z.h,
+        ast: z.scriptAst,
+        isExit: hasChange,
+        fired: false
+      });
+    }
+    return this;
+  };
+
+  /** 点是否落在矩形内（用左上角，与 w.java 的触发判定一致） */
+  World.prototype.inZone = function (z, x, y) {
+    return x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h;
+  };
+
+  /** 找出玩家位置命中的所有未触发过的触发区 */
+  World.prototype.zonesAt = function (x, y) {
+    var out = [];
+    for (var i = 0; i < (this.zones || []).length; i++) {
+      var z = this.zones[i];
+      if (z.fired) continue;
+      if (this.inZone(z, x, y)) out.push(z);
+    }
+    return out;
+  };
+
+  /**
+   * 执行一个触发区脚本。返回 {change, moveTo, dialog, effects}。
+   * ★ world.change 是立即切图（e.java:2573 super.a(true); super.y()），
+   *   不是走出边界才触发 —— 走进矩形就触发。
+   */
+  World.prototype.fireZone = function (z) {
+    var r = { zone: z, change: null, moveTo: null, dialog: null };
+    var self = this;
+    function condOk(c) {
+      if (c.cond == null) return true;
+      var terms = (c.cond && c.cond.terms) ? c.cond.terms.map(function (t) { return t.raw; }) : [c.cond];
+      for (var k = 0; k < terms.length; k++) {
+        if (!XS.testConds(self, terms[k])) return false;
+      }
+      return true;
+    }
+    for (var i = 0; i < z.ast.length; i++) {
+      var c = z.ast[i];
+      // ★ script.openScriptList[条件] —— 条件不成立则整批指令都不执行。
+      //   实测 272 个区里有 94 处条件挂在这里；break[条件] 只控制单次等待。
+      // ★ 被门控时【不能】标记 fired，否则事件达成后玩家再也进不去这个区。
+      if (c.obj === 'script' && c.cmd === 'openScriptList' && !condOk(c)) {
+        r.gated = true;
+        return r;
+      }
+      if (!condOk(c)) continue;
+      if (c.obj === 'world' && c.cmd === 'change') {
+        var a = c.raw_args || [];
+        r.change = {
+          map: String(a[0] || '').replace(/\.map$/i, ''),
+          tileBin: String(a[1] || '').replace(/\.bin$/i, ''),
+          elementAnt: String(a[2] || '').replace(/\.ant$/i, ''),
+          elementBin: String(a[3] || '').replace(/\.bin$/i, ''),
+          x: this.E(a[4]), y: this.E(a[5]),
+          dir: this.dirOf(String(a[6]), 'down')
+        };
+        continue;
+      }
+      if (c.obj === 'player' && c.cmd === 'moveTo') {
+        // moveTo(x, y, flag)：-1 表示保持当前值
+        var b = c.raw_args || [];
+        var nx = this.E(b[0]), ny = this.E(b[1]);
+        r.moveTo = { x: nx < 0 ? null : nx, y: ny < 0 ? null : ny };
+        continue;
+      }
+      if (c.obj === 'player' && c.cmd === 'setDirection') {
+        this.playerDir = this.dirOf(String((c.raw_args || [])[0]), this.playerDir || 'down');
+        continue;
+      }
+      if (c.obj === 'dialogBox' && c.cmd === 'setText') {
+        var da = (c.args || [])[0] || {};
+        r.dialog = { speaker: da.speaker || null, text: da.value != null ? da.value : String((c.raw_args || [])[0]) };
+        continue;
+      }
+      // 其余交给通用解释器
+      this.interp.step({ obj: c.obj, cmd: c.cmd, raw_args: c.raw_args || [], cond: null });
+    }
+    // 真正执行了才标记已触发（门控的区保持未触发）
+    z.fired = true;
+    return r;
+  };
+
+  /** 重置触发区（切图后调用） */
+  World.prototype.resetZones = function () { (this.zones || []).forEach(function (z) { z.fired = false; }); };
 
   // ------------------------------------------------------------ 出口
   /** 找离主角最近、且朝向匹配的出口 */
