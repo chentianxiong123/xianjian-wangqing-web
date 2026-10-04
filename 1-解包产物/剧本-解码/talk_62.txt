@@ -1,0 +1,37 @@
+!eventMarked(4444)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(14,false);npc.setDirection(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir==up]; npc.setDirecti
+n(14,left)[player.dir==right]; npc.setDirection(14,right)[player.dir==left];dialogBox.setText(/蜀山弟子/：
+��老吩咐过了，千万别私自去锁妖塔。); dialogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();�!eventMarked(4444)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(14,f
+lse);npc.setDirection(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir==up]; npc.se
+Direction(14,left)[player.dir==right]; npc.setDirection(14,right)[player.dir==left];dialogBox.setText(/蜀山弟子/
+��从蜀山别院东门出去，再穿过遗址就到锁妖塔了。); dialogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();�!eventMarked(4444)#script.openScriptList(); player.setState(stand);npc.setAi
+nabled(14,false);npc.setDirection(14,up)[player.dir==down]; npc.setDi
+ection(14,down)[player.dir==up]; npc.setDirection(14,left)[player.dir==right]; npc.setDirection(14,right)[player.d
+r==left];dialogBox.setText(/蜀山弟子/：传说中锁妖塔里封印的都是大魔头。); dialogBox.
+howDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();�!eventMarked(4444)#script.openScri
+tList(); player.setState(stand);npc.setAiEnabled(14,false);npc.setDirection(14,up)[player.dir==down]; npc.setDir
+ction(14,down)[player.dir==up]; npc.setDirection(14,left)[player.dir==right]; npc.setDirection(14,rig
+t)[player.dir==left];dialogBox.setText(/蜀山弟子/：从蜀山东往南走可以去盛渔村。); dia
+ogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();�!eventMarked(0444),e
+entMarked(4444)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(14,false);npc.setDirection(14,up)[pla
+er.dir==down]; npc.setDirection(14,down)[player.dir==up]; npc.setDirection(14,left)[player.dir==right]; npc.setDirection(
+4,right)[player.dir==left];dialogBox.setText(/道
+��/：重楼你怎么过来了？); dialogBox.showDialog();script.break();  dialogBox.showPlayerPortrait(); dialogBox.setType(type_left); dialogBox.setText(/重楼/：师兄师傅有事找你，你赶快过去吧！); dialogBox.show
+ialog(); script.break(); dialogBox.hidePortrait(); script.break(); d
+alogBox.setText(/道臻/：好的，我马上过去！); dialogBox.showDialog();script.break(); player.ad
+Item(风灵珠); player.addItem(火灵珠); system.showInfo(得到灵珠,1500);script.break();  game
+markEvent(0444); player.removeTask(蜀山西�
+); npc.setAiEnabled(14,true);script.closeScriptList();�eventMarked(0444)#script.openScriptList(); player.setState(stand);npc.setAiEn
+bled(14,false);npc.setDirection(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir==u
+]; npc.setDirection(14,left)[player.dir==right]; npc.setDirection(14,right)[player.dir==left];dialogBox.setText(
+蜀山弟子/：长老吩咐过了，千万别�
+�自去锁妖塔。); dialogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();�eventMarked(0444)#script.openScriptList(); player.set
+tate(stand);npc.setAiEnabled(14,false);npc.setDirection(14,up)[player.dir==down]; n
+c.setDirection(14,down)[player.dir==up]; npc.setDirection(14,left)[player.dir==right]; npc.setDirection(14,right
+[player.dir==left];dialogBox.setText(/蜀
+��弟子/：从蜀山别院东门出去，再穿过遗址就到锁妖塔了。); dialogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();�eventMarked(0444)#script.openScriptList(); player.setSta
+e(stand);npc.setAiEnabled(14,false);npc.setDirection(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir=
+up]; npc.setDirection(14,left)[player.dir==right]; npc.setDir
+ction(14,right)[player.dir==left];dialogBox.setText(/蜀山弟子/：传说中锁妖塔里封印的�
+是大魔头。); dialogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();�eventMarked(0444)#script.openScriptList(); player.setState(stand);npc.setAiEnab
+ed(14,false);npc.setDirection(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir==up]; npc.setDi
+ection(14,left)[player.dir==right]; npc.setDirection(14,right)[player.dir==left];dialogBox.setText(/蜀山弟子/�

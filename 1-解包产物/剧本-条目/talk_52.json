@@ -1,0 +1,22 @@
+[
+ "#script.openScriptList(); player.setState(stand);npc.setAiEnabled(52,false);npc.setDirection(52,up)[player.dir==down]; npc.setDirection(52,down)[player.dir==up]; npc.setDirection(",
+ "2,left)[player.dir==right]; npc.setDirection(52,right",
+ "[player.dir==left];dialogBox.setText(/李",
+ "��/：有什么事你去问王大虎吧，我什么都不知道。); dialogBox.showDialog();script.break(); npc.setAiEnabled(52,true);script.closeScriptList();\u0001�#script.openScriptList(); player.setState(stand);npc.setAiEnabled(52",
+ "false);npc.setDirection(52,up)[player.dir==d",
+ "wn]; npc.setDirection(52,down)[player.dir==up]; npc.setDirection(52,left)[player.dir==right]; npc.setDirection(",
+ "2,right)[player.dir==left];dialogBox.setText(/李四/",
+ "��王大虎估计在家，他没什么事一般不出去，他知道的事比较多。); dialogBox.showDialog();script.break(); npc.setAiEnabled(52,true);script.closeScriptList();\u0001�#script.openScriptList(); player.setState(stand);npc.setAi",
+ "nabled(52,false);npc.setDirection(52,up)[player.dir==down]; npc.setDi",
+ "ection(52,down)[player.dir==up]; npc.setDirection(52,left)[player.dir==right]; npc.setDirection(52,right)[player.d",
+ "r==left];dialogBox.setText(/李四/：现在世道不是很太平，到处是妖怪！); dialogBox.showDi",
+ "log();script.break(); npc.setAiEnabled(52,true);script.closeScriptList();\u0001�#script.openScriptList",
+ "); player.setState(stand);npc.setAiEnabl",
+ "d(52,false);npc.setDirection(52,up)[player.dir==down]; npc.setDirection(52,down)[player.dir==up]; npc",
+ "setDirection(52,left)[player.dir==right]; npc.",
+ "etDirection(52,right)[player.dir==left];dialogBox.setText(/李四/：听说捉到妖怪有很多赏金，我也很�",
+ "�心，就是我不会武功。); dialogBox.showDialog();script.break(); npc.setAiEnabled(52,true);script.closeScriptList();\u0001�#script.open",
+ "criptList(); player.setState(stand);npc.setAiEnabled(52,false);npc.setDirection(52,",
+ "p)[player.dir==down]; npc.setDirection(52,down)[player.dir==up]; npc.setDirection(52,left)[player.dir==right]; npc.se",
+ "Direction(52,right)[player.dir==left];dialogBox.setText(/李四/：不能去捉妖，晒晒太阳也不错哦！); d"
+]

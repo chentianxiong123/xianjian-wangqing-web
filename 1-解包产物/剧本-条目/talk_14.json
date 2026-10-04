@@ -1,0 +1,16 @@
+[
+ "#script.openScriptList(); player.setState(stand);npc.setAiEnabled(14,false);npc.setDirection(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir==up]; npc.setDirecti",
+ "n(14,left)[player.dir==right]; npc.setDirection(14,right)[player.dir==left];dialogBox.setText(/蜀山弟子/：",
+ "��老吩咐过了，千万别私自去锁妖塔。); dialogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();\u0001�#script.openScriptList(); player.setState(stand);npc.setAiEnabled(14,false);npc.setDirec",
+ "ion(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir==up]; npc.setDirection(14,left)[player.dir==right",
+ "; npc.setDirection(14,right)[player.dir==left];dialogBox.setText(/蜀山弟子/：从蜀山�",
+ "院东门出去，再穿过遗址就到锁妖塔了。); dialogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();\u0001�#script.openScriptList",
+ "); player.setState(stand);npc.setAiEnabl",
+ "d(14,false);npc.setDirection(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir==up]; npc",
+ "setDirection(14,left)[player.dir==right]; npc.",
+ "etDirection(14,right)[player.dir==left];dialogBox.setText(/蜀山弟子/：传说中锁妖塔里封印的都是大�",
+ "�头。); dialogBox.showDialog();script.break(); npc.setAiEnabled(14,true);script.closeScriptList();\u0001�#script.openScriptList(); player.setState(stand);npc.setAiEnabled(14,fa",
+ "se);npc.setDirection(14,up)[player.dir==down]; npc.setDirection(14,down)[player.dir==up]; npc.setDirection(1",
+ ",left)[player.dir==right]; npc.setDirection(14,right",
+ "[player.dir==left];dialogBox.setText(/蜀"
+]

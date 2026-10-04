@@ -1,0 +1,16 @@
+[
+ "!eventMarked(5555)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(60,false);npc.setDirection(60,up)[player.dir==down]; npc.s",
+ "tDirection(60,down)[player.dir==up]; npc.setDirection(60,left)[player.dir==right]; npc.setDirection(6",
+ ",right)[player.dir==left]; dialogBox.setText(/�",
+ "偷/：偷遍宫廷，偷遍王府，这就是偷富济贫的“无影踪”。哈哈…哈哈…); dialogBox.showDialog(); script.break(); dialogBox.setText(",
+ "神偷/：小子，你真是有福分啊！算�",
+ "�跟你有缘，我这有宝贝卖给你！); dialogBox.showDialog(); script.break(); dialogBox.showPlayerPortrait(); dialogBox.setType(type_left); dial",
+ "gBox.setText(/重楼/：你是谁？); dialogBox.showDialog(); script.break(); dialogBox.hidePortrait(); script",
+ "break(); dialogBox.setText(/神偷/：小子�",
+ "刚出来混吧，江湖上谁不知道我“无影踪”啊！); dialogBox.showDialog(); script.break(); dialogBox.setText(/神偷/：买�",
+ "一样神器，别处可是买不到的哦！); dialogBox.showDialog(); script.break(); system.trade(星辰伞|灵泉杖); script.break(); game.markEvent(5555);",
+ "pc.setAiEnabled(60,true); script.closeScriptList();\u0001�eventMarked(5555)#script.openScriptList(); player.setStat",
+ "(stand);npc.setAiEnabled(60,false);npc.setDirection(60,up)[player.dir==down]; npc.setDirection(60,dow",
+ ")[player.dir==up]; npc.setDirection(60,left)[player.dir==right]; npc.setDirection(60,right)[player.dir==left];",
+ "dialogBox.setText(/神偷/：小"
+]

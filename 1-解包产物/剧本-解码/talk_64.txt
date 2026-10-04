@@ -1,0 +1,25 @@
+!eventMarked(8887)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);npc.setDirection(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setD
+rection(49,left)[player.dir==right]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/小�
+�父亲/：生意难做啊，这年头养家都困难。); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();�!eventMarked(8887)#scr
+pt.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);npc.setDirection(49,up)[player.dir
+=down]; npc.setDirection(49,down)[player.dir==up]; npc.setDir
+ction(49,left)[player.dir==right]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/�
+孩父亲/：这回挣钱了给我儿子买糖葫芦吃。); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScrip
+List();�eventMarked(8889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);npc.setDirecti
+n(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setDirection(49,left)[player.dir==ri
+ht]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/小孩父亲/：把孩子扔家里
+��也不放心，但是没有办法啊！); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();�eventMarked(8889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);n
+c.setDirection(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setDirection(49,left)[pl
+yer.dir==right]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/小孩父亲/：
+��真是个好心人。); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();�eventMarked(8889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);npc.setDirection(49
+up)[player.dir==down]; npc.setDirection(49,d
+wn)[player.dir==up]; npc.setDirection(49,left)[player.dir==right]; npc.setDirection(49,right)[player.dir==left]
+dialogBox.setText(/小孩父亲/：酒店的钱结了我就
+��回家了！); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();!eventMarked(8889),eventMarked(8887)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);npc.setDire
+tion(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setDirection(49,left)
+player.dir==right]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/小孩�
+�亲/：您有什么事？); dialogBox.showDialog();script.break();  dialogBox.setType(type_left);  dialogBox.showPlayerPortrait();  dia
+ogBox.setText(/重楼/:你的孩子在家担心你！让我来告诉你让你尽快回去！);  dialogBox.sh
+wDialog();   script.break();   dialogBox.hidePortrait();  script.break();   dialogBox.setText(/小孩父亲/：
+��，酒店的钱还没结呢，结完我就回去了，谢谢您了，您真是个好心人。); dialogBox.showDialog();script.break();  player.addItem(雷灵珠); player.addItem(风灵珠); system.showInfo(得到灵珠,1500); s
+ript.break();  game.markEvent(8889); player.removeTask(小孩的期盼); npc.setAiEnabled(49,true);

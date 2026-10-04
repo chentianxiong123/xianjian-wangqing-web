@@ -1,0 +1,9 @@
+[
+ "#script.openScriptList();  p",
+ "ayer.setState(stand);npc.setDirection(8,up)[player.dir==down];  npc.setDirection(8,down)[player.dir==up]; di",
+ "logBox.setText(/酒剑仙/：天下的美酒就数盛渔村的美酒最好！); dialogBox.showDia",
+ "og();  script.break(); script.closeScriptList();\u0001\u001c#script.openScriptList();  player.setState(stand);npc.setD",
+ "rection(8,up)[player.dir==down];  npc.setDirection(8,down)[player.dir==up]; dialogBox.setText(/酒剑仙/",
+ "��御剑乘风去——下一句是什么来着？); dialogBox.showDialog();  script.break(); script.closeScriptList();\u0001\u001f#script.openScriptList();  player.setState(stand);npc.setDirection(8,up)[player.dir==down];  npc.setDirection(8,down)[",
+ "layer.dir==up]; dialogBox.setText(/酒剑仙/：我也不清楚你身上的印纹是怎么回事。); dialogBox."
+]

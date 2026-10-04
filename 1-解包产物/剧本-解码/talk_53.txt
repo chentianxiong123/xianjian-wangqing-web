@@ -1,0 +1,37 @@
+eventMarked(9887)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(52,false);npc.setDirection(52,up)[player.dir==down]; npc.setDirection(52,down)[player.dir==up];
+npc.setDirection(52,left)[player
+dir==right]; npc.setDirection(52,right)[player
+dir==left];dialogBox.setText(/赵六/：我哥
+��在雾林不会有什么事吧？); dialogBox.showDialog();script.break(); npc.setAiEnabled(52,true);script.closeScriptList();�eventMarked(9887)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(52,false);npc.se
+Direction(52,up)[player.dir==down]; npc.setDirection(52,down)[player.dir==up]; npc.setDirection(52,left)[player.dir=
+right]; npc.setDirection(52,right)[player.dir==left];dialogBo
+.setText(/赵六/：我母亲身体不好，就得吃那种特殊的草药。); dialogBox.showDialog();script.break(); n
+c.setAiEnabled(52,true);script.closeScriptList();�eventMarked(9887)#script.openScriptList(); player.setState(st
+nd);npc.setAiEnabled(52,false);npc.setDirection(52,up)[player.dir==down]; npc.setDirection(52,dow
+)[player.dir==up]; npc.setDirection(52,left)[player.dir==right]; npc.setDirection(52,right)[player.dir==left];
+ialogBox.setText(/赵六/：现在世道不是很太平，到处是妖怪！); dialogBox.showDialog(
+;script.break(); npc.setAiEnabled(52,true
+;script.closeScriptList();�eventMarked(9
+87)#script.openScriptList(); player.setState(stand);npc.
+etAiEnabled(52,false);npc.setDirection(52,up)[player.dir==down]; npc.setDirection(52,down)[player.dir==up]; npc.set
+irection(52,left)[player.dir==right]; npc.setDirection(52,right)[pla
+er.dir==left];dialogBox.setText(/赵六/：听说捉到妖怪有很多赏金，我也很动心，就是我不会武功。
+; dialogBox.showDialog();script.break(); 
+pc.setAiEnabled(52,true);script.closeScriptList();�eventMarked(9887)#script.openScriptList(); player.setState
+stand);npc.setAiEnabled(52,false);npc.se
+Direction(52,up)[player.dir==down]; npc.setDirection(52,down)[player.dir==up]; npc.setDirection(52,left)[player.dir=
+right]; npc.setDirection(52,right)[player.dir==left];dialogBo
+.setText(/赵六/：不能去捉妖，晒晒太阳也不错哦！); dialogBox.showDialog();script.break(); npc.setAiEnab
+ed(52,true);script.closeScriptList();�!eventMarked(9888)#script.openScriptList(); player.setState(stand);di
+logBox.setText(/赵六/：大侠你好，我有个哥哥常年在{雾林}采一种奇特的药，
+��我母亲治病，每个月我都去给我母亲把拿药回来，如今十里坡妖怪横行，大侠能不能帮我把药取回来，我母亲的药已经快吃完了，求求大侠您了！); dialogBox.showDialog();script.brea
+();  game.branch(接受,xuanze.str,24,不去,xuanze.str,25);  script.closeScriptList();�!eventMarked(9889)
+eventMarked(9888)#script.openScriptList(); p
+ayer.setState(stand);dialogBox.setText(/赵六/：大侠你还没去啊？我母亲的药马上就要吃完�
+�！); dialogBox.showDialog();script.break();  dialogBox.setType(type_left);  dialogBox.showPlayerPortrait();  dialogBox.setText(/重楼/:我马上就去！);  dialogBox.showDialog();   
+cript.break();   dialogBox.hidePortrait();  script.break();  script.closeScriptList();*eventMarked(9889),!eventMar
+ed(9887)#script.openScriptList(); player.setState(stand);dialogBox.setText(/赵六/：大侠你可算回来
+��，我都快急死啊！); dialogBox.showDialog();script.break();  dialogBox.setType(type_left);  dialogBox.showPlayerPortrait();  dialogBox.setText(/重楼/:这些药给你，希望你母亲尽快好起来！);  dialogBox.sho
+Dialog();   script.break();   dialogBox.hidePortrait();  script.break(); player.removeItem(神秘药品); dialogBox.set
+ext(/赵六/：谢谢大侠了！我也没什么可报答您的，我这有灵珠送
+��您吧！); dialogBox.showDialog();script.break();  player.addItem(水灵珠); player.addItem(雷灵珠); system.showInfo(得到灵珠,1500); script.break(); game.markEvent(9887); player.removeTask(赵六的药); script.closeScri

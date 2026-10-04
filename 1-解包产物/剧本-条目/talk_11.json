@@ -1,0 +1,4 @@
+[
+ "#script.openScriptList();player.setState(stand);dialogBox.setText(/道具商人/：�",
+ "�要点什么？);dialogBox.setType(type_left);dialogBox.showDialog();script.break();system.trade(止血草|金创药|首阳参|鼠儿果|还神丹|雪莲精|蜂王蜜|玄天异果|还魂�"
+]

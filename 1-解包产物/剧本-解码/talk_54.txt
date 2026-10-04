@@ -1,0 +1,2 @@
+#script.openScriptList();player.setState(stand);dialogBox.setText(/小贩/：你要点什么？);dialogBox.setType(type_left);dialogBox.showDialog();script.break();system.trade(木剑|铁剑|七星剑|夺魂�
+�|太极伞|凤鸣伞|桃木杖|降魔杖|布衣|布袍|流云披风|丝缎披风|雪羽披风|头巾|玄天帽|珍珠冠|银凤钗|布�

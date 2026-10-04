@@ -1,0 +1,4 @@
+[
+ "#script.openScriptList();player.setState(stand);dialogBox.setText(/铁匠/：你要点什",
+ "��？);dialogBox.setType(type_left);dialogBox.showDialog();script.break();system.trade(铁剑|七星剑|夺魂剑|定魂剑|无尘剑|凤鸣伞|流云伞|星辰伞|桃木杖|无双杖|降魔杖|轰雷杖|灵泉杖);script.break("
+]

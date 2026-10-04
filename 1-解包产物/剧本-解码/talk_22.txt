@@ -1,0 +1,19 @@
+!eventMarked(1980)#script.openScriptLis
+();player.setState(stand);dialogBox.setText(/裁缝/：你要点什么？);dialogBox.setType(type_left);dialogBox.sh
+wDialog();script.break();system.trade(流云披风|真元披风|九阴穹光|丝缎披风|雪羽披风|凤纹�
+风|圣灵披风|头巾|玄天帽|九阳帽|天冥束|珍珠冠|银凤钗|五彩花冠|如意发带|布靴|真武战靴|混天神靴|荡魔战靴|鹿皮短靴|鲷鳞靴|�
+彩靴|雪虹靴|青铜护镜|凤纹金扇|罗汉佛珠|龙骨吊坠);script.break();script.closeScriptList();2!eventMarked(1981),eventMarked(1980)
+script.openScriptList(); player.sho
+Face(duihua); dialogBox.showPlayerPortrait(); dialogBox.setType(type_left); dialogBox.setText(/重楼/：你知道最�
+为什么物价上涨？); dialogBox.showDialog(); script.break(); player.hideFace(); dialogBox.hidePortrait(); script.break(); npc.showFace(22,d
+ihua); dialogBox.setText(/裁缝/：嗯，其实我也只是听说梁天说的); dialogBox.showDialog(); script.break
+); npc.hideFace(22); player.showFace(dui
+ua); dialogBox.showPlayerPortrait(); dialogBox.setType(type_left); dialogBox.setText(/重楼/：梁天�
+哪？); dialogBox.showDialog(); script.break(); player.hideFace(); dialogBox.hidePortrait(); script.break(); npc.showFace(22,duihua); dialogBox.setText(/裁缝/：他�
+�常出现在苏州客栈附近，你去那里找他吧！); dialogBox.showDialog(); script.break(); npc.hideFace(22); system.showInfo(支线任务更新,2000); script.wait(2000); player.
+emoveTask(物价上涨); player.task(寻找梁天); script.break();game.markEvent(1981); script.closeScriptList();
+&e
+entMarked(1981)#script.openScriptList();player.setState(stand);dialogBox.setText(/裁缝/：你要点什么？);dialog
+ox.setType(type_left);dialogBox.showDialog();script.break();system
+trade(流云披风|真元披风|九阴穹光|�
+�缎披风|雪羽披风|凤纹披风|圣灵披风|头巾|玄天帽|九阳帽|天冥束|珍珠冠|银凤钗|五彩花冠|如意发带|布靴|真武战靴|混天神靴|荡魔战靴|鹿�

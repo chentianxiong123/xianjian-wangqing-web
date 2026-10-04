@@ -1,0 +1,17 @@
+jar: 仙剑奇侠传-忘情篇.jar
+条目总数: 354
+str文件: 73
+str总条目: 1620
+str总字符: 86876
+图片总数: 410
+图片损坏: 0
+每bin图片数: {'chengshi.bin': 22, 'chonglou.bin': 1, 'cs.bin': 112, 'fight.bin': 25, 'fight_beijing.bin': 3, 'fight_skill.bin': 15, 'fight_ui.bin': 6, 'menu.bin': 6, 'mishi.bin': 6, 'ms.bin': 31, 'portrait.bin': 6, 'renwu.bin': 34, 'share.bin': 8, 'shinei.bin': 8, 'sn.bin': 29, 'ui.bin': 10, 'yewai.bin': 15, 'yw.bin': 73}
+配置表: ['config_skill', 'config_item', 'config_zixuan', 'config_make', 'config_game', 'enemy', 'config_fight', 'config_instruction', 'config_liyiru', 'config_chonglou', 'task']
+MANIFEST: Manifest-Version: 1.0
+MIDlet-Vendor: ETgame
+MIDlet-Version: 1.0.0
+MIDlet-1: 仙剑奇侠传,/icon.png,cn.com.etgame.cls.system.Startup
+MicroEdition-Configuration: CLDC-1.0
+MIDlet-Icon: /icon.png
+MIDlet-Name: 仙剑奇侠传
+MicroEdition-Profile: MIDP-2.0

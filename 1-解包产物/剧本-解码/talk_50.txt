@@ -1,0 +1,15 @@
+#script.openScriptList(); player.setState(stand);npc.setAiEnabled(16,false);npc.setDirection(16,up)[player.dir==down]; npc.setDirection(16,down)[player.dir==u
+]; npc.setDirection(16,left)[player.dir==right]; npc.setDirection(16,right)[player.dir==left];dialogBox.setText(
+家丁/：老爷吩咐看好堡内一切物品�
+�); dialogBox.showDialog();script.break(); npc.setAiEnabled(16,true);script.closeScriptList();�#script.openScriptList(); player.setState(stand);npc.setAiEnabled(16,false);npc.setDirection
+16,up)[player.dir==down]; npc.setDirecti
+n(16,down)[player.dir==up]; npc.setDirection(16,left)[player.dir==right]; npc.setDirection(16,right)[player.dir
+=left];dialogBox.setText(/家丁/：我一定会尽职尽责�
+�！); dialogBox.showDialog();script.break(); npc.setAiEnabled(16,true);script.closeScriptList();�#script.openScriptList(); player.setState(stand);npc.se
+AiEnabled(16,false);npc.setDirection(16,up)[player.dir==down]; npc.setDirection(16,down)[player.dir==up]; npc.setDir
+ction(16,left)[player.dir==right]; npc.setDirection(16,right)[player.dir==left];dialogBox.setText(/�
+丁/：等我把钱攒够了就回家娶媳妇喽！); dialogBox.showDialog();script.break(); npc.setAiEnabled(16,true);script.closeScriptList();�#script.openScriptList(); player.se
+State(stand);npc.setAiEnabled(16,false);npc.setDirection(16,up)[player.dir==down]; npc.setDirection(16,down)[player.
+ir==up]; npc.setDirection(16,left)[player.dir==right]; npc.setDirection(16,right)[player.dir==left];
+ialogBox.setText(/家丁/：家里还要80的老母亲要赡养，这么大了还没有娶媳妇！)
+ dialogBox.showDialog();script.break(); npc.setAiEnabled(16

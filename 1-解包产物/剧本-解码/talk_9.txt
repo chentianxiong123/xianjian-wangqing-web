@@ -1,0 +1,28 @@
+eventMarked(8889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);npc.setDirection(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setDirecti
+n(49,left)[player.dir==right]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/小孩/：我爸
+��很辛苦的，每天都天不亮就出去了。); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();�eventMarked(8889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,
+alse);npc.setDirection(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setDir
+ction(49,left)[player.dir==right]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/�
+孩/：我也想去市集那边买糖葫芦，长这么大还没有吃过呢。); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,tr
+e);script.closeScriptList();�eventMarked(8889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,f
+lse);npc.setDirection(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.se
+Direction(49,left)[player.dir==right]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/小孩/：我
+��大了，要挣钱养家，就不让爸爸这么辛苦了。); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();�eventMarked(8889)#script.openScriptList(); player.setState(stand);npc.setAiE
+abled(49,false);npc.setDirection(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setD
+rection(49,left)[player.dir==right]; npc.setDirection(49,right)[player.dir==left];dialogBox.setText(/小�
+�/：街边的小乞丐可讨厌了，我从那过他老是欺负我。); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();�eventMa
+ked(8889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);npc.setDirection(49,up)[playe
+.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setDirection(49,left)[player.dir==right]; npc.setDirec
+ion(49,right)[player.dir==left];dialogBox.setText(/小孩/：我跟爸爸去酒店送过一次货，酒店里就是�
+�。); dialogBox.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();b!eventMarked(8887)#script.openScriptList();  player.setState(stand
+;npc.setAiEnabled(49,false);npc.setDirect
+on(49,up)[player.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setDirection(49,left)[player.
+ir==right]; npc.setDirection(49,right)[player.dir==left];player.setState(stand);dialogBox.setText(/�
+�孩/：我爸爸去城西给酒店送豆腐，很长时间了也没有回来，平时早就该回来了，你能帮我去看看我爸爸吗？); dialogBox.showDialog();script.
+reak();  game.branch(接受,xuanze.str,26,不去,xuanze.str,27);  npc.setAiEnabled(49,true);script
+closeScriptList();�!eventMarked(8889),eventMa
+ked(8887)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(49,false);npc.setDirection(49,up)[playe
+.dir==down]; npc.setDirection(49,down)[player.dir==up]; npc.setDirection(49,left)[player.dir==right]; npc.setDirec
+ion(49,right)[player.dir==left];dialogBox.setText(/小孩/：见到我爸爸了没有啊？); dialogBox.showDialog()
+script.break();  dialogBox.setType(type_left);  dialogBox.s
+owPlayerPortrait();  dialogBox.setText(/重楼/:我马上就去！);  dialogBox.showDialog();   script.b

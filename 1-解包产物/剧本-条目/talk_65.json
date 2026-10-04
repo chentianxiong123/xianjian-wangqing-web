@@ -1,0 +1,12 @@
+[
+ "#script.openScriptList(); player.setState(stand);npc.setAiEnabled(65,false);npc.setDirection(65,up)[player.dir==down]; npc.setDirection(65,down)[player.dir==up]; npc.setDirection(",
+ "5,left)[player.dir==right]; npc.setDirection(65,right)",
+ "player.dir==left]; dialogBox.setText(/酒鬼/：这家酒店的酒就是好喝，每天不�",
+ "�都难受！); dialogBox.showDialog(); script.break(); npc.setAiEnabled(65,true);script.closeScriptList(); \u0001�#script.openScriptList(); player.setStat",
+ "(stand);npc.setAiEnabled(65,false);npc.setDirection(65,up)[player.dir==down]; npc.setDirection(65,dow",
+ ")[player.dir==up]; npc.setDirection(65,left)[player.dir==right]; npc.setDirection(65,right)[player.dir==left];",
+ "dialogBox.setText(/酒鬼/：小",
+ "��子，来喝两杯？呵呵，你酒量绝对不如我。); dialogBox.showDialog(); script.break(); npc.setAiEnabled(65,true);script.closeScriptList(); \u0001�#script.openScriptList(); player.setState(stand);npc.setAiEnabled(65,fal",
+ "e);npc.setDirection(65,up)[player.dir==down]; npc.setDirection(65,down)[player.dir==up]; npc.setDirection(65,left)[",
+ "layer.dir==right]; npc.setDirection(65,right)[player.dir==left]; dialogBox.setText(/酒鬼/：今朝有酒今朝"
+]

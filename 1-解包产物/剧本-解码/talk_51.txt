@@ -1,0 +1,15 @@
+#script.openScriptList(); player.setState(stand);npc.setAiEnabled(51,false);npc.setDirection(51,up)[player.dir==down]; npc.setDirection(51,down)[player.dir==up]; npc.s
+tDirection(51,left)[player.dir==right]; npc.setDirection(51,right)[player.dir==left];dialogBox.setTex
+(/张三/：有钱就是好，不用住在这种贫民区！); dialogBox.showDialog();script.break(); npc.setAiEnabl
+d(51,true);script.closeScriptList();�#script.openScriptList(); player.setState(stand);npc.setAiEnabl
+d(51,false);npc.setDirection(51,up)[player.dir==down]; npc.setDirection(51,down)[player.dir==up]; npc
+setDirection(51,left)[player.dir==right]; npc.
+etDirection(51,right)[player.dir==left];dialogBox.setText(/张三/：我们这一片都是住的都是穷人，都�
+�命苦的人啊！); dialogBox.showDialog();script.break(); npc.setAiEnabled(51,true);script.closeScriptList();�#script.openScriptList(); player.setSt
+te(stand);npc.setAiEnabled(51,false);npc.setDirection(51,up)[player.dir==down]; npc.setDirection(
+1,down)[player.dir==up]; npc.setDirection(51,left)[pl
+yer.dir==right]; npc.setDirection(51,right)[player.dir==left];dialogBox.setText(/张三/：身体
+��好，不能干力气活，每天只能在这闲着，真是无奈啊！本来就穷，又有个这样的身体。); dialogBox.showDialog();script.break(); npc.setAiEnabled(51,true);script.closeScriptList();�#script.openScrip
+List(); player.setState(stand);npc.setAiEnabled(51,false);npc.setDirection(51,up)[player.dir==down]; npc.setDirectio
+(51,down)[player.dir==up]; npc.setDirection(51,left)[player.dir==right]; npc.setDirection(51,right)[player.dir
+=left];dialogBox.setText(/张三/：老天不开眼啊！穷�

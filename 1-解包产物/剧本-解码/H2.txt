@@ -1,0 +1,75 @@
+script.openScriptList()[!eventMarked(1)]; system.showAsideInfo(战斗开始,1000); script.wait(1000); script.break(); dialogBox.setType(type_right); dialogBox.setText(/邪剑仙/：魔
+��！你为何管蜀山之事？！); dialogBox.showDialog(); script.break(); dialogBox.setType(type_left); dialogBox.setText(/重楼/：多说无益，动手吧。); dialogBox.showDialog(); script.break(); game.markEvent(1); scr
+pt.closeScriptList();  script.openScriptList()[!eventMarked(2),eventMarked(1)];dialogBox.setType(type_lef
+); dialogBox.setText(屏幕下方显示的是{人物状态}。其中，红条是“{精}”，也就是人物的生�
+�值；蓝条是“{气}”，紫条是“{神}”。); dialogBox.showDialog(); script.break(); dialogBox.setType(type_left); dialogBox.setText(�
+�幕上方显示速度条和技能条。{左边是速度条}，小头像走到速度条最右边时，就可以进行操作。{右边是技能条}，每次攻击都需要走技�
+�条。); dialogBox.showDialog(); script.break();dialogBox.setType(type_left); dialogBox.setText(/重楼/：封印锁妖塔后魔�
+没完全恢复，维持魔尊真身需要消耗气，我的气维持不久，得速战速决！); dialogBox.showDialog(); script.break(); game.markEvent(2
+; script.closeScriptList();script.openScr
+ptList()[!eventMarked(3),eventMarked(2)]; dialogBox.setText(在战斗中，可以通过“{技}”中的{
+��尊真身}进行变身。变身能爆发{极强的攻击力}，但是{失去}了使用仙术、特技、物品的能力。); dialogBox.showDialog(); script.break();  dialogBox.setText(当“气”消耗完全，或者战斗胜利�
+，才能从退出变身状态。); dialogBox.showDialog(); script.break();game.markEvent(3); script.closeScriptList();script.openScriptList()
+!eventMarked(4),eventMarked(3)];dialogBox.setType(type_left); dialogBox.setText(/重楼/：
+��死！没想到伤势这么严重，这么快就支撑不住变身了。); dialogBox.showDialog(); script.break();game.markEvent(4); script.closeScriptList();script.openScriptList()[!eventMarked(5),eventMarked(4)];dialogBox.setTyp
+(type_left); dialogBox.setText(人物攻击分为{普通攻击}、{仙术}、{特技}3种形式。); 
+ialogBox.showDialog(); script.break();dialogBox.setType(type_left); dialogBox.setText(按确定键�
+用普通攻击。); dialogBox.showDialog(); script.break();game.waitForKey(fire,确定键选择攻击);  script.break(); dialogBox.setType(type_left); dialogBox.setText(普通攻击有{最�
+}的出手速度，恰当的使用普通攻击还能{化解}敌人的进攻。); dialogBox.showDialog(); script.break(); game.waitForKey(fire,确定键攻击目标);  scri
+t.break();game.markEvent(5); script.closeScriptList();  script.openScriptList()[!eventMarked(6),eventMarked(5)];
+ialogBox.setText(仙术消耗{神}，最多可学习{5系}仙术。使用本系仙术一定次数后
+��自动领悟该系的高级仙术。任意两系仙术修炼到巅峰都会领悟至强威力的{双系仙术}。); dialogBox.showDialog(); script.break();  dialogBox.setText(仙术可以通过{使用升级}。升级后的仙术威力更
+��，走技能条的速度也更快。); dialogBox.showDialog(); script.break();dialogBox.setText(每系仙术都有独特的附加属性。火系{持续伤害}、水系{将部分伤害转为给本人治疗}、雷系{将目标在
+��度条上打回原点}、土系{定身}、风系{秒杀}，每次使用都有一定几率触发。先按左键选择“{术}”，然后按确定键进入仙术菜单。); dialogBox.showDialog(); script.break(); system.showAsideInf
+(请跟随提示按键,1000);  script.wait(1000);  script.break();  game.waitForKey(left,请按左键);  script
+break();  game.waitForKey(fire,请按确定键
+;  script.break();  dialogBox.setText(选
+��火系仙术{炎咒}并释放。); dialogBox.showDialog(); script.break();  game.waitForKey(left|right,左右键切换系别);  script.break();  game.waitForKey(#,选择炎咒施放);  script.break();game.markEvent(6); script.cl
+seScriptList();script.openScriptList()[!eventMarked(7),eventMarked(6)];dialogBox.setText(特技消耗{气}，�
+个角色的特技都独一无二。); dialogBox.showDialog(); script.break();  dialogBox.setText(只有人物被普通攻击打中或者升级
+��，“气”才能恢复。); dialogBox.showDialog(); script.break();dialogBox.setText(按上键选择“{技}”，然后按确定键进入特技菜单。); dialogBox.showDialog(); script.break();system.showAsideInfo(请跟随�
+�示按键,1000);  script.wait(1000);  script.break();  game.waitForKey(up,请按上键);  script.break();  game.waitForKey(fire,请按确定�
+);  script.break(); dialogBox.setText(选择“{心波}”并释放。); dialogBox.showDialog(); script.break();   game.waitForKey(up|down,上下选择特技);  script.break(
+;  game.waitForKey(#,选择心波施放);
+ script.break();game.markEvent(7
+; script.closeScriptList();  script.openS
+riptList()[!eventMarked(8),eventMarked(7)]; dialogBox.setText(/重楼/：邪剑仙实力增强了�
+少，看来本座只能集中全身魔力，一举轰杀。); dialogBox.showDialog(); script.break();system.showAsideInfo(重楼强行变身
+1000);player.setmetos();script.wait(1000); s
+ript.break();game.backToRPG(); game.markEvent(8); script.closeScriptList();  )script.openScriptLis
+()[!feeMarked(99999),!eventMarked(1)];dialogBox.setText(/神秘道人/：要不是我有伤在身！哼！); dialogB
+x.showDialog(); script.break();game.markEvent(1);script.closeScriptList();script.openScriptList()[feeMarked(999
+9)];game.backToMenu();script.closeScriptList();,script.o
+enScriptList()[!feeMarked(99999),!eventMarked(1)];dialogBox.setText(/匪徒/：别怕俺，俺只是长得比较
+��壮。); dialogBox.showDialog(); script.break();game.markEvent(1);script.closeScriptList();script.openScriptList()[feeMarked(99999)];game.backToMenu();script.closeScriptList();|script.openScriptList()[!eventMarked(1)];  dialog
+ox.setType(type_left); dialogBox.setText(/重楼/：可恶！竟�
+被偷袭了！); dialogBox.showDialog(); script.break();system.showAsideInfo(任务：第一次战斗,1500); script.wait(1500); script.break(); game.markEvent(1); script.closeScript
+ist();  script.openScriptList()[!eventMarked(2),eventMarked(1)]; dialogBox.s
+tType(type_left); dialogBox.setText(/重楼/：第一次战斗开始了，有些紧张。师父说过
+��屏幕下方显示的是{人物状态}。其中，红条是“{精}”，也就是人物的生命值；蓝条是“{气}”，紫条是“{神}”。); dialogBox.showDialog(); script.break(); dialogBox.setType(type_left); dialogBox.setTe
+t(/重楼/：屏幕上方显示的是速度条和仙术条。{左边是速度条}，小头像走到速度条最右边时
+��就可以进行操作。{右边是仙术条}，它的作用嘛——一会再说。); dialogBox.showDialog(); script.break(); dialogBox.setType(type_left); dialogBox.setText(/重楼/：技能分为{特技}、{仙术}，两者之间的差
+��可是很大。我还是先使用看看吧。先按上键选择“{技}”，然后按确定键进入特技菜单。); dialogBox.showDialog(); script.break(); system.showAsideInfo(请跟随提示按键,1000); script.wait(1000);
+script.break(); game.waitForKey(
+p,请按上键); script.break(); game.waitForKey(fire,请按确定键); script.break(); dialogBox.setType(type_left);
+dialogBox.setText(/重楼/：每
+��角色的特技都是独一无二的。使用特技会消耗“气”，选择目标后使用特技会立即施展技能。); dialogBox.showDialog(); script.break(); game.waitForKey(fire,请按确定键); script.break(); game.
+aitForKey(left|right|down|up,方向键选择目标); script.break(); game.waitForKey(#,确定键施放技能); script.b
+eak(); game.markEvent(2); script.closeScriptList();  script.openScriptList()[!eventMarked(3),eventMarked(2)]; dial
+gBox.setType(type_left); dialogBox.setText(/重楼/：师父还说过，特技消耗的“气”不能使用物
+��和技能恢复。只有人物被普通攻击打中或者升级时，“气”才能恢复。); dialogBox.showDialog(); script.break(); dialogBox.setType(type_left); dialogBox.setText(/重楼/：该说仙术了。仙术消耗�
+神”，使用仙术需要走{仙术条}。当小头像在仙术条上行动时，人物处于仙术准备状态，此时若是受到攻击，仙术的释�
+�会被{打断}。只有把握好时机，保护自己的仙术施放，多打断敌人仙术施放，才能更效率的战斗。); dialogBox.showDi
+log(); script.break(); dialogBox.setType(type_left); dialogBox.setText(/重楼/：先按左键选
+��“{术}”，然后按确定键进入仙术菜单。); dialogBox.showDialog(); script.break(); system.showAsideInfo(请跟随提示按键,1000); script.wait(1000); script.break(); game.waitForKey(left,请按左键); script.brea
+(); game.waitForKey(fire,请按确定键); script.break(); dialogBox.setType(type_left); dialogBox.setText(
+重楼/：仙术最高为4级。仙术等级越
+��，意味更强的威力，还有仙术条上更快的移动速度，让仙术不易被打断。只有多多使用，才能让仙术更快升级。); dialogBox.showDialog(); script.break(); dialogBox.setType(type_left); dialogBox.s
+tText(/重楼/：高级仙术很强大！虽然说我以后肯定会是巅峰强者。可是现在，
+��是先用炎咒来对付下眼前。); dialogBox.showDialog(); script.break(); game.waitForKey(left|right,左右键切换系别); script.break(); game.waitForKey(#,选择火系炎咒施放); script.break(); game.waitForKey(left|ri
+ht|down|up,方向键选择目标); script.break(); game.waitForKey(#,确定键施放技能); script.bre
+k(); game.markEvent(3); script.closeScriptList();  script.openScriptList()[!eventMarked(4),eventM
+rked(3)]; dialogBox.setType(type_left); dialogBox.setText(/重楼/：看来我还是蛮有领悟�
+�，这么快就熟悉战斗了。接下来该我尽情战斗了！); dialogBox.showDialog(); script.break(); game.markEvent(4);  game.mar
+Event(5);script.closeScriptList(); script.openScriptList()[feeMarked(99999)];game.backToMenu();script.close
+criptList();  Tscript.openScriptList()[feeMarked(99999)];game.backToRPG();script.cl

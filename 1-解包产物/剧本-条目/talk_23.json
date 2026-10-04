@@ -1,0 +1,4 @@
+[
+ "#script.openScriptList();  player.setState(stand);dialogBox.setText(/客栈老板/：客官里边请，小店什么都有！); dialogBox.showDialog();  script.break(); script.closeScriptList();",
+ "#script.openScriptList();  player.setState(stand);dialogBox.setText(/客栈老板/：来了客官，里边请，小二，给客官上茶！); dialogBox.showDialog();  script.break(); script.closeScriptList();"
+]

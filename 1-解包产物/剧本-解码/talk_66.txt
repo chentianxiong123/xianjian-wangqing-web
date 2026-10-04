@@ -1,0 +1,31 @@
+!eventMarked(1981)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(66,false);npc.setDirection(66,up)[player.dir==down]; npc.setDirectio
+(66,down)[player.dir==up]; npc.setDirection(66,left)[player.dir==right]; npc.setDirection(66,right)[player.dir
+=left];dialogBox.setText(/梁天/：没事别烦我); dialogB
+x.showDialog();script.break(); npc.setAiEnabled(49,true);script.closeScriptList();;!eventMarked(1982),eventMar
+ed(1981)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(66,false);npc.setDirection(66,up)
+player.dir==down]; npc.setDirection(66,down)[player.dir==up]; npc.setDirection(66,left)[pla
+er.dir==right]; npc.setDirection(66,right)[player.dir==left];player.showFace(duihua); dialogBox.showPlayerPortrait(); dia
+ogBox.setType(type_left); dialogBox.setText(/重楼/：你就是梁天？); dialogBox.showDialog(); script.b
+eak(); player.hideFace(); dialogBox.hidePortrait(); script.break(); npc.showFace(66,duihua); dialogBox.setText(/�
+天/：嗯，你们是谁？); dialogBox.showDialog(); script.break(); npc.hideFace(66); player.showFace(duihua); dialogBox.showP
+ayerPortrait(); dialogBox.setType(type_left); dialogBox.setText(/重楼/：我们听裁缝店老板说你知
+��为什么物价上涨！); dialogBox.showDialog(); script.break(); player.hideFace(); dialogBox.hidePortrait(); script.break(); npc.showFace(66,duihua); dialogBox.setText(/梁天/：想知道物价上涨的原因也可以你先去�
+�我买把铁剑吧！); dialogBox.showDialog(); script.break(); npc.hideFace(66); npc.setAiEnabled(66,true);system.showInfo(支线任务更新,2000); script.wait(2000); player.removeTask
+寻找梁天); player.task(集齐武器)
+ script.break();game.markEvent(1982); script.closeScriptLis
+();e!eventMarked(1983),eventMarked(1982),player.itemExists(铁剑)#script.openScriptList(); player.setState(stand);
+pc.setAiEnabled(66,false);npc.setDirection(66,up)[player.dir==down]; npc.setDirection(66,down)[player.dir==up]
+ npc.setDirection(66,left)[player.dir==right]; npc.setDirec
+ion(66,right)[player.dir==left];player.removeItem(铁剑);npc.showFace(66,duihua); dialogBox.setText(/梁天/：嗯�
+�不错确实是上好的铁剑！); dialogBox.showDialog(); script.break(); dialogBox.setText(/梁天/：不过我还需要金疮药和还神丹，有了这些我就告诉你们物价上�
+�的原因); dialogBox.showDialog(); script.break(); npc.hideFace(66); npc.setAiEnabled(66,true);system.showInfo(支线任务更新,2000); script.wait(2000); player.removeTask(集齐
+��器); player.task(集齐药品); script.break();game.markEvent(1983); script.closeScriptList();�!eventMarked(1984),eventMarked(1983),player.itemExists(金创药),player.itemExists(还神丹)#script.openScriptList(); player.setS
+ate(stand);npc.setAiEnabled(66,false);npc.setDirection(66,up)[player.dir==down]; npc.setDirection(66,down)[player.di
+==up]; npc.setDirection(66,left)[player.dir==right]; npc.setDirection(66,right)[player.dir==left];npc.showFace(66,
+uihua); player.removeItem(金疮药); player.removeItem(还神丹); dialogBox.showDialog(); script.b
+eak(); npc.showFace(66,duihua); dialogBox.setText(/梁天/：嗯，太好了有了武器和药品我就可以去�
+灭苏州城郊的妖怪了！); dialogBox.showDialog(); script.break(); dialogBox.setText(/梁天/：其实物价上涨是因为苏州�
+�郊总有妖怪作乱，导致所有东西产量都很低); dialogBox.showDialog(); script.break(); dialogBox.setText(/梁天/：谢谢你们，帮助我凑�
+武器和药品，这是我以前在城郊外找到的送给你们了); dialogBox.showDialog(); script.break(); npc.hideFace(66); system.showInf
+(获得行运丸*2,2000); script.wait(2000); player.addItem(行运丸); player.addItem(行运丸); script.break
+); player.removeTask(集齐药品); npc.

@@ -1,0 +1,29 @@
+eventMarked(9889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(63,false);npc.setDirection(63,up)[player.dir==down]; npc.setDirection(63,down)[player.dir==u
+]; npc.setDirection(63,left)[player.dir==right]; npc.setDirection(63,right)[player.dir==left];dialogBox.setText(
+赵五/：雾林妖怪多，还是少来为妙�
+�); dialogBox.showDialog();script.break(); npc.setAiEnabled(63,true);script.closeScriptList();�eventMarked(9889)#script.openScr
+ptList(); player.setState(stand);npc.setAiEnabled(63,false);npc.setDirection(63,up)[player.dir==down]; np
+.setDirection(63,down)[player.dir==up]; npc.setDirection(63,left)[player.dir==right]; npc.setDirect
+on(63,right)[player.dir==left];dialogBox.setText(/赵五/：也不知道我母亲身体好点了没有。
+; dialogBox.showDialog();script.break(); 
+pc.setAiEnabled(63,true);script.closeScriptList();�!eventMarked(9888)#script.openScriptList(); player.setStat
+(stand);npc.setAiEnabled(63,false);npc.setDirection(63,up)[player.dir==down]; npc.setDirection(63,dow
+)[player.dir==up]; npc.setDirection(63,left)[player.dir==right]; npc.setDirection(63,right)[player.dir==left];
+ialogBox.setText(/赵五/：赵六该来拿药了怎么还不来啊，真是急死人了，不知道
+��亲的药还够不够了。); dialogBox.showDialog();script.break(); npc.setAiEnabled(63,true);script.closeScriptList();�!eventMarked(9888)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(63,false);npc.setDirec
+ion(63,up)[player.dir==down]; npc.setDirection(63,down)[player.dir==up]; npc.setDirection(63,left)[player.dir==right
+; npc.setDirection(63,right)[player.dir==left];dialogBox.setText(/赵五/：现在草药越�
+越不好采了，不知道哪还有这种草药。); dialogBox.showDialog();script.break(); npc.setAiEnabled(63,true);script.closeScriptList();heventMarked(9888),!
+ventMarked(9889)#script.openScriptList(); player.setState(stand);npc.setAiEnabled(63,false);npc.setDi
+ection(63,up)[player.dir==down]; npc.setDirection(63,down)[player.dir==up]; npc.setDirection(63,left)[player.dir==
+ight]; npc.setDirection(63,right)[player.dir==left];dialogBox.setText(/赵五/：大侠你有事吗？); dialogBox
+showDialog();script.break();  dialogBox.setTyp
+(type_left);  dialogBox.showPlayerPortrait();  dialogBox.setText(/重楼/:你是赵六的哥哥吗？
+;  dialogBox.showDialog();   script.break
+);   dialogBox.hidePortrait();  script.b
+eak();  dialogBox.setText(/赵五/：我是，你是？); dialogBox.showDialog();script.break();  dialogBox.setTyp
+(type_left); dialogBox.showPlayerPortrait();  dialogBox.setText(/重楼/:赵六让我来帮你母亲�
+�药呢！);  dialogBox.showDialog();   script.break();   dialogBox.hidePortrait();  script.break();  dialogBox.setText(/赵五/：哦，�
+谢大侠，这些药给你，麻烦你告诉赵六，让我母亲一定按时服药，路上小心。); dialogBox.showDialog();script.break();  player.addItem(�
+秘药品); system.showInfo(得到神秘药品,1500); script.wait(1000); script.break(); game.markEvent(9889); system.showInfo(任务：送药,1500); player.t
+sk(赵六的药); script.wait(1000); player.removeTask(雾林取药); npc.setAiEnabled(63,true);s

@@ -1,0 +1,12 @@
+[
+ "!eventMarked(9),eventMarked(8)#script.openScriptList()",
+ " player.setState(stand);npc.setAiEnabled(1,false);npc.setSe",
+ "uence(1,stand_up)[player.dir==down]; npc.setSequence(1,stand_down)[player.dir==up]; npc.setSequence(1,stand_left)",
+ "player.dir==right]; npc.setSequence(1,stand_right)[player.dir==left];dialogBox.setText(/王",
+ "��虎/：这位少侠也是来打听悬赏消息的吧。); dialogBox.showDialog(); script.break(); dialogBox.setText(/重楼/：悬赏？); dialogBox.showDialog(); script.break(); dialogBox.setText(/王大虎/：村庄西面的�",
+ "�里坡最近有妖怪作乱，闹得人心惶惶。村长说了，谁除去那妖怪，村里凑的500两就归谁。); dialogBox.showDialog",
+ "); script.break(); dialogBox.setText(/�",
+ "楼/：（十里坡除妖，可以得到500两？）); dialogBox.showDialog(); script.break(); dialogBox.setText(/重楼/：（500两，好�",
+ "，还可以留下来许多银两。）); dialogBox.showDialog(); script.break(); dialogBox.setText(/重楼/：（实在是太好了。）); dialogBox.sho",
+ "Dialog(); script.break(); dialogBox.setText(/王大虎/：这500两也不是那么好拿的。武艺不好的话，千�"
+]
