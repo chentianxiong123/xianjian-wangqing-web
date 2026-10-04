@@ -107,40 +107,15 @@ const ENCOUNTERS = {
 };
 
 const MAPS_DATA = [
-  {id:"cs_ljb_1",name:"罗家堡",music:"syc",npcs:[{id:31,x:320,y:33}],transitions:[{target:"cs_sz_2",x:30,y:205},{target:"cs_ljb_2",x:420,y:773}]},
-  {id:"cs_ljb_2",name:"罗家堡大院",music:"syc",npcs:[{id:31,x:191,y:240},{id:2,x:120,y:110},{id:3,x:140,y:105}],transitions:[{target:"cs_ljb_1",x:320,y:27},{target:"sn_ljb",x:240,y:456}]},
-  {id:"cs_ss_by",name:"蜀山别院",music:"ss",npcs:[{id:31,x:378,y:252}],transitions:[{target:"yw_yz_1",x:30,y:264},{target:"cs_ss_d",x:770,y:194}]},
-  {id:"cs_ss_d",name:"蜀山演武场",music:"ss",npcs:[{id:1,x:393,y:760}],transitions:[{target:"yw_yl_3",x:343,y:30},{target:"cs_ss_by",x:30,y:276},{target:"cs_ss_x",x:770,y:694}]},
-  {id:"cs_ss_x",name:"蜀山西",music:"ss",npcs:[],transitions:[{target:"cs_ss_d",x:30,y:600},{target:"cs_ss_xt",x:450,y:415}]},
-  {id:"cs_ss_xt",name:"蜀山西厅",music:"ss",npcs:[],transitions:[{target:"cs_ss_x",x:450,y:415}]},
-  {id:"cs_sz_1",name:"苏州城东",music:"sz",npcs:[{id:31,x:200,y:150}],transitions:[{target:"cs_sz_2",x:100,y:100},{target:"cs_sz_yg",x:400,y:200},{target:"cs_sz_sj",x:300,y:300}]},
-  {id:"cs_sz_2",name:"苏州城西",music:"sz",npcs:[{id:31,x:500,y:300}],transitions:[{target:"cs_sz_1",x:100,y:100},{target:"cs_ljb_1",x:30,y:205}]},
-  {id:"cs_sz_sj",name:"苏州市集",music:"sz",npcs:[{id:5,x:200,y:150},{id:6,x:300,y:200}],transitions:[{target:"cs_sz_1",x:100,y:100}]},
-  {id:"cs_sz_yg",name:"苏州医馆",music:"sz",npcs:[{id:7,x:150,y:100}],transitions:[{target:"cs_sz_1",x:100,y:100}]},
-  {id:"ms_syt_1",name:"锁妖塔六层",music:"ss",npcs:[{id:35,x:367,y:311},{id:36,x:367,y:343}],transitions:[{target:"ms_syt_2",x:367,y:100}]},
-  {id:"ms_syt_2",name:"锁妖塔五层",music:"ss",npcs:[],transitions:[{target:"ms_syt_1",x:367,y:400},{target:"ms_syt_3",x:367,y:100}]},
-  {id:"ms_syt_3",name:"锁妖塔四层",music:"ss",npcs:[],transitions:[{target:"ms_syt_2",x:367,y:400},{target:"ms_syt_4",x:367,y:100}]},
-  {id:"ms_syt_4",name:"锁妖塔三层",music:"ss",npcs:[],transitions:[{target:"ms_syt_3",x:367,y:400},{target:"ms_syt_5",x:367,y:100}]},
-  {id:"ms_syt_5",name:"锁妖塔二层",music:"ss",npcs:[],transitions:[{target:"ms_syt_4",x:367,y:400},{target:"ms_syt_6",x:367,y:100}]},
-  {id:"ms_syt_6",name:"锁妖塔一层",music:"ss",npcs:[],transitions:[{target:"ms_syt_5",x:367,y:400}]},
-  {id:"yw_slp_x",name:"十里坡西",music:"xg",npcs:[{id:10,x:100,y:100}],transitions:[{target:"yw_slp_d",x:200,y:100}]},
-  {id:"yw_slp_d",name:"十里坡东",music:"xg",npcs:[],transitions:[{target:"yw_slp_x",x:100,y:100}]},
-  {id:"yw_wl_2",name:"雾林",music:"xg",npcs:[],transitions:[{target:"yw_wl_1",x:200,y:100}]},
-  {id:"yw_yl_3",name:"云麓",music:"xg",npcs:[],transitions:[{target:"cs_ss_d",x:343,y:30}]},
-  {id:"yw_ssm",name:"山神庙外",music:"xg",npcs:[],transitions:[]},
-  {id:"yw_syc",name:"渔村",music:"xg",npcs:[],transitions:[]},
-  {id:"yw_hhc",name:"莲花池",music:"xg",npcs:[],transitions:[]},
-  {id:"ms_ylk_1",name:"隐龙窟一层",music:"xg",npcs:[],transitions:[{target:"ms_ylk_2",x:200,y:50}]},
-  {id:"ms_ylk_2",name:"隐龙窟二层",music:"xg",npcs:[],transitions:[{target:"ms_ylk_1",x:200,y:400},{target:"ms_ylk_3",x:200,y:50}]},
-  {id:"ms_ylk_3",name:"隐龙窟三层",music:"xg",npcs:[],transitions:[{target:"ms_ylk_2",x:200,y:400},{target:"ms_ylk_4",x:200,y:50}]},
-  {id:"ms_ylk_4",name:"隐龙窟四层",music:"xg",npcs:[],transitions:[{target:"ms_ylk_3",x:200,y:400},{target:"ms_ylk_5",x:200,y:50}]},
-  {id:"ms_ylk_5",name:"隐龙窟五层",music:"xg",npcs:[],transitions:[{target:"ms_ylk_4",x:200,y:400}]},
-  {id:"sn_ljb",name:"罗家堡大厅",music:"syc",npcs:[],transitions:[{target:"cs_ljb_2",x:240,y:456}]},
-  {id:"sn_ssmn",name:"山神庙内",music:"xg",npcs:[],transitions:[]},
-  {id:"sn_syg",name:"水月宫内",music:"xg",npcs:[],transitions:[]},
-  {id:"sn_yg",name:"苏州医馆内",music:"sz",npcs:[],transitions:[]},
-  {id:"yw_yz_1",name:"遗址",music:"xg",npcs:[],transitions:[]},
-  {id:"yw_gs_1",name:"鬼山",music:"xg",npcs:[],transitions:[]}
+Generated 69 map entries
+First 3:
+  {id:"cs_ljb_1",name:"罗家堡",music:"syc",npcs:[{id:31,x:609,y:435}],transitions:[{target:"cs_sz_2",x:30,y:205},{target:"cs_ljb_2",x:420,y:773}]},
+  {id:"cs_ljb_2",name:"罗家堡大院",music:"syc",npcs:[{id:31,x:425,y:777},{id:24,x:170,y:250},{id:25,x:214,y:250},{id:26,x:192,y:250},{id:3,x:214,y:250},{id:2,x:170,y:250},{id:16,x:1170,y:250}],transitions:[{target:"cs_ljb_1",x:320,y:27},{target:"sn_ljb",x:240,y:456}]},
+  {id:"cs_ss_by",name:"蜀山别院",music:"ss",npcs:[{id:31,x:378,y:252}],transitions:[{target:"yw_yz_1",x:30,y:264},{target:"cs_ss_d",x:770,y:194},{target:"sn_jjx",x:208,y:359}]},
+Last 3:
+  {id:"yw_ylkw",name:"隐龙窟外",music:"yw",npcs:[{id:31,x:150,y:75}],transitions:[{target:"yw_gs_2",x:30,y:285},{target:"ms_ylk_1",x:61,y:723},{target:"yw_gs_2",x:30,y:285},{target:"ms_ylk_1",x:61,y:723}]},
+  {id:"yw_yz_1",name:"遗址",music:"yw",npcs:[{id:31,x:345,y:33}],transitions:[{target:"cs_ss_by",x:370,y:254},{target:"yw_yz_2",x:344,y:418},{target:"yw_yz_2",x:344,y:418},{target:"cs_ss_by",x:370,y:254}]},
+  {id:"yw_yz_2",name:"遗址",music:"yw",npcs:[{id:31,x:211,y:33}],transitions:[{target:"yw_yz_1",x:348,y:30},{target:"ms_syt_1",x:418,y:348},{target:"ms_syt_1",x:418,y:348},{target:"yw_yz_1",x:348,y:30}]},
 ];
 
 // NPC name lookup
