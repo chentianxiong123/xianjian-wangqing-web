@@ -114,9 +114,9 @@
       "msg": "NPC: 67 个定义, ant 全部存在"
     },
     {
-      "level": "OK",
+      "level": "WARN",
       "group": "引用",
-      "msg": "NPC: 对话文件全部存在"
+      "msg": "NPC: 7 个对话文件缺失 [('3', 'talk_3.str'), ('4', 'talk_4.str'), ('5', 'talk_5.str'), ('7', 'talk_7.str'), ('12', 'talk_12.str')]"
     },
     {
       "level": "OK",
@@ -397,5 +397,5 @@
     "battleOpsTotal": 48
   },
   "errors": 0,
-  "warnings": 0
+  "warnings": 1
 }

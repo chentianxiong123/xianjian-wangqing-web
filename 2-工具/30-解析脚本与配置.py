@@ -266,9 +266,13 @@ def build_npc_table(defs):
                 except ValueError:
                     continue
                 src = g.group(2).strip()
-                e = tbl.setdefault(nid, {"id": nid, "src": src, "maps": [],
-                                        "positions": []})
-                e["src"] = src
+                e = tbl.setdefault(nid, {"id": nid, "srcStr": None, "srcAnt": None,
+                                        "maps": [], "positions": []})
+                # .str 与 .ant 分开记录：.str 才是定义来源，.ant 只是贴图
+                if src.endswith(".str"):
+                    e["srcStr"] = src
+                else:
+                    e["srcAnt"] = src
                 if mname not in e["maps"]:
                     e["maps"].append(mname)
             for g in SET_POS.finditer(t):
@@ -282,20 +286,37 @@ def build_npc_table(defs):
                                        "x": as_int(g.group(2)),
                                        "y": as_int(g.group(3))})
     # 合并 str 定义
+    #
+    # ★ 同一个 NPC id 可能被两种形式引用：
+    #     element.addToNpc(17, 17.str)      ← 带定义（名字/对话文件/对话区域）
+    #     element.addToNpc(34, npc_34.ant)  ← 仅贴图
+    #   两者可以出现在不同地图里。之前用单个 src 字段后写覆盖，
+    #   结果 .ant 把 .str 的定义整个抹掉（39 个定义里丢了 23 个 talk）。
+    #   正确做法：分开记录 srcStr / srcAnt，定义一律以 .str 为准。
     for nid, e in tbl.items():
-        src = e.get("src") or ""
-        if src.endswith(".str"):
-            stem = src[:-4]
-            d = defs.get(stem)
+        src_str = e.get("srcStr")
+        src_ant = e.get("srcAnt")
+        if not src_str and str(nid) in defs:
+            # 没有 addToNpc(...str) 引用，但地图里用 npc.setPosition(<id>,x,y) 直接放置。
+            # 这种 NPC 的定义就在 id.str 里（defs 以数字为键）。
+            src_str = "%d.str" % nid
+            e["srcStr"] = src_str
+            e["placedBy"] = "setPosition"
+        if src_str:
+            d = defs.get(src_str[:-4])
             if d:
                 e.update({"name": d["name"], "ant": d["ant"],
                           "talk": d["talk"], "nameHeight": d["nameHeight"],
                           "moveUD": d["moveUD"], "moveLR": d["moveLR"],
                           "dialogRegions": d["dialogRegions"],
-                          "defFile": src})
-                continue
-        e.update({"name": None, "ant": (None if src.endswith(".str") else src),
-                  "talk": None, "defFile": None})
+                          "defFile": src_str})
+            else:
+                e.update({"name": None, "talk": None, "defFile": src_str})
+        else:
+            # 没有 .str 定义 → 只能拿到贴图名，其余未知
+            e.update({"name": None, "talk": None, "defFile": None,
+                      "ant": src_ant or None})
+        e["src"] = src_str or src_ant
     return {str(k): v for k, v in sorted(tbl.items())}
 
 
