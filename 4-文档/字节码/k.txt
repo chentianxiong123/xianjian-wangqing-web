@@ -1,0 +1,15 @@
+================================================================================
+类: k  (super: java.lang.Object)
+版本: 45.3  标志: public final synchronized
+接口: 
+
+--- 字段(3) ---
+  public final a:Ljava/lang/String;
+  public final b:Ljava/util/Vector;
+  public final c:Ljava/lang/String;
+
+--- 方法(2) ---
+  public <init>(Ljava/lang/String;Ljava/lang/String;)V
+    [abstract/native/...]
+  native abstract ??
+    [abstract/native/...]

@@ -1,0 +1,10 @@
+================================================================================
+类: n  (super: java.lang.Object)
+版本: 45.3  标志: public interface abstract
+接口: 
+
+--- 字段(0) ---
+
+--- 方法(1) ---
+  public abstract a(Ljavax/microedition/lcdui/Graphics;Ljavax/microedition/lcdui/Image;IIIIIII)V
+    [abstract/native/...]

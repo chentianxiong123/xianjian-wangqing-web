@@ -1,0 +1,13 @@
+================================================================================
+类: p  (super: java.lang.Object)
+版本: 45.3  标志: final synchronized
+接口: java.lang.Runnable
+
+--- 字段(1) ---
+  private a:Lal;
+
+--- 方法(2) ---
+  _ <init>(Lal;)V
+    [abstract/native/...]
+  interface synthetic ??
+    [abstract/native/...]

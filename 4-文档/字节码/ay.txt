@@ -1,0 +1,16 @@
+================================================================================
+类: ay  (super: q)
+版本: 45.3  标志: public synchronized
+接口: 
+
+--- 字段(2) ---
+  private a:[Ll;
+  private b:[Ll;
+
+--- 方法(3) ---
+  public <init>(Lat;II)V
+    [abstract/native/...]
+  _ ??
+    [abstract/native/...]
+  private final native strictfp synthetic ??
+    [abstract/native/...]

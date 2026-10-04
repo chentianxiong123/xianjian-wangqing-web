@@ -1,0 +1,15 @@
+================================================================================
+类: ba  (super: java.lang.Object)
+版本: 45.3  标志: public final synchronized
+接口: 
+
+--- 字段(3) ---
+  public final a:I
+  public final b:I
+  public final c:[I
+
+--- 方法(2) ---
+  private <init>(II[I)V
+    [abstract/native/...]
+  strictfp ??
+    [abstract/native/...]

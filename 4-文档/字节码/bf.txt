@@ -1,0 +1,12 @@
+================================================================================
+类: bf  (super: java.lang.Object)
+版本: 45.3  标志: public final synchronized
+接口: 
+
+--- 字段(2) ---
+  public final a:Ljava/lang/String;
+  public final b:[B
+
+--- 方法(1) ---
+  _ <init>(Ljava/lang/String;[B)V
+    [abstract/native/...]
