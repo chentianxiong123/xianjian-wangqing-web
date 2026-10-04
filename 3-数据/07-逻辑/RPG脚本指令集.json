@@ -1,0 +1,1602 @@
+{
+ "dispatcher": {
+  "namespaces": [
+   {
+    "ns": "script",
+    "line": 990
+   },
+   {
+    "ns": "null",
+    "line": 1504
+   },
+   {
+    "ns": "eventMarked",
+    "line": 2199
+   },
+   {
+    "ns": "feeMarked",
+    "line": 2207
+   },
+   {
+    "ns": "element",
+    "line": 2316
+   },
+   {
+    "ns": "npc",
+    "line": 2384
+   },
+   {
+    "ns": "script",
+    "line": 2469
+   },
+   {
+    "ns": "element",
+    "line": 2489
+   },
+   {
+    "ns": "fee",
+    "line": 2497
+   },
+   {
+    "ns": "world",
+    "line": 2510
+   },
+   {
+    "ns": "player",
+    "line": 2580
+   },
+   {
+    "ns": "npc",
+    "line": 2717
+   },
+   {
+    "ns": "partner",
+    "line": 2784
+   },
+   {
+    "ns": "item",
+    "line": 2839
+   },
+   {
+    "ns": "user",
+    "line": 2848
+   },
+   {
+    "ns": "camera",
+    "line": 2852
+   },
+   {
+    "ns": "dialogBox",
+    "line": 2881
+   },
+   {
+    "ns": "guide",
+    "line": 2898
+   },
+   {
+    "ns": "script",
+    "line": 2908
+   },
+   {
+    "ns": "game",
+    "line": 2931
+   },
+   {
+    "ns": "countdownTimer",
+    "line": 3055
+   },
+   {
+    "ns": "midi",
+    "line": 3074
+   },
+   {
+    "ns": "system",
+    "line": 3087
+   }
+  ],
+  "method": "a(Object, Object) — 逐行解析并按命名空间分派",
+  "note": "同一命名空间可能出现多次（如 script 在 2469 与 2908），后者是同一 if/else 链上的补充分支，提取时按区间归并"
+ },
+ "namespaces": {
+  "camera": {
+   "ops": [
+    {
+     "cmd": "setFocusOnPlayer",
+     "lines": [
+      2853
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2853
+     }
+    },
+    {
+     "cmd": "setFocusOnNpc",
+     "lines": [
+      2859
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2859
+     }
+    },
+    {
+     "cmd": "setPosition",
+     "lines": [
+      2869
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2869
+     }
+    },
+    {
+     "cmd": "moveTo",
+     "lines": [
+      2875
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2875
+     }
+    }
+   ],
+   "count": 4
+  },
+  "countdownTimer": {
+   "ops": [
+    {
+     "cmd": "setMillis",
+     "lines": [
+      3056
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3056
+     }
+    },
+    {
+     "cmd": "stop",
+     "lines": [
+      3071
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3071
+     }
+    }
+   ],
+   "count": 2
+  },
+  "dialogBox": {
+   "ops": [
+    {
+     "cmd": "setText",
+     "lines": [
+      2882
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2882
+     }
+    },
+    {
+     "cmd": "setType",
+     "lines": [
+      2884
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2884
+     }
+    },
+    {
+     "cmd": "showDialog",
+     "lines": [
+      2886
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2886
+     }
+    },
+    {
+     "cmd": "hideDialog",
+     "lines": [
+      2889
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2889
+     }
+    },
+    {
+     "cmd": "showPlayerPortrait",
+     "lines": [
+      2891
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2891
+     }
+    },
+    {
+     "cmd": "showNpcPortrait",
+     "lines": [
+      2893
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2893
+     }
+    },
+    {
+     "cmd": "hidePortrait",
+     "lines": [
+      2895
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2895
+     }
+    }
+   ],
+   "count": 7
+  },
+  "element": {
+   "ops": [
+    {
+     "cmd": "addToNpc",
+     "lines": [
+      2317
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2317
+     }
+    },
+    {
+     "cmd": "addToMonster",
+     "lines": [
+      2337
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2337
+     }
+    },
+    {
+     "cmd": "addToDropRock",
+     "lines": [
+      2343
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2343
+     }
+    },
+    {
+     "cmd": "addToBird",
+     "lines": [
+      2352
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2352
+     }
+    },
+    {
+     "cmd": "addToFish",
+     "lines": [
+      2354
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2354
+     }
+    },
+    {
+     "cmd": "addToWave",
+     "lines": [
+      2356
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2356
+     }
+    },
+    {
+     "cmd": "addToButterfly",
+     "lines": [
+      2358
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2358
+     }
+    },
+    {
+     "cmd": "addToPoult",
+     "lines": [
+      2360
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2360
+     }
+    },
+    {
+     "cmd": "addToTreasureBox",
+     "lines": [
+      2362
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2362
+     }
+    },
+    {
+     "cmd": "addToCock",
+     "lines": [
+      2368
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2368
+     }
+    },
+    {
+     "cmd": "addToCloud",
+     "lines": [
+      2370
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2370
+     }
+    },
+    {
+     "cmd": "remove",
+     "lines": [
+      2372
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2372
+     }
+    },
+    {
+     "cmd": "setSequence",
+     "lines": [
+      2490
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2490
+     }
+    }
+   ],
+   "count": 13
+  },
+  "game": {
+   "ops": [
+    {
+     "cmd": "markEvent",
+     "lines": [
+      2932
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2932
+     }
+    },
+    {
+     "cmd": "unmarkEvent",
+     "lines": [
+      2934
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2934
+     }
+    },
+    {
+     "cmd": "showMenu",
+     "lines": [
+      2936
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2936
+     }
+    },
+    {
+     "cmd": "showFee",
+     "lines": [
+      2941
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2941
+     }
+    },
+    {
+     "cmd": "dropRock",
+     "lines": [
+      2947
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2947
+     }
+    },
+    {
+     "cmd": "dropRockClear",
+     "lines": [
+      2949
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2949
+     }
+    },
+    {
+     "cmd": "waitForKey",
+     "lines": [
+      2953
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2953
+     }
+    },
+    {
+     "cmd": "branch",
+     "lines": [
+      2996
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2996
+     }
+    },
+    {
+     "cmd": "fight",
+     "lines": [
+      3011
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3011
+     }
+    },
+    {
+     "cmd": "flicker",
+     "lines": [
+      3019
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3019
+     }
+    },
+    {
+     "cmd": "vibrate",
+     "lines": [
+      3023
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3023
+     }
+    },
+    {
+     "cmd": "showNpc",
+     "lines": [
+      3034
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3034
+     }
+    },
+    {
+     "cmd": "showPlayer",
+     "lines": [
+      3036
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3036
+     }
+    },
+    {
+     "cmd": "showMonster",
+     "lines": [
+      3042
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3042
+     }
+    },
+    {
+     "cmd": "hideMonster",
+     "lines": [
+      3044
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3044
+     }
+    }
+   ],
+   "count": 15
+  },
+  "guide": {
+   "ops": [
+    {
+     "cmd": "setText",
+     "lines": [
+      2899
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2899
+     }
+    },
+    {
+     "cmd": "setTarget",
+     "lines": [
+      2904
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2904
+     }
+    }
+   ],
+   "count": 2
+  },
+  "item": {
+   "ops": [
+    {
+     "cmd": "remove",
+     "lines": [
+      2840
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2840
+     }
+    }
+   ],
+   "count": 1
+  },
+  "midi": {
+   "ops": [
+    {
+     "cmd": "play",
+     "lines": [
+      3075
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3075
+     }
+    },
+    {
+     "cmd": "stop",
+     "lines": [
+      3083
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3083
+     }
+    }
+   ],
+   "count": 2
+  },
+  "npc": {
+   "ops": [
+    {
+     "cmd": "addInitialPosition",
+     "lines": [
+      2385
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2385
+     }
+    },
+    {
+     "cmd": "addActivityRegion",
+     "lines": [
+      2387
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2387
+     }
+    },
+    {
+     "cmd": "addNode",
+     "lines": [
+      2389
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2389
+     }
+    },
+    {
+     "cmd": "setVelocity",
+     "lines": [
+      2391
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2391
+     }
+    },
+    {
+     "cmd": "setState",
+     "lines": [
+      2393,
+      2738
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2393
+     }
+    },
+    {
+     "cmd": "setDirection",
+     "lines": [
+      2399,
+      2744
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2399
+     }
+    },
+    {
+     "cmd": "setSequence",
+     "lines": [
+      2401,
+      2748
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2401
+     }
+    },
+    {
+     "cmd": "setPosition",
+     "lines": [
+      2403,
+      2746
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2403
+     }
+    },
+    {
+     "cmd": "setAiEnabled",
+     "lines": [
+      2405,
+      2750
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2405
+     }
+    },
+    {
+     "cmd": "removeNode",
+     "lines": [
+      2411
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2411
+     }
+    },
+    {
+     "cmd": "setIgnoreEvent",
+     "lines": [
+      2413,
+      2758
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2413
+     }
+    },
+    {
+     "cmd": "setPortrait",
+     "lines": [
+      2415
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2415
+     }
+    },
+    {
+     "cmd": "moveTo",
+     "lines": [
+      2726
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2726
+     }
+    },
+    {
+     "cmd": "showFace",
+     "lines": [
+      2773
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2773
+     }
+    },
+    {
+     "cmd": "hideFace",
+     "lines": [
+      2775
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2775
+     }
+    },
+    {
+     "cmd": "bindPlayer",
+     "lines": [
+      2777
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2777
+     }
+    },
+    {
+     "cmd": "unbindPlayer",
+     "lines": [
+      2779
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2779
+     }
+    }
+   ],
+   "count": 17
+  },
+  "partner": {
+   "ops": [
+    {
+     "cmd": "addFeeling",
+     "lines": [
+      2786
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2786
+     }
+    },
+    {
+     "cmd": "reduceFeeling",
+     "lines": [
+      2793
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2793
+     }
+    }
+   ],
+   "count": 2
+  },
+  "player": {
+   "ops": [
+    {
+     "cmd": "moveTo",
+     "lines": [
+      2581
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2581
+     }
+    },
+    {
+     "cmd": "move",
+     "lines": [
+      2586,
+      2608
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2586
+     }
+    },
+    {
+     "cmd": "takeTheStairs",
+     "lines": [
+      2596
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2596
+     }
+    },
+    {
+     "cmd": "playAnimation",
+     "lines": [
+      2601
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2601
+     }
+    },
+    {
+     "cmd": "setSequence",
+     "lines": [
+      2603
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2603
+     }
+    },
+    {
+     "cmd": "setState",
+     "lines": [
+      2605
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2605
+     }
+    },
+    {
+     "cmd": "setVelocity",
+     "lines": [
+      2613
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2613
+     }
+    },
+    {
+     "cmd": "setDirection",
+     "lines": [
+      2615
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2615
+     }
+    },
+    {
+     "cmd": "setPosition",
+     "lines": [
+      2617
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2617
+     }
+    },
+    {
+     "cmd": "addItem",
+     "lines": [
+      2621
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2621
+     }
+    },
+    {
+     "cmd": "removeItem",
+     "lines": [
+      2623
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2623
+     }
+    },
+    {
+     "cmd": "addGold",
+     "lines": [
+      2625
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2625
+     }
+    },
+    {
+     "cmd": "reduceGold",
+     "lines": [
+      2627
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2627
+     }
+    },
+    {
+     "cmd": "setGold",
+     "lines": [
+      2629
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2629
+     }
+    },
+    {
+     "cmd": "healing",
+     "lines": [
+      2631
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2631
+     }
+    },
+    {
+     "cmd": "levelup",
+     "lines": [
+      2633
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2633
+     }
+    },
+    {
+     "cmd": "showFace",
+     "lines": [
+      2642
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2642
+     }
+    },
+    {
+     "cmd": "hideFace",
+     "lines": [
+      2644
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2644
+     }
+    },
+    {
+     "cmd": "firstTask",
+     "lines": [
+      2646
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2646
+     }
+    },
+    {
+     "cmd": "task",
+     "lines": [
+      2653
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2653
+     }
+    },
+    {
+     "cmd": "removeTask",
+     "lines": [
+      2661
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2661
+     }
+    },
+    {
+     "cmd": "startSkill",
+     "lines": [
+      2665
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2665
+     }
+    },
+    {
+     "cmd": "addspeed",
+     "lines": [
+      2679
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2679
+     }
+    },
+    {
+     "cmd": "addluck",
+     "lines": [
+      2683
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2683
+     }
+    },
+    {
+     "cmd": "addgod",
+     "lines": [
+      2687
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2687
+     }
+    },
+    {
+     "cmd": "addhp",
+     "lines": [
+      2691
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2691
+     }
+    },
+    {
+     "cmd": "addlove",
+     "lines": [
+      2695
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2695
+     }
+    },
+    {
+     "cmd": "startArtSkill",
+     "lines": [
+      2704
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2704
+     }
+    }
+   ],
+   "count": 28
+  },
+  "script": {
+   "ops": [
+    {
+     "cmd": "break",
+     "lines": [
+      990
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 990
+     }
+    },
+    {
+     "cmd": "wait",
+     "lines": [
+      990,
+      993
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 990
+     }
+    },
+    {
+     "cmd": "openScriptList",
+     "lines": [
+      2470,
+      2928
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2470
+     }
+    },
+    {
+     "cmd": "closeScriptList",
+     "lines": [
+      2476
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2476
+     }
+    },
+    {
+     "cmd": "load",
+     "lines": [
+      2909
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2909
+     }
+    },
+    {
+     "cmd": "include",
+     "lines": [
+      2916
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2916
+     }
+    }
+   ],
+   "count": 6
+  },
+  "system": {
+   "ops": [
+    {
+     "cmd": "showInfo",
+     "lines": [
+      3088
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3088
+     }
+    },
+    {
+     "cmd": "showAsideInfo",
+     "lines": [
+      3091
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3091
+     }
+    },
+    {
+     "cmd": "trade",
+     "lines": [
+      3093
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3093
+     }
+    },
+    {
+     "cmd": "returnToMainMenu",
+     "lines": [
+      3103
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3103
+     }
+    },
+    {
+     "cmd": "showScreenMargin",
+     "lines": [
+      3105
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3105
+     }
+    },
+    {
+     "cmd": "hideScreenMargin",
+     "lines": [
+      3108
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3108
+     }
+    },
+    {
+     "cmd": "markFee",
+     "lines": [
+      3110
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3110
+     }
+    },
+    {
+     "cmd": "unmarkFee",
+     "lines": [
+      3112
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3112
+     }
+    }
+   ],
+   "count": 8
+  },
+  "user": {
+   "ops": [
+    {
+     "cmd": "addHP",
+     "lines": [
+      2849
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2849
+     }
+    }
+   ],
+   "count": 1
+  },
+  "world": {
+   "ops": [
+    {
+     "cmd": "addMask",
+     "lines": [
+      2511
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2511
+     }
+    },
+    {
+     "cmd": "setName",
+     "lines": [
+      2538
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2538
+     }
+    },
+    {
+     "cmd": "removeAllMask",
+     "lines": [
+      2540
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2540
+     }
+    },
+    {
+     "cmd": "change",
+     "lines": [
+      2547
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2547
+     }
+    },
+    {
+     "cmd": "fadeOut",
+     "lines": [
+      2575
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2575
+     }
+    },
+    {
+     "cmd": "setFlyEnabled",
+     "lines": [
+      2577
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2577
+     }
+    }
+   ],
+   "count": 6
+  }
+ },
+ "conditions": [
+  {
+   "cond": "eventMarked",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2199
+   }
+  },
+  {
+   "cond": "!eventMarked",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2203
+   }
+  },
+  {
+   "cond": "feeMarked",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2207
+   }
+  },
+  {
+   "cond": "!feeMarked",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2211
+   }
+  },
+  {
+   "cond": "player.itemCountIsGreaterThan",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2215
+   }
+  },
+  {
+   "cond": "player.itemCountIsLesserThan",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2220
+   }
+  },
+  {
+   "cond": "player.itemExists",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2225
+   }
+  },
+  {
+   "cond": "player.goldIsGreaterThan",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2230
+   }
+  },
+  {
+   "cond": "player.goldIsLesserThan",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2235
+   }
+  },
+  {
+   "cond": "partner.feelingIsGreaterThan",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2240
+   }
+  },
+  {
+   "cond": "partner.feelingIsLesserThan",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2245
+   }
+  },
+  {
+   "cond": "partner.feelingIsEqualTo",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2250
+   }
+  },
+  {
+   "cond": "partner.feelingIsGreater",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2255
+   }
+  },
+  {
+   "cond": "!partner.feelingIsGreater",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2260
+   }
+  },
+  {
+   "cond": "partner.feelingEqual",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2265
+   }
+  },
+  {
+   "cond": "partner.exists",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2269
+   }
+  },
+  {
+   "cond": "!partner.exists",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2275
+   }
+  },
+  {
+   "cond": "element",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2316
+   }
+  },
+  {
+   "cond": "npc",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2384
+   }
+  },
+  {
+   "cond": "element",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2489
+   }
+  },
+  {
+   "cond": "npc",
+   "src": {
+    "class": "4-文档/反编译源码/e.java",
+    "line": 2717
+   }
+  }
+ ],
+ "totalOps": 114,
+ "namespaceSemantics": {
+  "script": "脚本控制：批处理队列、跨文件跳转",
+  "element": "地图元素实例化：NPC / 怪物 / 落石 / 鸟 / 鱼 / 浪 / 蝴蝶 / 毒 / 宝箱 / 鸡 / 云",
+  "npc": "配置上一步实例化的元素（必须跟在 addToXxx 之后）",
+  "fee": "调试开关",
+  "world": "世界/地图：遮罩、名称、切换、淡出、飞行开关",
+  "player": "主角：移动、动画、物品、金钱、任务、技能、属性增减",
+  "partner": "队友：好感度增减",
+  "item": "物品：从地图元素上摘除",
+  "user": "临时用户态加血",
+  "camera": "镜头：跟随玩家/NPC、绝对定位、移动",
+  "dialogBox": "对话框：文本、对齐、显示隐藏、头像",
+  "guide": "指引条：文本与目标",
+  "game": "全局：事件标记、菜单、落石、等待按键、分支、战斗、闪屏、震动、黑白字幕",
+  "countdownTimer": "倒计时器",
+  "midi": "背景音乐",
+  "system": "系统：提示、商店、返回主菜单、屏幕边距、调试 flag"
+ },
+ "conditionTable": [
+  {
+   "cond": "eventMarked <n>",
+   "true": "P.a(\"event\"+n) == 1",
+   "src": "e.java:2199"
+  },
+  {
+   "cond": "!eventMarked <n>",
+   "true": "P.a(\"event\"+n) != 1",
+   "src": "e.java:2203"
+  },
+  {
+   "cond": "feeMarked <n>",
+   "true": "d.c(n)",
+   "src": "e.java:2207"
+  },
+  {
+   "cond": "!feeMarked <n>",
+   "true": "!d.c(n)",
+   "src": "e.java:2211"
+  },
+  {
+   "cond": "player.itemCountIsGreaterThan <物品> <n>",
+   "src": "e.java:2215"
+  },
+  {
+   "cond": "player.itemCountIsLesserThan <物品> <n>",
+   "src": "e.java:2220"
+  },
+  {
+   "cond": "player.itemExists <物品>",
+   "src": "e.java:2225"
+  },
+  {
+   "cond": "player.goldIsGreaterThan <n>",
+   "src": "e.java:2230"
+  },
+  {
+   "cond": "player.goldIsLesserThan <n>",
+   "src": "e.java:2235"
+  },
+  {
+   "cond": "partner.feelingIsGreaterThan <队友> <n>",
+   "src": "e.java:2240"
+  },
+  {
+   "cond": "partner.feelingIsLesserThan <队友> <n>",
+   "src": "e.java:2245"
+  },
+  {
+   "cond": "partner.feelingIsEqualTo <队友> <n>",
+   "src": "e.java:2250"
+  },
+  {
+   "cond": "partner.feelingIsGreater <队友> <n>",
+   "src": "e.java:2255"
+  },
+  {
+   "cond": "!partner.feelingIsGreater <队友> <n>",
+   "src": "e.java:2260"
+  },
+  {
+   "cond": "partner.feelingEqual <队友> <n>",
+   "src": "e.java:2265"
+  },
+  {
+   "cond": "partner.exists <队友>",
+   "src": "e.java:2269"
+  },
+  {
+   "cond": "!partner.exists <队友>",
+   "src": "e.java:2275"
+  },
+  {
+   "cond": "(其它任何写法)",
+   "true": "恒为 false —— 整条分支被跳过",
+   "why": "e.java:2281 的 else 直接 return false，未知条件一律不通过",
+   "src": "e.java:2281"
+  },
+  {
+   "cond": "组合方式",
+   "true": "条件串切分为数组逐条 AND；任一不满足即跳过整行",
+   "src": "e.java:2190"
+  }
+ ],
+ "kind": "logic",
+ "name": "RPG脚本指令集",
+ "variableScope": {
+  "holder": "e.P",
+  "desc": "RPG 脚本的表达式变量作用域；每条指令的参数都以它求值",
+  "injected": {
+   "player.x": "主角当前 X（e.java:2302，每条元素脚本前刷新）",
+   "player.y": "主角当前 Y（e.java:2303）"
+  },
+  "writable": "event<编号> 由 game markEvent / unmarkEvent 写入",
+  "src": {
+   "class": "4-文档/反编译源码/e.java",
+   "line": 2302
+  }
+ },
+ "scriptHost": {
+  "bn": "地图元素脚本宿主，v 字段是元素自己的脚本文本",
+  "src": {
+   "class": "4-文档/反编译源码/e.java",
+   "line": 2298,
+   "note": "public final bn a(bn, ao)"
+  }
+ }
+}

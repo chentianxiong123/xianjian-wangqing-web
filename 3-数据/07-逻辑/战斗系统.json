@@ -1,0 +1,829 @@
+{
+ "kind": "logic",
+ "name": "战斗系统",
+ "sources": [
+  {
+   "class": "4-文档/反编译源码/f.java",
+   "line": 10
+  },
+  {
+   "class": "4-文档/反编译源码/ax.java",
+   "line": 8
+  },
+  {
+   "class": "4-文档/反编译源码/bd.java",
+   "line": 4
+  },
+  {
+   "class": "4-文档/反编译源码/g.java",
+   "line": 7
+  },
+  {
+   "class": "4-文档/反编译源码/bm.java",
+   "line": 6
+  },
+  {
+   "class": "4-文档/反编译源码/af.java",
+   "line": 6
+  },
+  {
+   "class": "4-文档/反编译源码/am.java",
+   "line": 4
+  },
+  {
+   "class": "4-文档/反编译源码/j.java",
+   "line": 9
+  },
+  {
+   "class": "4-文档/反编译源码/bj.java",
+   "line": 4
+  }
+ ],
+ "slots": {
+  "heroes": 3,
+  "foes": 3,
+  "total": 6,
+  "note": "d[0..2] 为玩家(bd)，d[3..5] 为敌人(g)；a[3] 与 b[3] 各自独立",
+  "source": {
+   "class": "4-文档/反编译源码/f.java",
+   "line": 13,
+   "note": "public bd[] a; public g[] b; private ax[] d"
+  }
+ },
+ "unitFieldMap": {
+  "note": "ax 的字段语义，由 bd/g 构造器与全部 getter/setter 反推闭合",
+  "fields": {
+   "I": {
+    "name": "当前精(HP)",
+    "getter": "w()",
+    "setter": "j(int)",
+    "clamp": "0..J"
+   },
+   "J": {
+    "name": "最大精",
+    "getter": "x()",
+    "setter": "k(int)",
+    "clamp": ">=1"
+   },
+   "K": {
+    "name": "攻击",
+    "getter": "(无)",
+    "setter": "g(int)",
+    "clamp": ">=0"
+   },
+   "L": {
+    "name": "防御",
+    "getter": "(无)",
+    "setter": "m(int)",
+    "clamp": "无"
+   },
+   "M": {
+    "name": "当前神",
+    "getter": "u()",
+    "setter": "h(int)",
+    "clamp": "0..N"
+   },
+   "N": {
+    "name": "最大神",
+    "getter": "v()",
+    "setter": "i(int)",
+    "clamp": ">=1"
+   },
+   "O": {
+    "name": "当前气",
+    "getter": "s()",
+    "setter": "e(int)",
+    "clamp": "0..P"
+   },
+   "P": {
+    "name": "最大气",
+    "getter": "t()",
+    "setter": "f(int)",
+    "clamp": ">=1"
+   },
+   "Q": {
+    "name": "速度",
+    "getter": "F()",
+    "setter": "n(int)",
+    "clamp": ">=0"
+   },
+   "S": {
+    "name": "运",
+    "getter": "D()",
+    "setter": "p(int)",
+    "clamp": "无"
+   },
+   "R": {
+    "name": "攻击时目标增加的气",
+    "getter": "s()-O 之外的独立字段",
+    "setter": "o(int)"
+   },
+   "T": {
+    "name": "好感度(玩家)/经验",
+    "getter": "E()",
+    "setter": "q(int)"
+   },
+   "H": {
+    "name": "等级",
+    "getter": "y()",
+    "setter": "l(int)",
+    "clamp": ">=1"
+   },
+   "i": {
+    "name": "行动条",
+    "getter": "m()",
+    "range": "0..1000"
+   },
+   "c": {
+    "name": "技能速度(行动期增量)",
+    "setter": "由技能表达式求值写入"
+   },
+   "t": {
+    "name": "状态机",
+    "values": {
+     "0": "站立",
+     "1": "消失",
+     "2": "攻击",
+     "3": "(空)",
+     "7": "死亡",
+     "8": "仙术释放",
+     "9": "变身动画"
+    }
+   },
+   "j": {
+    "name": "本回合已行动",
+    "type": "bool"
+   },
+   "ab": {
+    "name": "格挡中",
+    "getter": "r()",
+    "type": "bool"
+   },
+   "ac": {
+    "name": "变身中",
+    "getter": "z()",
+    "type": "bool"
+   },
+   "B": {
+    "name": "反击(吸血)标记",
+    "type": "bool"
+   },
+   "z": {
+    "name": "停止行动(定身)",
+    "type": "bool"
+   },
+   "u": {
+    "name": "持续掉血生效",
+    "type": "bool"
+   },
+   "C/D": {
+    "name": "武增数值/剩余回合",
+    "clamp": "回合计数递减到 0 时数值清零"
+   },
+   "E/F": {
+    "name": "防增数值/剩余回合"
+   },
+   "a/G": {
+    "name": "速增数值/剩余回合"
+   },
+   "d/e": {
+    "name": "当前显示坐标",
+    "getter": "(protected)"
+   },
+   "U/V": {
+    "name": "站位坐标",
+    "getter": "o()/p()"
+   }
+  },
+  "source": [
+   {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 12,
+    "note": "字段声明"
+   },
+   {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 1218,
+    "note": "getter/setter 全表"
+   },
+   {
+    "class": "4-文档/反编译源码/bd.java",
+    "line": 19,
+    "note": "玩家属性映射"
+   },
+   {
+    "class": "4-文档/反编译源码/g.java",
+    "line": 26,
+    "note": "怪物属性映射"
+   }
+  ]
+ },
+ "turnGauge": {
+  "name": "行动条（速度条）",
+  "source": {
+   "class": "4-文档/反编译源码/ax.java",
+   "line": 49,
+   "note": "private static int W = 1000 * am.k / am.j"
+  },
+  "constants": {
+   "W": {
+    "expr": "1000 * 速度条的实际技能长度 / 速度条的实际可用长度",
+    "value": 750,
+    "from": "config_fight.str"
+   },
+   "max": 1000,
+   "availableLength": 180,
+   "skillLength": 135
+  },
+  "tick": {
+   "waiting": "i += 速度(Q) + 速增(a)",
+   "acting": "i += 技能速度(c) + 速增(a)",
+   "gate": "仅当 敌人尚未全灭 且 本单位未定身 时推进（ax.java:122）"
+  },
+  "snap": {
+   "expr": "若 W < i < W + (速度+速增) 且 本单位尚未行动 则 i = W",
+   "why": "避免高速单位冲过阈值而无法行动",
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 125
+   }
+  },
+  "cap": {
+   "expr": "i > 1000 时 i = 1000",
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 125
+   }
+  },
+  "buffDecay": {
+   "window": "当 i 落在 [速度+速增, 2*(速度+速增)) 区间时，三组 buff 各递减一次剩余回合",
+   "expire": "剩余回合降到 0 后 buff 数值清零且剩余回合归零",
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 127
+   }
+  },
+  "turnStart": {
+   "expr": "!已行动 && i == W → 调 c()（玩家开菜单 / 怪物 AI 选技能）并置 已行动=true",
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 153
+   }
+  },
+  "turnEnd": {
+   "expr": "已行动 && i == 1000 → 调 b()（执行技能结算）",
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 156
+   }
+  },
+  "reset": {
+   "expr": "h(): i=0, aa=0, 已行动=false, r=false",
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 238
+   }
+  },
+  "death": {
+   "expr": "i<=0 且 处于站立/消失 → 精置 0，播「死亡中」，状态置 7（死亡）",
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 213
+   }
+  },
+  "wounded": {
+   "expr": "当前精 < 最大精*2/10 → 精灵切「重伤」帧",
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 577
+   }
+  }
+ },
+ "damage": {
+  "name": "伤害结算",
+  "source": {
+   "class": "4-文档/反编译源码/ax.java",
+   "line": 494,
+   "note": "protected final void a(String, ax, int, int)"
+  },
+  "steps": [
+   {
+    "id": "guard",
+    "expr": "目标非空 && 未死亡 && 目标精>0"
+   },
+   {
+    "id": "advantage",
+    "expr": "攻击优势 adv = (攻方.K + 武增C) - (目标.L + 防增E)"
+   },
+   {
+    "id": "branch",
+    "expr": "adv > 0 走技能公式；adv <= 0 直接固定 1 点",
+    "source": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 502
+    }
+   },
+   {
+    "id": "skillLevel",
+    "expr": "lv = 技能等级(技能)",
+    "source": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 503
+    }
+   },
+   {
+    "id": "base",
+    "expr": "base = 技能.伤害公式(slv=lv, atk=adv)",
+    "source": {
+     "class": "4-文档/反编译源码/af.java",
+     "line": 76
+    }
+   },
+   {
+    "id": "roll",
+    "expr": "roll = 均匀整数[9,11]  → 0.9x ~ 1.1x",
+    "source": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 508
+    }
+   },
+   {
+    "id": "compute",
+    "expr": "dmg = base * roll / 10（整数除法）",
+    "source": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 516
+    }
+   },
+   {
+    "id": "floor",
+    "expr": "dmg = max(dmg, 1)",
+    "source": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 517
+    }
+   },
+   {
+    "id": "morph",
+    "expr": "若变身中(ac) dmg = dmg * 3 / 5（×0.6）",
+    "source": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 521
+    }
+   },
+   {
+    "id": "postpone",
+    "expr": "结算类型 != 闪避 且 0 < 目标行动条 < W → 目标行动条 -= n3(动画延迟参数)",
+    "source": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 526
+    }
+   }
+  ],
+  "byType": {
+   "3": {
+    "name": "普通攻击",
+    "rules": [
+     {
+      "id": "dmgToQi",
+      "expr": "若 施法者是怪物 且 当前技能是变身(b==7) → 目标气 += 攻击方R",
+      "src": {
+       "class": "4-文档/反编译源码/ax.java",
+       "line": 529
+      }
+     },
+     {
+      "id": "crit",
+      "expr": "若 rand(施法者运 S, 200) 命中 且 dmg != 1 → dmg *= 2；dmg = min(dmg, 目标当前精)",
+      "prob": "S / 200",
+      "popup": "暴击伤害",
+      "src": {
+       "class": "4-文档/反编译源码/ax.java",
+       "line": 535
+      }
+     },
+     {
+      "id": "normal",
+      "expr": "否则 dmg = min(dmg, 目标当前精)",
+      "popup": "普通伤害",
+      "src": {
+       "class": "4-文档/反编译源码/ax.java",
+       "line": 545
+      }
+     },
+     {
+      "id": "lifesteal",
+      "expr": "若 反击标记B → 回精 = max(1, dmg/4)，施法者精 += 回精",
+      "src": {
+       "class": "4-文档/反编译源码/ax.java",
+       "line": 552
+      }
+     }
+    ]
+   },
+   "5": {
+    "name": "格挡",
+    "rules": [
+     {
+      "id": "halve",
+      "expr": "dmg = (dmg >>= 1) <= 0 ? 1 : dmg；dmg = min(dmg, 目标当前精)",
+      "popup": "普通伤害",
+      "src": {
+       "class": "4-文档/反编译源码/ax.java",
+       "line": 559
+      }
+     }
+    ]
+   },
+   "6": {
+    "name": "闪避",
+    "rules": [
+     {
+      "id": "noop",
+      "expr": "不扣血，仅弹「闪避」飘字",
+      "popup": "闪避",
+      "src": {
+       "class": "4-文档/反编译源码/ax.java",
+       "line": 567
+      }
+     }
+    ]
+   },
+   "1": {
+    "name": "单体结算",
+    "rules": [
+     {
+      "id": "delegate",
+      "expr": "转交 ax 基类 a(int,String,int) 走单目标判定",
+      "src": {
+       "class": "4-文档/反编译源码/ax.java",
+       "line": 423
+      }
+     }
+    ]
+   }
+  },
+  "targeting": {
+   "playerAttack": {
+    "expr": "遍历全部存活敌人 in l.b；每人独立判定闪避与格挡",
+    "evadeCheck": "!已行动 && 目标精>0 && rand(目标运 S, 100)",
+    "src": {
+     "class": "4-文档/反编译源码/bd.java",
+     "line": 160
+    }
+   },
+   "monsterAttack": {
+    "expr": "遍历全部存活玩家 in l.a；每人独立判定格挡与闪避",
+    "blockCheck": "目标.r() 格挡中",
+    "src": {
+     "class": "4-文档/反编译源码/g.java",
+     "line": 143
+    }
+   },
+   "note": "普通攻击是范围命中，不做单目标骰子；范围内每人各判一次闪避"
+  }
+ },
+ "evade": {
+  "name": "闪避",
+  "expr": "rand(目标.运 S, 100)  → 概率 = 目标运 / 100",
+  "source": {
+   "class": "4-文档/反编译源码/ax.java",
+   "line": 486,
+   "note": "return j.b(ax2.S, 100, this.af)"
+  },
+  "notes": [
+   "仅当攻击者本回合尚未行动(!j)且目标精>0 时才判定",
+   "运 >= 100 时必定闪避"
+  ]
+ },
+ "crit": {
+  "name": "暴击",
+  "expr": "rand(施法者.运 S, 200) → 概率 = 施法者运 / 200；dmg *= 2",
+  "source": {
+   "class": "4-文档/反编译源码/ax.java",
+   "line": 535
+  },
+  "notes": [
+   "dmg 原本等于 1（打不动）时不触发暴击",
+   "暴击后 dmg 不会超过目标当前精"
+  ]
+ },
+ "buffs": {
+  "name": "临时增益（技能施加）",
+  "source": {
+   "class": "4-文档/反编译源码/ax.java",
+   "line": 1021,
+   "note": "player addatk/adddef/addspeed/addAll"
+  },
+  "levelVar": "lv = 施法者对该技能的技能等级",
+  "rules": [
+   {
+    "cmd": "addatk",
+    "target": "单体的施法目标",
+    "amount": "(10 + 5*(lv-1)) * 施法者.攻击 / 100",
+    "duration": "lv + 2",
+    "sets": "C=amount, D=duration",
+    "src": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 1024
+    }
+   },
+   {
+    "cmd": "adddef",
+    "target": "单体的施法目标",
+    "amount": "(10 + 5*(lv-1)) * 施法者.防御 / 100",
+    "duration": "lv + 2",
+    "sets": "E=amount, F=duration",
+    "src": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 1033
+    }
+   },
+   {
+    "cmd": "addspeed",
+    "target": "单体的施法目标",
+    "amount": "1（固定值，与 lv 无关）",
+    "duration": "lv + 2",
+    "sets": "a=amount, G=duration",
+    "src": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 1043
+    }
+   },
+   {
+    "cmd": "addAll",
+    "target": "全部存活队友(含自身)",
+    "amount": "同时施加武增/防增/速增",
+    "duration": "lv + 2",
+    "src": {
+     "class": "4-文档/反编译源码/ax.java",
+     "line": 1055
+    }
+   }
+  ],
+  "quirk": "增益数值取的是【施法者】的攻击/防御，不是目标的",
+  "expire": "剩余回合在行动条进入 [速度, 2*速度) 时递减，归零后数值清零",
+  "icons": {
+   "A()": "武增生效中(D>0 && C>0)",
+   "B()": "防增生效中(F>0 && E>0)",
+   "C()": "速增生效中(G>0 && a>0)"
+  }
+ },
+ "morph": {
+  "name": "变身",
+  "flag": "ax.ac (getter z())",
+  "costPerTurn": {
+   "expr": "变身中每回合 气 -= U[7].j",
+   "value": 10,
+   "src": {
+    "class": "4-文档/反编译源码/bd.java",
+    "line": 43
+   },
+   "note": "U[7] = config_skill.str 第 7 条 = 魔尊真身，af.j = 10"
+  },
+  "insufficient": "气 < 10 → 提示「气值不足」并取消变身",
+  "damageScale": "伤害 × 3/5（ax.java:521）",
+  "skillLevelForced": {
+   "expr": "变身技能的 slv 强制为 5",
+   "src": {
+    "class": "4-文档/反编译源码/bd.java",
+    "line": 73
+   }
+  },
+  "specialSlot": {
+   "expr": "U[0] 被硬编码为变身槽：af.b=7，伤害公式 'atk'，MP/气 均为 0",
+   "src": {
+    "class": "4-文档/反编译源码/cn/com/etgame/cls/system/d.java",
+    "line": 249
+   }
+  }
+ },
+ "skillLevel": {
+  "name": "技能等级",
+  "player": {
+   "expr": "取角色存档里该技能的实际等级",
+   "src": {
+    "class": "4-文档/反编译源码/bd.java",
+    "line": 155,
+    "note": "return this.n.b(n2)"
+   }
+  },
+  "monster": {
+   "expr": "(等级 + 20) / 20（整数除法）",
+   "src": {
+    "class": "4-文档/反编译源码/g.java",
+    "line": 139
+   }
+  },
+  "forced": {
+   "普通攻击": "固定 slv = 4",
+   "变身": "固定 slv = 5",
+   "src": {
+    "class": "4-文档/反编译源码/bd.java",
+    "line": 73
+   }
+  },
+  "quirk": {
+   "id": "monster-level-hardcoded-1",
+   "detail": "g 构造器写死 this.l(1)（g.java:26），所以 ax.H 恒为 1，怪物技能等级恒为 (1+20)/20 = 1；真实等级只通过 bm 内部变量 lv 参与 生命/速度/经验/金钱/仙术速度 的表达式求值。",
+   "impact": "所有怪物的技能公式里 slv 恒为 1，atk/3、atk*(5+5)/20 之类。",
+   "doNotFix": true
+  }
+ },
+ "skillSpeed": {
+  "name": "技能速度（行动期行动条增量）",
+  "player": {
+   "expr": "求值角色配置的「仙术速度」表达式",
+   "src": {
+    "class": "4-文档/反编译源码/bd.java",
+    "line": 74
+   }
+  },
+  "monster": {
+   "expr": "求值 fight_N.str 的「仙术速度」表达式（作用域只有 slv）",
+   "src": {
+    "class": "4-文档/反编译源码/g.java",
+    "line": 134
+   }
+  },
+  "note": "变量 slv 在同一作用域内已被设为技能等级，因此 10+4*(slv-1) 对怪物恒为 10"
+ },
+ "monsterAI": {
+  "name": "怪物 AI",
+  "source": {
+   "class": "4-文档/反编译源码/g.java",
+   "line": 115,
+   "note": "protected final void c()"
+  },
+  "steps": [
+   {
+    "id": "heal",
+    "expr": "当前精 <= 最大精*3/10 且 rand(当前精,100) 命中 且 携带物品非空 → 随机用 1 个药，中断本回合",
+    "src": {
+     "class": "4-文档/反编译源码/g.java",
+     "line": 118
+    }
+   },
+   {
+    "id": "pick",
+    "expr": "rand(5 + 等级/2, 100) 命中 → 从仙术技能表随机取 1 个；否则从普通技能表随机取 1 个",
+    "prob": "(5 + 等级/2) / 100",
+    "src": {
+     "class": "4-文档/反编译源码/g.java",
+     "line": 126
+    }
+   },
+   {
+    "id": "target",
+    "expr": "随机取一个存活玩家（f.i()）",
+    "src": {
+     "class": "4-文档/反编译源码/f.java",
+     "line": 846
+    }
+   }
+  ]
+ },
+ "encounter": {
+  "name": "遇敌组成",
+  "source": {
+   "class": "4-文档/反编译源码/f.java",
+   "line": 346,
+   "note": "private void d(int)"
+  },
+  "enemyLineFormat": "lvmin-lvmax,count,levelSpec,antName,bgm   （enemy.str）",
+  "countSplit": {
+   "single": "每种怪的数量：50% 出 1、45% 出 2、5% 出 3",
+   "two": "50% 出 2、40% 出 3、10% 出 1",
+   "multi": "5% 出 1、35% 出 2、60% 出 3",
+   "src": {
+    "class": "4-文档/反编译源码/f.java",
+    "line": 350
+   }
+  },
+  "levelScaling": {
+   "expr": "怪物等级 = 玩家等级 ±1，并夹在 [lvmin, lvmax] 内",
+   "detail": "plv<=lvmin → lvmin；plv>=lvmax → lvmax；否则在 [max(lvmin,plv-1), min(lvmax,plv+1)] 之间均匀取整数",
+   "src": {
+    "class": "4-文档/反编译源码/f.java",
+    "line": 443
+   }
+  },
+  "hpRangeRandom": "生命 = 均匀整数[最小生命表达式, 最大生命表达式]（bm.d）",
+  "spdRangeRandom": "速度 = 均匀整数[最小速度表达式, 最大速度表达式]（bm.e）",
+  "expRangeRandom": "经验 = 均匀整数[最小经验, 最大经验]（bm.i）",
+  "goldRangeRandom": "金钱 = 均匀整数[最小金钱, 最大金钱]（bm.j）"
+ },
+ "settlement": {
+  "name": "战斗结算",
+  "source": {
+   "class": "4-文档/反编译源码/f.java",
+   "line": 1020,
+   "note": "private void f(int)"
+  },
+  "win": {
+   "state": 1,
+   "dropItems": "每条掉落物 item(probPercent)，rand(percent,100) 命中则掉落，最多 3 件",
+   "gold": "Σ 各怪物 均匀金钱",
+   "exp": "Σ 各怪物 均匀经验",
+   "debugFlag": {
+    "name": "四倍修行",
+    "expr": "命中该 flag 时 exp <<= 2 且 gold <<= 2",
+    "src": {
+     "class": "4-文档/反编译源码/f.java",
+     "line": 1052
+    }
+   },
+   "perMember": [
+    "存活者：好感度与精按战斗快照恢复（E() / w()）",
+    "存活者：若 g(经验) 返回真 → 提示升级",
+    "阵亡者：好感度 -= 5，且精强制置 1（不死亡，代价是掉好感）",
+    "等级上限 45，除非 debug flag 500 打开"
+   ],
+   "src": {
+    "class": "4-文档/反编译源码/f.java",
+    "line": 1062
+   }
+  },
+  "lose": {
+   "state": 2,
+   "src": {
+    "class": "4-文档/反编译源码/f.java",
+    "line": 1097
+   }
+  },
+  "endDetect": {
+   "expr": "全部玩家死亡 → 败；全部敌人死亡 → 胜",
+   "src": {
+    "class": "4-文档/反编译源码/f.java",
+    "line": 950
+   }
+  }
+ },
+ "slotPositions": {
+  "heroes": [
+   [
+    182,
+    249
+   ],
+   [
+    150,
+    272
+   ],
+   [
+    210,
+    219
+   ]
+  ],
+  "foes": [
+   [
+    26,
+    164
+   ],
+   [
+    40,
+    128
+   ],
+   [
+    86,
+    113
+   ]
+  ],
+  "attackRange": 25
+ },
+ "popupTypes": {
+  "0": "普通伤害",
+  "1": "暴击伤害",
+  "2": "闪避",
+  "3": "回精",
+  "4": "未命中",
+  "5": "反击",
+  "6": "持续掉血",
+  "7": "行动重置"
+ },
+ "randomPrimitives": {
+  "j.a(min,max,rnd)": {
+   "expr": "max - |rnd.nextInt()| % (max-min+1)",
+   "semantics": "闭区间 [min,max] 均匀整数",
+   "src": {
+    "class": "4-文档/反编译源码/j.java",
+    "line": 135
+   }
+  },
+  "j.b(x,y,rnd)": {
+   "expr": "x*y>=0 && |rnd.nextInt()| % y < |x|",
+   "semantics": "概率 x/y",
+   "src": {
+    "class": "4-文档/反编译源码/j.java",
+    "line": 146
+   }
+  },
+  "j.a(n)": {
+   "expr": "round(sqrt(n))",
+   "semantics": "整数平方根，用于距离计算",
+   "src": {
+    "class": "4-文档/反编译源码/j.java",
+    "line": 103
+   }
+  }
+ }
+}

@@ -1,0 +1,156 @@
+{
+ "kind": "logic",
+ "name": "表达式求值引擎",
+ "source": {
+  "class": "4-文档/反编译源码/t.java",
+  "line": 18,
+  "note": "public final synchronized long a(String)"
+ },
+ "grammar": {
+  "expr": "term (('+' | '-') term)*",
+  "term": "unary (('*' | '/' | '%') unary)*",
+  "unary": "('+' | '-') unary | primary ('^' unary)?",
+  "primary": "'(' expr ')' | operand",
+  "operand": "NUMBER | VARIABLE",
+  "assignment": "VARIABLE '=' expr"
+ },
+ "tokens": {
+  "operatorChars": "+-*/%^=()",
+  "identifierStart": "_ $ a-z A-Z",
+  "identifierBody": "除运算符与空格外的任意字符",
+  "numberBody": "同上（实际只出现纯数字）",
+  "whitespace": "仅空格 ' ' 被跳过",
+  "kinds": {
+   "0": "流结束(EOF)",
+   "1": "运算符",
+   "2": "标识符",
+   "3": "数字"
+  }
+ },
+ "precedence": [
+  [
+   "^"
+  ],
+  [
+   "*",
+   "/",
+   "%"
+  ],
+  [
+   "+",
+   "-"
+  ]
+ ],
+ "associativity": {
+  "^": "右结合（指数侧递归 unary）",
+  "* / % + -": "左结合"
+ },
+ "quirks": [
+  {
+   "id": "unary-minus-vs-pow",
+   "rule": "-2^2 == 4",
+   "why": "一元负号先作用于底数，再做幂运算（d.java:129-148 先取 l3 再判 ^）",
+   "impl": "2-工具/formats/expr.py::_pow"
+  },
+  {
+   "id": "div-trunc-toward-zero",
+   "rule": "-10/3 == -3（不是 Python 的 -4）",
+   "why": "Java 整数除法向 0 截断",
+   "impl": "2-工具/formats/expr.py::_jdiv"
+  },
+  {
+   "id": "mod-sign-follows-dividend",
+   "rule": "-10%3 == -1",
+   "why": "Java 取模语义",
+   "impl": "2-工具/formats/expr.py::_jmod"
+  },
+  {
+   "id": "pow-negative-exponent",
+   "rule": "2^-1 == 0；2^0 == 1",
+   "why": "原实现用 for 循环连乘，负指数直接落 0（d.java:141-147）",
+   "impl": "2-工具/formats/expr.py::_pow"
+  },
+  {
+   "id": "undefined-var-is-zero",
+   "rule": "未定义变量取 0",
+   "why": "e.java:170 object == null ? 0L",
+   "impl": "2-工具/formats/expr.py::_operand"
+  },
+  {
+   "id": "divide-by-zero-throws",
+   "rule": "x/0 与 x%0 抛「算术错误。」",
+   "why": "c.java:94,100",
+   "impl": "2-工具/formats/expr.py::ArithmeticErr"
+  },
+  {
+   "id": "scope-per-instance",
+   "rule": "每个 t 实例持有独立 Hashtable<String,Long> 变量表",
+   "why": "t.java:13  private Hashtable f",
+   "impl": "2-工具/formats/expr.py::Expr"
+  }
+ ],
+ "variableScopes": [
+  {
+   "holder": "f.A",
+   "desc": "战斗画面的全局事件/开关存储",
+   "keys": [
+    "event<数字>",
+    "任意脚本变量"
+   ],
+   "source": {
+    "class": "4-文档/反编译源码/f.java",
+    "line": 37,
+    "note": "private t A"
+   }
+  },
+  {
+   "holder": "ax.m",
+   "desc": "单位自身作用域，技能结算时写入 slv",
+   "keys": [
+    "slv"
+   ],
+   "source": {
+    "class": "4-文档/反编译源码/ax.java",
+    "line": 53,
+    "note": "protected t m"
+   }
+  },
+  {
+   "holder": "af.m",
+   "desc": "技能自己的作用域，af.a(slv,atk) 写入 slv/atk 后求值伤害公式",
+   "keys": [
+    "slv",
+    "atk"
+   ],
+   "source": {
+    "class": "4-文档/反编译源码/af.java",
+    "line": 7,
+    "note": "private t m"
+   }
+  },
+  {
+   "holder": "bm.q",
+   "desc": "怪物配置解析作用域，bm.a(int) 写入 lv",
+   "keys": [
+    "lv"
+   ],
+   "source": {
+    "class": "4-文档/反编译源码/bm.java",
+    "line": 23,
+    "note": "private t q"
+   }
+  },
+  {
+   "holder": "bj.L",
+   "desc": "角色配置解析作用域（无预置变量）",
+   "keys": [],
+   "source": {
+    "class": "4-文档/反编译源码/bj.java",
+    "line": 43,
+    "note": "private t L"
+   }
+  }
+ ],
+ "pythonPort": "2-工具/formats/expr.py",
+ "verifiable": true
+}

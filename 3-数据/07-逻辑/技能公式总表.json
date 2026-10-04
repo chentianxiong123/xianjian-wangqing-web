@@ -1,0 +1,3288 @@
+{
+ "kind": "logic",
+ "name": "技能公式总表",
+ "formulaContract": {
+  "vars": {
+   "slv": "技能等级，min 1；玩家取存档等级，怪物恒 1，普通攻击强制 4，变身强制 5",
+   "atk": "攻击优势 = (攻方攻击+武增) - (目标防御+防增)"
+  },
+  "eval": "int(eval(formula, {slv, atk}))，整数除法向 0 截断",
+  "source": {
+   "class": "4-文档/反编译源码/af.java",
+   "line": 76,
+   "note": "public final int a(int n2, int n3)"
+  },
+  "note": "公式为 0 的增益类技能不造成伤害，只走 buff 分支"
+ },
+ "playerSkills": [
+  {
+   "index": 0,
+   "kind": "变身/其它",
+   "kindCode": "none",
+   "attackType": "none",
+   "gain": false,
+   "name": "name",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    0,
+    0
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": null,
+   "origin": "config_skill.str",
+   "isTemplate": true,
+   "hardcodedSlot": true,
+   "note": "d.U[0] 被源码硬编码为变身槽，实际数据行被忽略",
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100,
+    "slv=1,atk=500": 500,
+    "slv=5,atk=300": 300
+   },
+   "parsable": true
+  },
+  {
+   "index": 1,
+   "kind": "变身/其它",
+   "kindCode": "普通",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "鬼降",
+   "anim": "鬼降",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 7,
+   "cost气": 0,
+   "formula": "(atk*8)/10",
+   "desc": "减少精，攻击全体目标",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 80,
+    "slv=4,atk=100": 80,
+    "slv=10,atk=100": 80,
+    "slv=1,atk=500": 400,
+    "slv=5,atk=300": 240
+   },
+   "parsable": true
+  },
+  {
+   "index": 2,
+   "kind": "变身/其它",
+   "kindCode": "普通",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "心波",
+   "anim": "心波",
+   "allTargets": false,
+   "targetOffset": [
+    15,
+    -15
+   ],
+   "morphable": false,
+   "cost神": 5,
+   "cost气": 0,
+   "formula": "(atk*2)/3",
+   "desc": "减少精，攻击单体目标",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 66,
+    "slv=4,atk=100": 66,
+    "slv=10,atk=100": 66,
+    "slv=1,atk=500": 333,
+    "slv=5,atk=300": 200
+   },
+   "parsable": true
+  },
+  {
+   "index": 3,
+   "kind": "变身/其它",
+   "kindCode": "普通",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "梦蛇蛊",
+   "anim": "梦蛇蛊",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 3,
+   "cost气": 0,
+   "formula": "atk*2",
+   "desc": "减少精，攻击单体目标",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 200,
+    "slv=4,atk=100": 200,
+    "slv=10,atk=100": 200,
+    "slv=1,atk=500": 1000,
+    "slv=5,atk=300": 600
+   },
+   "parsable": true
+  },
+  {
+   "index": 4,
+   "kind": "变身/其它",
+   "kindCode": "普通",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "万蛊蚀天",
+   "anim": "万蛊蚀天",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 8,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "减少精，攻击全体目标",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100,
+    "slv=1,atk=500": 500,
+    "slv=5,atk=300": 300
+   },
+   "parsable": true
+  },
+  {
+   "index": 5,
+   "kind": "变身/其它",
+   "kindCode": "普通",
+   "attackType": "增益",
+   "gain": true,
+   "name": "洒金笺",
+   "anim": "洒金笺",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 9,
+   "cost气": 0,
+   "formula": "0",
+   "desc": "全体增加精",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [],
+   "samples": {
+    "slv=1,atk=100": 0,
+    "slv=4,atk=100": 0,
+    "slv=10,atk=100": 0,
+    "slv=1,atk=500": 0,
+    "slv=5,atk=300": 0
+   },
+   "parsable": true
+  },
+  {
+   "index": 6,
+   "kind": "变身/其它",
+   "kindCode": "普通",
+   "attackType": "偷窃",
+   "gain": false,
+   "name": "飞龙探云",
+   "anim": "飞龙探云",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    -20
+   ],
+   "morphable": false,
+   "cost神": 4,
+   "cost气": 0,
+   "formula": "0",
+   "desc": "随机偷取目标身上物品",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [],
+   "samples": {
+    "slv=1,atk=100": 0,
+    "slv=4,atk=100": 0,
+    "slv=10,atk=100": 0,
+    "slv=1,atk=500": 0,
+    "slv=5,atk=300": 0
+   },
+   "parsable": true
+  },
+  {
+   "index": 7,
+   "kind": "变身/其它",
+   "kindCode": "普通",
+   "attackType": "增益",
+   "gain": true,
+   "name": "魔尊真身",
+   "anim": "魔尊真身",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 10,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "恢复魔尊真身，单体武增加到4倍",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100,
+    "slv=1,atk=500": 500,
+    "slv=5,atk=300": 300
+   },
+   "parsable": true
+  },
+  {
+   "index": 8,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 12,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击全体目标，一定几率吸收部分伤害转为给本人治疗",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183,
+    "slv=1,atk=500": 166,
+    "slv=5,atk=300": 300
+   },
+   "parsable": true
+  },
+  {
+   "index": 9,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "增益",
+   "gain": true,
+   "name": "烟水还魂",
+   "anim": "烟水还魂",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 14,
+   "formula": "400",
+   "desc": "单体复活、增加少量精",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [],
+   "samples": {
+    "slv=1,atk=100": 400,
+    "slv=4,atk=100": 400,
+    "slv=10,atk=100": 400,
+    "slv=1,atk=500": 400,
+    "slv=5,atk=300": 400
+   },
+   "parsable": true
+  },
+  {
+   "index": 10,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "增益",
+   "gain": true,
+   "name": "五气连波",
+   "anim": "五气连波",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 26,
+   "formula": "400",
+   "desc": "全体增加精",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [],
+   "samples": {
+    "slv=1,atk=100": 400,
+    "slv=4,atk=100": 400,
+    "slv=10,atk=100": 400,
+    "slv=1,atk=500": 400,
+    "slv=5,atk=300": 400
+   },
+   "parsable": true
+  },
+  {
+   "index": 11,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 12,
+   "formula": "(atk*(10+6*slv))/20",
+   "desc": "减少精，攻击单体目标，一定几率对目标造成持续伤害",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 80,
+    "slv=4,atk=100": 170,
+    "slv=10,atk=100": 350,
+    "slv=1,atk=500": 400,
+    "slv=5,atk=300": 600
+   },
+   "parsable": true
+  },
+  {
+   "index": 12,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "三味真火",
+   "anim": "三味真火",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 19,
+   "formula": "(atk*(5+5*slv))/20",
+   "desc": "减少精，攻击全体目标，一定几率对目标造成持续伤害",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 125,
+    "slv=10,atk=100": 275,
+    "slv=1,atk=500": 250,
+    "slv=5,atk=300": 450
+   },
+   "parsable": true
+  },
+  {
+   "index": 13,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "流星火雨",
+   "anim": "流星火雨",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 29,
+   "formula": "(atk*(10+5*slv))/40",
+   "desc": "减少精，攻击全体目标，一定几率对目标造成持续伤害",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 37,
+    "slv=4,atk=100": 75,
+    "slv=10,atk=100": 150,
+    "slv=1,atk=500": 187,
+    "slv=5,atk=300": 262
+   },
+   "parsable": true
+  },
+  {
+   "index": 14,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 11,
+   "formula": "(atk*(10+6*slv))/20",
+   "desc": "减少精，攻击单体目标，一定几率震慑目标使之在速度条上回原点",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 80,
+    "slv=4,atk=100": 170,
+    "slv=10,atk=100": 350,
+    "slv=1,atk=500": 400,
+    "slv=5,atk=300": 600
+   },
+   "parsable": true
+  },
+  {
+   "index": 15,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "增益",
+   "gain": true,
+   "name": "天罡战气",
+   "anim": "天罡战气",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 14,
+   "formula": "0",
+   "desc": "单体增加武",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [],
+   "samples": {
+    "slv=1,atk=100": 0,
+    "slv=4,atk=100": 0,
+    "slv=10,atk=100": 0,
+    "slv=1,atk=500": 0,
+    "slv=5,atk=300": 0
+   },
+   "parsable": true
+  },
+  {
+   "index": 16,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷动九天",
+   "anim": "雷动九天",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 28,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标，一定几率震慑目标使之在速度条上回原点",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200,
+    "slv=1,atk=500": 250,
+    "slv=5,atk=300": 350
+   },
+   "parsable": true
+  },
+  {
+   "index": 17,
+   "kind": "变身/其它",
+   "kindCode": "风系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "风咒",
+   "anim": "风咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 10,
+   "formula": "(atk*(10+6*slv))/20",
+   "desc": "减少精，攻击单体目标，一定几率秒杀目标",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 80,
+    "slv=4,atk=100": 170,
+    "slv=10,atk=100": 350,
+    "slv=1,atk=500": 400,
+    "slv=5,atk=300": 600
+   },
+   "parsable": true
+  },
+  {
+   "index": 18,
+   "kind": "变身/其它",
+   "kindCode": "风系",
+   "attackType": "增益",
+   "gain": true,
+   "name": "仙风云体",
+   "anim": "仙风云体",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 15,
+   "formula": "0",
+   "desc": "单体增加速",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [],
+   "samples": {
+    "slv=1,atk=100": 0,
+    "slv=4,atk=100": 0,
+    "slv=10,atk=100": 0,
+    "slv=1,atk=500": 0,
+    "slv=5,atk=300": 0
+   },
+   "parsable": true
+  },
+  {
+   "index": 19,
+   "kind": "变身/其它",
+   "kindCode": "风系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "风卷尘生",
+   "anim": "风卷尘生",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 26,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标，一定几率秒杀目标",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200,
+    "slv=1,atk=500": 250,
+    "slv=5,atk=300": 350
+   },
+   "parsable": true
+  },
+  {
+   "index": 20,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "土咒",
+   "anim": "土咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 11,
+   "formula": "(atk*(10+6*slv))/30",
+   "desc": "减少精，攻击单体目标，一定几率使目标定身",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 53,
+    "slv=4,atk=100": 113,
+    "slv=10,atk=100": 233,
+    "slv=1,atk=500": 266,
+    "slv=5,atk=300": 400
+   },
+   "parsable": true
+  },
+  {
+   "index": 21,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 20,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标，一定几率使目标定身",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200,
+    "slv=1,atk=500": 250,
+    "slv=5,atk=300": 350
+   },
+   "parsable": true
+  },
+  {
+   "index": 22,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "增益",
+   "gain": true,
+   "name": "真元护体",
+   "anim": "真元护体",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 24,
+   "formula": "0",
+   "desc": "单体增加防",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [],
+   "samples": {
+    "slv=1,atk=100": 0,
+    "slv=4,atk=100": 0,
+    "slv=10,atk=100": 0,
+    "slv=1,atk=500": 0,
+    "slv=5,atk=300": 0
+   },
+   "parsable": true
+  },
+  {
+   "index": 23,
+   "kind": "变身/其它",
+   "kindCode": "双系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "风雪冰天",
+   "anim": "风雪冰天",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 54,
+   "formula": "(atk*(15+5*slv))/50",
+   "desc": "减少精，攻击全体目标，一定几率吸收部分伤害转为给本人治疗，一定几率秒杀目标",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 40,
+    "slv=4,atk=100": 70,
+    "slv=10,atk=100": 130,
+    "slv=1,atk=500": 200,
+    "slv=5,atk=300": 240
+   },
+   "parsable": true
+  },
+  {
+   "index": 24,
+   "kind": "变身/其它",
+   "kindCode": "双系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "举火燎天",
+   "anim": "举火燎天",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 54,
+   "formula": "(atk*(15+5*slv))/40",
+   "desc": "减少精，攻击全体目标，一定几率对目标造成持续伤害，一定几率秒杀目标",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 87,
+    "slv=10,atk=100": 162,
+    "slv=1,atk=500": 250,
+    "slv=5,atk=300": 300
+   },
+   "parsable": true
+  },
+  {
+   "index": 25,
+   "kind": "变身/其它",
+   "kindCode": "双系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "星沉地动",
+   "anim": "星沉地动",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 54,
+   "formula": "(atk*(15+5*slv))/40",
+   "desc": "减少精，攻击全体目标，一定几率对目标造成持续伤害，一定几率使目标定身",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 87,
+    "slv=10,atk=100": 162,
+    "slv=1,atk=500": 250,
+    "slv=5,atk=300": 300
+   },
+   "parsable": true
+  },
+  {
+   "index": 26,
+   "kind": "变身/其它",
+   "kindCode": "双系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "烈焰燃雷",
+   "anim": "烈焰燃雷",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 54,
+   "formula": "(atk*(8+slv))/20",
+   "desc": "减少精，攻击全体目标，一定几率对目标造成持续伤害，一定几率震慑目标使之在速度条上回原点",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 45,
+    "slv=4,atk=100": 60,
+    "slv=10,atk=100": 90,
+    "slv=1,atk=500": 225,
+    "slv=5,atk=300": 195
+   },
+   "parsable": true
+  },
+  {
+   "index": 27,
+   "kind": "变身/其它",
+   "kindCode": "双系",
+   "attackType": "增益",
+   "gain": true,
+   "name": "天魔附体",
+   "anim": "天魔附体",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 45,
+   "formula": "0",
+   "desc": "全体武防速增加",
+   "origin": "config_skill.str",
+   "isTemplate": false,
+   "vars": [],
+   "samples": {
+    "slv=1,atk=100": 0,
+    "slv=4,atk=100": 0,
+    "slv=10,atk=100": 0,
+    "slv=1,atk=500": 0,
+    "slv=5,atk=300": 0
+   },
+   "parsable": true
+  }
+ ],
+ "monsterSkillCount": 73,
+ "monsterSkills": [
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    0,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_0.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 0,
+   "configName": "宝葫芦"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_0.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 0,
+   "configName": "宝葫芦"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_0.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 0,
+   "configName": "宝葫芦"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    0,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_1.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 1,
+   "configName": "宝葫芦"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_1.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 1,
+   "configName": "宝葫芦"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_1.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 1,
+   "configName": "宝葫芦"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_1.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 1,
+   "configName": "宝葫芦"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_1.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 1,
+   "configName": "宝葫芦"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    -15,
+    0
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_10.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 10,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "2*atk/3",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_10.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 66,
+    "slv=4,atk=100": 66,
+    "slv=10,atk=100": 66
+   },
+   "parsable": true,
+   "configId": 10,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "2*atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_10.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 200,
+    "slv=4,atk=100": 200,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 10,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "2*atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_10.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 200,
+    "slv=4,atk=100": 200,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 10,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "2*atk/3",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_10.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 66,
+    "slv=4,atk=100": 66,
+    "slv=10,atk=100": 66
+   },
+   "parsable": true,
+   "configId": 10,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    -10,
+    22
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_11.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 11,
+   "configName": "力尧"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "atk/3",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_11.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 33,
+    "slv=10,atk=100": 33
+   },
+   "parsable": true,
+   "configId": 11,
+   "configName": "力尧"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_11.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 11,
+   "configName": "力尧"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_11.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 11,
+   "configName": "力尧"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "atk/3",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_11.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 33,
+    "slv=10,atk=100": 33
+   },
+   "parsable": true,
+   "configId": 11,
+   "configName": "力尧"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    0,
+    20
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_12.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 12,
+   "configName": "玲珑"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "atk/3",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_12.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 33,
+    "slv=10,atk=100": 33
+   },
+   "parsable": true,
+   "configId": 12,
+   "configName": "玲珑"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_12.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 12,
+   "configName": "玲珑"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_12.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 12,
+   "configName": "玲珑"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "atk/3",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_12.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 33,
+    "slv=10,atk=100": 33
+   },
+   "parsable": true,
+   "configId": 12,
+   "configName": "玲珑"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    0,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_13.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 13,
+   "configName": "漓殇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "atk/3",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_13.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 33,
+    "slv=10,atk=100": 33
+   },
+   "parsable": true,
+   "configId": 13,
+   "configName": "漓殇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_13.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 13,
+   "configName": "漓殇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_13.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 13,
+   "configName": "漓殇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "atk/3",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_13.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 33,
+    "slv=10,atk=100": 33
+   },
+   "parsable": true,
+   "configId": 13,
+   "configName": "漓殇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    0,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_14.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 14,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_14.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 14,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_14.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 14,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_14.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 14,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_14.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 14,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    0,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_2.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 2,
+   "configName": "赤练蛇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_2.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 2,
+   "configName": "赤练蛇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_2.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 2,
+   "configName": "赤练蛇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_2.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 2,
+   "configName": "赤练蛇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_2.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 2,
+   "configName": "赤练蛇"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    0,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_3.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 3,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_3.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 3,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_3.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 3,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_3.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 3,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_3.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 3,
+   "configName": "赝月"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    3,
+    16
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_4.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 4,
+   "configName": "饿鬼"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_4.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 4,
+   "configName": "饿鬼"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_4.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 4,
+   "configName": "饿鬼"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_4.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 4,
+   "configName": "饿鬼"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_4.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 4,
+   "configName": "饿鬼"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    -5,
+    20
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_5.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 5,
+   "configName": "花妖"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_5.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 5,
+   "configName": "花妖"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_5.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 5,
+   "configName": "花妖"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_5.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 5,
+   "configName": "花妖"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_5.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 5,
+   "configName": "花妖"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    -15,
+    0
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_6.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 6,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "2*atk/3",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_6.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 66,
+    "slv=4,atk=100": 66,
+    "slv=10,atk=100": 66
+   },
+   "parsable": true,
+   "configId": 6,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "2*atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_6.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 200,
+    "slv=4,atk=100": 200,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 6,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "2*atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_6.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 200,
+    "slv=4,atk=100": 200,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 6,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "2*atk/3",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_6.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 66,
+    "slv=4,atk=100": 66,
+    "slv=10,atk=100": 66
+   },
+   "parsable": true,
+   "configId": 6,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    -15,
+    0
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_7.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 7,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_7.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 7,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_7.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 7,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_7.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 7,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_7.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 7,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    -20,
+    15
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_8.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 8,
+   "configName": "灵兽"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "atk/3",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_8.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 33,
+    "slv=10,atk=100": 33
+   },
+   "parsable": true,
+   "configId": 8,
+   "configName": "灵兽"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_8.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 8,
+   "configName": "灵兽"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "atk",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_8.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 8,
+   "configName": "灵兽"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "atk/3",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_8.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 33,
+    "slv=10,atk=100": 33
+   },
+   "parsable": true,
+   "configId": 8,
+   "configName": "灵兽"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "类型",
+   "attackType": "普通攻击",
+   "gain": false,
+   "name": "攻击",
+   "anim": "攻击",
+   "allTargets": false,
+   "targetOffset": [
+    -20,
+    15
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 0,
+   "formula": "atk",
+   "desc": "技能介绍",
+   "origin": "fight_9.str",
+   "isTemplate": false,
+   "vars": [
+    "atk"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 100
+   },
+   "parsable": true,
+   "configId": 9,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "水系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "冰咒",
+   "anim": "冰咒",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 6,
+   "formula": "(atk*(5+5*slv))/30",
+   "desc": "减少精，攻击一排目标",
+   "origin": "fight_9.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 33,
+    "slv=4,atk=100": 83,
+    "slv=10,atk=100": 183
+   },
+   "parsable": true,
+   "configId": 9,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "火系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "炎咒",
+   "anim": "炎咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 5,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_9.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 9,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "雷系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "雷咒",
+   "anim": "雷咒",
+   "allTargets": false,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": false,
+   "cost神": 0,
+   "cost气": 9,
+   "formula": "(atk*(12+8*slv))/20",
+   "desc": "减少精，攻击单体目标",
+   "origin": "fight_9.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 100,
+    "slv=4,atk=100": 220,
+    "slv=10,atk=100": 460
+   },
+   "parsable": true,
+   "configId": 9,
+   "configName": "邪剑仙"
+  },
+  {
+   "index": null,
+   "kind": "变身/其它",
+   "kindCode": "土系",
+   "attackType": "攻击",
+   "gain": false,
+   "name": "飞岩术",
+   "anim": "飞岩术",
+   "allTargets": true,
+   "targetOffset": [
+    10,
+    10
+   ],
+   "morphable": true,
+   "cost神": 0,
+   "cost气": 23,
+   "formula": "(atk*(10+5*slv))/30",
+   "desc": "减少精，攻击全体目标",
+   "origin": "fight_9.str",
+   "isTemplate": false,
+   "vars": [
+    "atk",
+    "slv"
+   ],
+   "samples": {
+    "slv=1,atk=100": 50,
+    "slv=4,atk=100": 100,
+    "slv=10,atk=100": 200
+   },
+   "parsable": true,
+   "configId": 9,
+   "configName": "邪剑仙"
+  }
+ ]
+}

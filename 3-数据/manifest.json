@@ -122,6 +122,61 @@
       "level": "OK",
       "group": "引用",
       "msg": "精灵图: 461/461 张 PNG"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "表达式引擎语义 16/16 组通过(含 8 项 Java 特例)"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "表达式错误用例 9/9 组按预期抛错"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "RPG 指令表 114 条 / 15 命名空间 与源码自动提取一致"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "指令表行号全部可回溯到 e.java"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "ANT 脚本实证 125 行 / 18 种指令 100% 被覆盖"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "技能公式 101 条(玩家 28 + 怪物 73)全部可求值"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "战斗/技能指令 48/48 条行号全部可回溯到源码"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "怪物属性公式 15 个配置全部可求值"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "行动阈值 W=750 与 config_fight.str(135/180) 一致"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "战斗站位与 config_fight.str 一致"
+    },
+    {
+      "level": "OK",
+      "group": "逻辑",
+      "msg": "MID 11/11 首可从原始文件重新解析且音符数一致；其中 2 首在最后一个 chunk 后有少量残留字节（原始数据即如此）"
     }
   ],
   "coverage": [
@@ -216,49 +271,131 @@
     {
       "layer": "逻辑",
       "item": "战斗公式",
-      "done": 0,
+      "done": 1,
       "total": 1,
-      "pct": 0.0,
-      "note": "待专项逆向 f.java"
-    },
-    {
-      "layer": "逻辑",
-      "item": "脚本指令集语义",
-      "done": 0,
-      "total": 1,
-      "pct": 0.0,
-      "note": "待专项逆向 e.java"
-    },
-    {
-      "layer": "逻辑",
-      "item": "命中/闪避/暴击",
-      "done": 0,
-      "total": 1,
-      "pct": 0.0,
-      "note": "依赖战斗公式"
+      "pct": 100.0,
+      "note": "战斗系统.md / .json"
     },
     {
       "layer": "逻辑",
       "item": "回合状态机",
-      "done": 0,
+      "done": 1,
       "total": 1,
-      "pct": 0.0,
-      "note": "依赖战斗公式"
+      "pct": 100.0,
+      "note": "行动条 W=750"
+    },
+    {
+      "layer": "逻辑",
+      "item": "命中/闪避/暴击",
+      "done": 1,
+      "total": 1,
+      "pct": 100.0,
+      "note": ""
     },
     {
       "layer": "逻辑",
       "item": "NPC AI",
-      "done": 0,
+      "done": 1,
       "total": 1,
-      "pct": 0.0,
-      "note": "依赖战斗公式"
+      "pct": 100.0,
+      "note": ""
+    },
+    {
+      "layer": "逻辑",
+      "item": "增益/变身",
+      "done": 1,
+      "total": 1,
+      "pct": 100.0,
+      "note": ""
+    },
+    {
+      "layer": "逻辑",
+      "item": "遇敌与结算",
+      "done": 1,
+      "total": 1,
+      "pct": 100.0,
+      "note": ""
+    },
+    {
+      "layer": "逻辑",
+      "item": "表达式引擎",
+      "done": 1,
+      "total": 1,
+      "pct": 100.0,
+      "note": "expr.py 已移植并验证"
+    },
+    {
+      "layer": "逻辑",
+      "item": "战斗/技能指令",
+      "done": 48,
+      "total": 48,
+      "pct": 100.0,
+      "note": "行号逐条回溯源码"
+    },
+    {
+      "layer": "逻辑",
+      "item": "RPG 指令集",
+      "done": 114,
+      "total": 114,
+      "pct": 100.0,
+      "note": "15 个命名空间"
+    },
+    {
+      "layer": "逻辑",
+      "item": "脚本条件求值",
+      "done": 19,
+      "total": 19,
+      "pct": 100.0,
+      "note": "19 条 + 未知条件跳过"
+    },
+    {
+      "layer": "逻辑",
+      "item": "技能公式可求值",
+      "done": 101,
+      "total": 101,
+      "pct": 100.0,
+      "note": "101 条"
+    },
+    {
+      "layer": "逻辑",
+      "item": "怪物属性公式",
+      "done": 15,
+      "total": 15,
+      "pct": 100.0,
+      "note": "lv/slv 作用域"
+    },
+    {
+      "layer": "逻辑",
+      "item": "ANT 脚本覆盖",
+      "done": 18,
+      "total": 18,
+      "pct": 100.0,
+      "note": "125 行脚本"
     }
   ],
-  "logic_files": [],
+  "logic_files": [
+    "RPG脚本指令集.json",
+    "动画脚本总表.json",
+    "怪物属性总表.json",
+    "战斗系统.json",
+    "战斗脚本指令集.json",
+    "技能公式总表.json",
+    "表达式引擎.json"
+  ],
   "spec_docs": [
     "00-逆向备忘.md",
-    "MID格式.md"
+    "MID格式.md",
+    "战斗系统.md",
+    "脚本指令集.md"
   ],
+  "logic_summary": {
+    "exprCases": 16,
+    "exprErrCases": 9,
+    "rpgOps": 114,
+    "rpgNs": 15,
+    "battleOps": 48,
+    "battleOpsTotal": 48
+  },
   "errors": 0,
   "warnings": 0
 }

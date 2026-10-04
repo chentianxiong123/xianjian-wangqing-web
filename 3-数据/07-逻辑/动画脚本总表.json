@@ -1,0 +1,219 @@
+{
+ "kind": "evidence",
+ "name": "ANT 动画脚本实证统计",
+ "note": "对 3-数据/01-ant/*.json 的每个 state.seq[].tag 逐行统计，用于验证从源码逆向出的指令表是否覆盖了游戏实际用到的全部指令",
+ "filesScanned": 75,
+ "scriptLinesTotal": 125,
+ "filesWithScripts": {
+  "fight_1.json": 1,
+  "fight_10.json": 2,
+  "fight_11.json": 1,
+  "fight_12.json": 1,
+  "fight_13.json": 1,
+  "fight_2.json": 1,
+  "fight_3.json": 1,
+  "fight_4.json": 2,
+  "fight_5.json": 1,
+  "fight_9.json": 1,
+  "fight_cl.json": 10,
+  "fight_lyr.json": 5,
+  "fight_skill.json": 93,
+  "fight_zx.json": 1,
+  "jiujianxian.json": 1,
+  "npc_33.json": 1,
+  "npc_34.json": 2
+ },
+ "distinct": 18,
+ "commands": [
+  {
+   "ns": "attacker",
+   "cmd": "hurt",
+   "hasArgs": true,
+   "count": 73,
+   "argsSamples": [
+    "1,被攻击2,12",
+    "1,被攻击2,6",
+    "1,被攻击2,6"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "attacker",
+   "cmd": "shake",
+   "hasArgs": true,
+   "count": 7,
+   "argsSamples": [
+    "300,2,5",
+    "300,1,3",
+    "300,1,3"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "attacker",
+   "cmd": "splash",
+   "hasArgs": true,
+   "count": 7,
+   "argsSamples": [
+    "150,16777215",
+    "200,16777215",
+    "200,16777215"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "attacker",
+   "cmd": "blackGround",
+   "hasArgs": true,
+   "count": 6,
+   "argsSamples": [
+    "是",
+    "是",
+    "否"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "skill",
+   "cmd": "dmgoftime",
+   "hasArgs": true,
+   "count": 5,
+   "argsSamples": [
+    "15,3,slv*50-30,slv*10+30",
+    "15,3,slv*50-30,slv*10+30",
+    "15,3,slv*50-30,slv*10+30"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "skill",
+   "cmd": "kill",
+   "hasArgs": true,
+   "count": 4,
+   "argsSamples": [
+    "10+slv*2",
+    "10+slv*2",
+    "10+slv*2"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "skill",
+   "cmd": "stopspeed",
+   "hasArgs": true,
+   "count": 4,
+   "argsSamples": [
+    "6,slv*4+20",
+    "6,slv*4+20",
+    "6,slv*4+20"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "game",
+   "cmd": "flicker",
+   "hasArgs": true,
+   "count": 4,
+   "argsSamples": [
+    "2",
+    "2,16711680",
+    "2"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "skill",
+   "cmd": "resetspeed",
+   "hasArgs": true,
+   "count": 3,
+   "argsSamples": [
+    "slv*3+20",
+    "slv*3+20",
+    "slv*3+20"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "skill",
+   "cmd": "dmgtohp",
+   "hasArgs": true,
+   "count": 2,
+   "argsSamples": [
+    "slv*3+20",
+    "slv*3+20"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "skill",
+   "cmd": "clear",
+   "hasArgs": false,
+   "count": 2,
+   "argsSamples": [],
+   "coveredBySource": true
+  },
+  {
+   "ns": "player",
+   "cmd": "addhpall",
+   "hasArgs": true,
+   "count": 2,
+   "argsSamples": [
+    "200*slv+400",
+    "500"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "attacker",
+   "cmd": "steal",
+   "hasArgs": false,
+   "count": 1,
+   "argsSamples": [],
+   "coveredBySource": true
+  },
+  {
+   "ns": "player",
+   "cmd": "againlife",
+   "hasArgs": true,
+   "count": 1,
+   "argsSamples": [
+    "60*slv+300"
+   ],
+   "coveredBySource": true
+  },
+  {
+   "ns": "player",
+   "cmd": "addatk",
+   "hasArgs": false,
+   "count": 1,
+   "argsSamples": [],
+   "coveredBySource": true
+  },
+  {
+   "ns": "player",
+   "cmd": "addspeed",
+   "hasArgs": false,
+   "count": 1,
+   "argsSamples": [],
+   "coveredBySource": true
+  },
+  {
+   "ns": "player",
+   "cmd": "adddef",
+   "hasArgs": false,
+   "count": 1,
+   "argsSamples": [],
+   "coveredBySource": true
+  },
+  {
+   "ns": "player",
+   "cmd": "addAll",
+   "hasArgs": false,
+   "count": 1,
+   "argsSamples": [],
+   "coveredBySource": true
+  }
+ ],
+ "uncovered": [],
+ "uncoveredCount": 0
+}

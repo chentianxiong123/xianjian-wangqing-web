@@ -1,0 +1,1311 @@
+{
+ "kind": "logic",
+ "name": "怪物属性总表",
+ "referenceLevel": 5,
+ "count": 15,
+ "monsters": [
+  {
+   "configId": 0,
+   "name": "宝葫芦",
+   "id": "1",
+   "moves": false,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "( (100+26*lv)*(2+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1035
+     },
+     "最大生命": {
+      "expr": "( (100+26*lv)*(3+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1380
+     },
+     "最小速度": {
+      "expr": "lv/8+12",
+      "valueAt": 12
+     },
+     "最大速度": {
+      "expr": "lv/6+15",
+      "valueAt": 15
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "40+10*lv",
+      "valueAt": 90
+     },
+     "运": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "攻击时增加的气值": {
+      "expr": "2",
+      "valueAt": 2
+     },
+     "最小经验": {
+      "expr": "lv+8",
+      "valueAt": 13
+     },
+     "最大经验": {
+      "expr": "lv+14",
+      "valueAt": 19
+     },
+     "最小金钱": {
+      "expr": "5+lv*2",
+      "valueAt": 15
+     },
+     "最大金钱": {
+      "expr": "6+lv*2",
+      "valueAt": 16
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(50)",
+    "鼠儿果(50)",
+    "金创药(20)",
+    "还神丹(20)",
+    "妖树刺(20)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒"
+   ],
+   "source": {
+    "file": "fight_0.str",
+    "sha256": "73955995cbc516c13559ded9ed1052be759e0802ea2cfedc96d05dcfe23060c7"
+   }
+  },
+  {
+   "configId": 1,
+   "name": "宝葫芦",
+   "id": "1",
+   "moves": false,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "( (100+26*lv)*(2+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1035
+     },
+     "最大生命": {
+      "expr": "( (100+26*lv)*(3+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1380
+     },
+     "最小速度": {
+      "expr": "lv/8+12",
+      "valueAt": 12
+     },
+     "最大速度": {
+      "expr": "lv/6+15",
+      "valueAt": 15
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "40+10*lv",
+      "valueAt": 90
+     },
+     "运": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "攻击时增加的气值": {
+      "expr": "2",
+      "valueAt": 2
+     },
+     "最小经验": {
+      "expr": "2*lv+16",
+      "valueAt": 26
+     },
+     "最大经验": {
+      "expr": "2*lv+24",
+      "valueAt": 34
+     },
+     "最小金钱": {
+      "expr": "5+lv*2",
+      "valueAt": 15
+     },
+     "最大金钱": {
+      "expr": "6+lv*2",
+      "valueAt": 16
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(50)",
+    "鼠儿果(50)",
+    "金创药(20)",
+    "还神丹(20)",
+    "妖树刺(20)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_1.str",
+    "sha256": "0ecc2e077f167fab356aeace803512a6194d33fed07a3de8c2650b430d7d72d0"
+   }
+  },
+  {
+   "configId": 10,
+   "name": "邪剑仙",
+   "id": "10",
+   "moves": true,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "15000",
+      "valueAt": 15000
+     },
+     "最大生命": {
+      "expr": "15000",
+      "valueAt": 15000
+     },
+     "最小速度": {
+      "expr": "18",
+      "valueAt": 18
+     },
+     "最大速度": {
+      "expr": "20",
+      "valueAt": 20
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "180",
+      "valueAt": 180
+     },
+     "运": {
+      "expr": "25",
+      "valueAt": 25
+     },
+     "攻击时增加的气值": {
+      "expr": "3",
+      "valueAt": 3
+     },
+     "最小经验": {
+      "expr": "200",
+      "valueAt": 200
+     },
+     "最大经验": {
+      "expr": "300",
+      "valueAt": 300
+     },
+     "最小金钱": {
+      "expr": "200",
+      "valueAt": 200
+     },
+     "最大金钱": {
+      "expr": "300",
+      "valueAt": 300
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "金创药(2)"
+   ],
+   "drops": [
+    "止血草(10)",
+    "鼠儿果(10)",
+    "金创药(10)",
+    "还神丹(50)",
+    "猩魔角(50)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_10.str",
+    "sha256": "748472d13f42f7b6fa6bd6e60b2e7b8d4c3e41eabd1bddb9cd08fd645ce824d0"
+   }
+  },
+  {
+   "configId": 11,
+   "name": "力尧",
+   "id": "11",
+   "moves": true,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "160000",
+      "valueAt": 160000
+     },
+     "最大生命": {
+      "expr": "160000",
+      "valueAt": 160000
+     },
+     "最小速度": {
+      "expr": "25",
+      "valueAt": 25
+     },
+     "最大速度": {
+      "expr": "30",
+      "valueAt": 30
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "1000",
+      "valueAt": 1000
+     },
+     "运": {
+      "expr": "20",
+      "valueAt": 20
+     },
+     "攻击时增加的气值": {
+      "expr": "3",
+      "valueAt": 3
+     },
+     "最小经验": {
+      "expr": "80",
+      "valueAt": 80
+     },
+     "最大经验": {
+      "expr": "1000",
+      "valueAt": 1000
+     },
+     "最小金钱": {
+      "expr": "200",
+      "valueAt": 200
+     },
+     "最大金钱": {
+      "expr": "500",
+      "valueAt": 500
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "玄天异果(1)"
+   ],
+   "drops": [
+    "止血草(20)",
+    "鼠儿果(20)",
+    "金创药(50)",
+    "还神丹(50)",
+    "绿玉骨(80)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_11.str",
+    "sha256": "baea55a1d733c1d2d229ef35af10334997f76129c00ae736cfe3983730111206"
+   }
+  },
+  {
+   "configId": 12,
+   "name": "玲珑",
+   "id": "12",
+   "moves": true,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "110000",
+      "valueAt": 110000
+     },
+     "最大生命": {
+      "expr": "110000",
+      "valueAt": 110000
+     },
+     "最小速度": {
+      "expr": "22",
+      "valueAt": 22
+     },
+     "最大速度": {
+      "expr": "24",
+      "valueAt": 24
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "800",
+      "valueAt": 800
+     },
+     "运": {
+      "expr": "20",
+      "valueAt": 20
+     },
+     "攻击时增加的气值": {
+      "expr": "3",
+      "valueAt": 3
+     },
+     "最小经验": {
+      "expr": "600",
+      "valueAt": 600
+     },
+     "最大经验": {
+      "expr": "800",
+      "valueAt": 800
+     },
+     "最小金钱": {
+      "expr": "500",
+      "valueAt": 500
+     },
+     "最大金钱": {
+      "expr": "520",
+      "valueAt": 520
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(10)",
+    "鼠儿果(10)",
+    "金创药(50)",
+    "还神丹(50)",
+    "绿玉骨(80)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_12.str",
+    "sha256": "56cc07ffc8195ae57aea3627de708786619ca67a6ce5628ca615dca2ec3b7952"
+   }
+  },
+  {
+   "configId": 13,
+   "name": "漓殇",
+   "id": "13",
+   "moves": true,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "450000",
+      "valueAt": 450000
+     },
+     "最大生命": {
+      "expr": "450000",
+      "valueAt": 450000
+     },
+     "最小速度": {
+      "expr": "27",
+      "valueAt": 27
+     },
+     "最大速度": {
+      "expr": "27",
+      "valueAt": 27
+     },
+     "仙术速度": {
+      "expr": "20+4*(slv-1)",
+      "valueAt": 20
+     },
+     "攻击值": {
+      "expr": "1300",
+      "valueAt": 1300
+     },
+     "运": {
+      "expr": "20",
+      "valueAt": 20
+     },
+     "攻击时增加的气值": {
+      "expr": "2",
+      "valueAt": 2
+     },
+     "最小经验": {
+      "expr": "1500",
+      "valueAt": 1500
+     },
+     "最大经验": {
+      "expr": "2000",
+      "valueAt": 2000
+     },
+     "最小金钱": {
+      "expr": "500",
+      "valueAt": 500
+     },
+     "最大金钱": {
+      "expr": "800",
+      "valueAt": 800
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "玄天异果(10)"
+   ],
+   "drops": [
+    "止血草(10)",
+    "鼠儿果(10)",
+    "金创药(10)",
+    "还神丹(10)",
+    "猩魔角(80)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_13.str",
+    "sha256": "89a66d5ead4c26cf8c9cf65bcc694b7096594a8d28e9cd89b8a65c76d36d4037"
+   }
+  },
+  {
+   "configId": 14,
+   "name": "赝月",
+   "id": "3",
+   "moves": false,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "3500",
+      "valueAt": 3500
+     },
+     "最大生命": {
+      "expr": "4000",
+      "valueAt": 4000
+     },
+     "最小速度": {
+      "expr": "8",
+      "valueAt": 8
+     },
+     "最大速度": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "300",
+      "valueAt": 300
+     },
+     "运": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "攻击时增加的气值": {
+      "expr": "2",
+      "valueAt": 2
+     },
+     "最小经验": {
+      "expr": "5",
+      "valueAt": 5
+     },
+     "最大经验": {
+      "expr": "8",
+      "valueAt": 8
+     },
+     "最小金钱": {
+      "expr": "20",
+      "valueAt": 20
+     },
+     "最大金钱": {
+      "expr": "50",
+      "valueAt": 50
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(10)",
+    "鼠儿果(10)",
+    "金创药(50)",
+    "还神丹(10)",
+    "猩魔角(50)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_14.str",
+    "sha256": "557b68d6ba5d50aa0c6d0517f77123027be494fdf482472e973d33cc0411cf52"
+   }
+  },
+  {
+   "configId": 2,
+   "name": "赤练蛇",
+   "id": "2",
+   "moves": false,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "( (100+26*lv)*(2+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1035
+     },
+     "最大生命": {
+      "expr": "( (100+26*lv)*(3+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1380
+     },
+     "最小速度": {
+      "expr": "lv/8+13",
+      "valueAt": 13
+     },
+     "最大速度": {
+      "expr": "lv/6+16",
+      "valueAt": 16
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "41+10*lv",
+      "valueAt": 91
+     },
+     "运": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "攻击时增加的气值": {
+      "expr": "3",
+      "valueAt": 3
+     },
+     "最小经验": {
+      "expr": "2*lv+16",
+      "valueAt": 26
+     },
+     "最大经验": {
+      "expr": "2*lv+24",
+      "valueAt": 34
+     },
+     "最小金钱": {
+      "expr": "5+lv*2",
+      "valueAt": 15
+     },
+     "最大金钱": {
+      "expr": "6+lv*2",
+      "valueAt": 16
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(50)",
+    "鼠儿果(50)",
+    "金创药(20)",
+    "还神丹(20)",
+    "猩魔角(20)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_2.str",
+    "sha256": "f92ac0d3764c17e60f85be8f19b4bf965de20b29007a10d41bb7688fdd1a39b7"
+   }
+  },
+  {
+   "configId": 3,
+   "name": "赝月",
+   "id": "3",
+   "moves": false,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "( (100+26*lv)*(2+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1035
+     },
+     "最大生命": {
+      "expr": "( (100+26*lv)*(3+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1380
+     },
+     "最小速度": {
+      "expr": "lv/8+12",
+      "valueAt": 12
+     },
+     "最大速度": {
+      "expr": "lv/6+14",
+      "valueAt": 14
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "45+10*lv",
+      "valueAt": 95
+     },
+     "运": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "攻击时增加的气值": {
+      "expr": "2",
+      "valueAt": 2
+     },
+     "最小经验": {
+      "expr": "2*lv+16",
+      "valueAt": 26
+     },
+     "最大经验": {
+      "expr": "2*lv+30",
+      "valueAt": 40
+     },
+     "最小金钱": {
+      "expr": "5+lv*2",
+      "valueAt": 15
+     },
+     "最大金钱": {
+      "expr": "6+lv*2",
+      "valueAt": 16
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(50)",
+    "鼠儿果(50)",
+    "金创药(20)",
+    "还神丹(20)",
+    "绿玉骨(20)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_3.str",
+    "sha256": "1489f1afd03a55f603cb6fc3fcfab168d4a4559e02f4beedcc9e12912017f092"
+   }
+  },
+  {
+   "configId": 4,
+   "name": "饿鬼",
+   "id": "4",
+   "moves": false,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "( (100+26*lv)*(2+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1035
+     },
+     "最大生命": {
+      "expr": "( (100+26*lv)*(3+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1380
+     },
+     "最小速度": {
+      "expr": "lv/8+12",
+      "valueAt": 12
+     },
+     "最大速度": {
+      "expr": "lv/6+14",
+      "valueAt": 14
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "48+10*lv",
+      "valueAt": 98
+     },
+     "运": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "攻击时增加的气值": {
+      "expr": "3",
+      "valueAt": 3
+     },
+     "最小经验": {
+      "expr": "2*lv+16",
+      "valueAt": 26
+     },
+     "最大经验": {
+      "expr": "2*lv+28",
+      "valueAt": 38
+     },
+     "最小金钱": {
+      "expr": "5+lv*2",
+      "valueAt": 15
+     },
+     "最大金钱": {
+      "expr": "6+lv*2",
+      "valueAt": 16
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(50)",
+    "鼠儿果(50)",
+    "金创药(20)",
+    "还神丹(20)",
+    "绿玉骨(20)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_4.str",
+    "sha256": "fdccfa43abcb034ce1cd3feec4f6836c395513147b8061a94999c298db8249cd"
+   }
+  },
+  {
+   "configId": 5,
+   "name": "花妖",
+   "id": "5",
+   "moves": false,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "( (100+26*lv)*(2+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1035
+     },
+     "最大生命": {
+      "expr": "( (100+26*lv)*(3+lv/5+lv/10-lv/20))*3/2",
+      "valueAt": 1380
+     },
+     "最小速度": {
+      "expr": "lv/8+10",
+      "valueAt": 10
+     },
+     "最大速度": {
+      "expr": "lv/6+14",
+      "valueAt": 14
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "43+10*lv",
+      "valueAt": 93
+     },
+     "运": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "攻击时增加的气值": {
+      "expr": "3",
+      "valueAt": 3
+     },
+     "最小经验": {
+      "expr": "2*lv+16",
+      "valueAt": 26
+     },
+     "最大经验": {
+      "expr": "2*lv+24",
+      "valueAt": 34
+     },
+     "最小金钱": {
+      "expr": "5+lv*2",
+      "valueAt": 15
+     },
+     "最大金钱": {
+      "expr": "6+lv*2",
+      "valueAt": 16
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(50)",
+    "鼠儿果(50)",
+    "金创药(20)",
+    "还神丹(20)",
+    "猩魔角(20)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_5.str",
+    "sha256": "274a9cf38757112440f0e0ca746850064be9a23d7275dcf8dff86dac394465a4"
+   }
+  },
+  {
+   "configId": 6,
+   "name": "邪剑仙",
+   "id": "10",
+   "moves": true,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "270000",
+      "valueAt": 270000
+     },
+     "最大生命": {
+      "expr": "270000",
+      "valueAt": 270000
+     },
+     "最小速度": {
+      "expr": "22",
+      "valueAt": 22
+     },
+     "最大速度": {
+      "expr": "25",
+      "valueAt": 25
+     },
+     "仙术速度": {
+      "expr": "20+4*(slv-1)",
+      "valueAt": 20
+     },
+     "攻击值": {
+      "expr": "750",
+      "valueAt": 750
+     },
+     "运": {
+      "expr": "40",
+      "valueAt": 40
+     },
+     "攻击时增加的气值": {
+      "expr": "5",
+      "valueAt": 5
+     },
+     "最小经验": {
+      "expr": "500",
+      "valueAt": 500
+     },
+     "最大经验": {
+      "expr": "600",
+      "valueAt": 600
+     },
+     "最小金钱": {
+      "expr": "1000",
+      "valueAt": 1000
+     },
+     "最大金钱": {
+      "expr": "1200",
+      "valueAt": 1200
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(50)",
+    "鼠儿果(5)",
+    "金创药(20)",
+    "还神丹(10)",
+    "猩魔角(80)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_6.str",
+    "sha256": "29fd5eeac52474ebc84eba761a18170651c9d213d24f9fd0a81e5b3c3be4bf6f"
+   }
+  },
+  {
+   "configId": 7,
+   "name": "邪剑仙",
+   "id": "10",
+   "moves": true,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "10000000",
+      "valueAt": 10000000
+     },
+     "最大生命": {
+      "expr": "10000000",
+      "valueAt": 10000000
+     },
+     "最小速度": {
+      "expr": "28",
+      "valueAt": 28
+     },
+     "最大速度": {
+      "expr": "30",
+      "valueAt": 30
+     },
+     "仙术速度": {
+      "expr": "20+4*(slv-1)",
+      "valueAt": 20
+     },
+     "攻击值": {
+      "expr": "100000",
+      "valueAt": 100000
+     },
+     "运": {
+      "expr": "30",
+      "valueAt": 30
+     },
+     "攻击时增加的气值": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "最小经验": {
+      "expr": "200",
+      "valueAt": 200
+     },
+     "最大经验": {
+      "expr": "250",
+      "valueAt": 250
+     },
+     "最小金钱": {
+      "expr": "200",
+      "valueAt": 200
+     },
+     "最大金钱": {
+      "expr": "300",
+      "valueAt": 300
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "止血草(1)"
+   ],
+   "drops": [
+    "止血草(20)",
+    "鼠儿果(20)",
+    "金创药(50)",
+    "还神丹(50)",
+    "猩魔角(80)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_7.str",
+    "sha256": "5b86b5648d96cdbae91805a11d98f5efc71fcd226e25eeae0e80734dd0292dee"
+   }
+  },
+  {
+   "configId": 8,
+   "name": "灵兽",
+   "id": "9",
+   "moves": true,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "50000",
+      "valueAt": 50000
+     },
+     "最大生命": {
+      "expr": "50000",
+      "valueAt": 50000
+     },
+     "最小速度": {
+      "expr": "20",
+      "valueAt": 20
+     },
+     "最大速度": {
+      "expr": "25",
+      "valueAt": 25
+     },
+     "仙术速度": {
+      "expr": "12+4*(slv-1)",
+      "valueAt": 12
+     },
+     "攻击值": {
+      "expr": "600",
+      "valueAt": 600
+     },
+     "运": {
+      "expr": "30",
+      "valueAt": 30
+     },
+     "攻击时增加的气值": {
+      "expr": "2",
+      "valueAt": 2
+     },
+     "最小经验": {
+      "expr": "100",
+      "valueAt": 100
+     },
+     "最大经验": {
+      "expr": "150",
+      "valueAt": 150
+     },
+     "最小金钱": {
+      "expr": "300",
+      "valueAt": 300
+     },
+     "最大金钱": {
+      "expr": "400",
+      "valueAt": 400
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "金创药(2)"
+   ],
+   "drops": [
+    "止血草(50)",
+    "鼠儿果(50)",
+    "金创药(10)",
+    "还神丹(10)",
+    "猩魔角(50)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_8.str",
+    "sha256": "95e7bcacbff6437cda0e6ef9279cda2b9a962c2e78442a59e4abfa104e94b8ef"
+   }
+  },
+  {
+   "configId": 9,
+   "name": "邪剑仙",
+   "id": "10",
+   "moves": true,
+   "movesNote": "ID 为 1..5 的敌人不会移动（g.java:41-51 置 p=false）",
+   "statsAtLv": {
+    "lv": 5,
+    "fields": {
+     "最小生命": {
+      "expr": "50000",
+      "valueAt": 50000
+     },
+     "最大生命": {
+      "expr": "50000",
+      "valueAt": 50000
+     },
+     "最小速度": {
+      "expr": "20",
+      "valueAt": 20
+     },
+     "最大速度": {
+      "expr": "20",
+      "valueAt": 20
+     },
+     "仙术速度": {
+      "expr": "10+4*(slv-1)",
+      "valueAt": 10
+     },
+     "攻击值": {
+      "expr": "350",
+      "valueAt": 350
+     },
+     "运": {
+      "expr": "10",
+      "valueAt": 10
+     },
+     "攻击时增加的气值": {
+      "expr": "1",
+      "valueAt": 1
+     },
+     "最小经验": {
+      "expr": "400",
+      "valueAt": 400
+     },
+     "最大经验": {
+      "expr": "450",
+      "valueAt": 450
+     },
+     "最小金钱": {
+      "expr": "200",
+      "valueAt": 200
+     },
+     "最大金钱": {
+      "expr": "300",
+      "valueAt": 300
+     },
+     "使用药品的概率": {
+      "expr": "0",
+      "valueAt": 0
+     }
+    }
+   },
+   "carriedItems": [
+    "金创药(2)"
+   ],
+   "drops": [
+    "止血草(10)",
+    "鼠儿果(10)",
+    "金创药(80)",
+    "还神丹(20)",
+    "猩魔角(10)"
+   ],
+   "normalSkills": [
+    "攻击"
+   ],
+   "spellSkills": [
+    "冰咒",
+    "炎咒",
+    "雷咒",
+    "飞岩术"
+   ],
+   "source": {
+    "file": "fight_9.str",
+    "sha256": "a1847252f8c05709de36f0b44a902aee22a4edf78690c6a1129dbc176e046c28"
+   }
+  }
+ ]
+}
