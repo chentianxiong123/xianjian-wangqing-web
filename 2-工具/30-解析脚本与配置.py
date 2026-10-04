@@ -49,6 +49,21 @@ def dump(rel, obj):
 COND_SPLIT = re.compile(r"^(?P<cond>[^#]*)#(?P<body>.*)$", re.S)
 
 
+def split_entry(t):
+    """条目切分为 (条件, 正文)。
+    ★ 分隔符 # 必须满足：前面无 ';'（条件段不可能含分号），且括号平衡。
+    反例：H2.str 条目 0 的 game.waitForKey(#,选择炎咒施放)——# 是按键名（#=65536），
+    不是分隔符；旧实现按首个 # 切，把 2751 字脚本头误作条件，整段报废。
+    """
+    i = t.find("#")
+    if i >= 0:
+        head = t[:i]
+        if ";" not in head and head.count("(") == head.count(")"):
+            cond = head.strip() or None
+            return cond, t[i + 1:]
+    return None, t
+
+
 def parse_talk(entries, meta):
     """NPC 对话 str → [{cond, nodes:[AST], dialogues:[{speaker,text}]}]"""
     blocks = []
@@ -56,9 +71,7 @@ def parse_talk(entries, meta):
         t = e["text"].strip()
         if not t:
             continue
-        m = COND_SPLIT.match(t)
-        cond = m.group("cond").strip() if m else None
-        body = m.group("body") if m else t
+        cond, body = split_entry(t)
         # 去掉行尾多余分号后逐行/逐指令解析
         nodes = FS.parse(body)
         dlg = []
@@ -144,9 +157,7 @@ def parse_generic_script(name, entries, meta):
         t = e["text"].strip()
         if not t:
             continue
-        m = COND_SPLIT.match(t)
-        cond = m.group("cond").strip() if m else None
-        body = m.group("body") if m else t
+        cond, body = split_entry(t)
         blocks.append({"entry": e["i"], "condRaw": cond,
                        "cond": FS.parse_condition(cond),
                        "nodes": FS.parse(body),

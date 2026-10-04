@@ -62,8 +62,17 @@
     // ★ 装配世界：跑地图级脚本 + 逐个对象脚本，真正把 NPC/怪物/宝箱等建出来
     //   runScript=false（warp 进图）时跳过 change 行防连锁，其余照常
     this.world.build(mapName, this.px, this.py, { skipChange: runScript === false });
-    // 地图级脚本里的 world.change 是进图即切图（可能连锁），限制深度防死循环
-    if (this.world.pendingChange && (this._warpDepth || 0) < 4) {
+    this.checkZones();
+    // ★ 地图级脚本的副作用在这里落子（midi/剧情战斗/菜单/字幕/道具…）
+    this.drainWorldFx();
+    // ★ 先开战、后切图（原版 fight 是模态的，后续行战后才跑）：
+    //   若落子排了战斗，pendingChange 暂存到战后执行
+    if (this.pendingBattle && this.world.pendingChange) {
+      var pc = this.world.pendingChange;
+      this.world.pendingChange = null;
+      this.pendingBattle.afterGoto = [pc.map, pc.x, pc.y, pc.dir, false];
+      this.log('战后切图 → ' + pc.map + ' @' + pc.x + ',' + pc.y);
+    } else if (this.world.pendingChange && (this._warpDepth || 0) < 4) {
       var c = this.world.pendingChange;
       this._warpDepth = (this._warpDepth || 0) + 1;
       this._warpGuard = mapName + '>' + c.map;
@@ -76,15 +85,14 @@
       }
       this._warpDepth--;
     }
-    this.checkZones();
-    // ★ 地图级脚本的副作用在这里落子（midi/剧情战斗/菜单/字幕/道具…）
-    this.drainWorldFx();
     return true;
   };
 
   /** 取出 World 解释器攒的效果 → 状态落子 + 意图执行 */
   Scene.prototype.drainWorldFx = function () {
-    var fx = this.world.applyStateEffects(this.world.takeEffects());
+    // ★ 状态已由各 runner 即时提交（flushState），这里只取延迟的 UI 意图
+    this.world.flushState();
+    var fx = this.world.drainDeferred();
     var self = this;
     (fx.messages || []).forEach(function (m) { self.log(m); });
     this.runIntents(fx.intents || []);
@@ -101,7 +109,7 @@
       switch (it.type) {
         case 'bgm': self.audioPlay(it.file, it.loop); break;
         case 'bgmStop': self.audioStop(); break;
-        case 'fight': self.startBattle(it.key, self.mainLevel()); break;
+        case 'fight': self.queueBattle(it.key, it.script); break;
         case 'menu': self.openMenu(); break;
         case 'fee': self.openFee(); break;
         case 'shop': self.openShop(it.items); break;
@@ -190,6 +198,12 @@
    * @param x,y 落点（像素）；缺省用出口数据里的落点
    */
   Scene.prototype.goto = function (mapName, x, y, dir, runScript) {
+    // ★ 战斗排队中：切图暂存，战后执行（原版 fight 模态语义）
+    if (this.pendingBattle && !this.inBattle) {
+      this.pendingBattle.afterGoto = [mapName, x, y, dir, runScript];
+      this.log('战后切图 → ' + mapName);
+      return true;
+    }
     var prev = this.mapName;
     var px = x, py = y;
     if (px == null || py == null) {
@@ -203,10 +217,26 @@
   };
 
   /**
-   * 进入战斗：game.fight(key, 脚本行, 回合A, 回合B)
-   * H2.str 是空的（脚本行与回合数全部无效），只用 key 组建遇敌。
-   * 我方用队伍真实属性（bd 构造器语义：公式+装备）。
+   * 排队战斗：game.fight(key, 脚本行, 回合A, 回合B)。
+   * H2.str 有 7 个条目（不是空的！）：t1>=0 时先播开场剧情（邪剑仙对峙/新手教程），
+   * 播完再开战。H2 行号 = STR 条目索引（b.a(file, n) 取第 n 条）。
    */
+  Scene.prototype.queueBattle = function (key, script) {
+    if (script != null && script >= 0) {
+      var r = this.world.runScriptEntry('H2.str', script);
+      if (r && !r.skipped) {
+        this.drainWorldFx();
+        var self = this;
+        (r.dialogs || []).forEach(function (dd) {
+          self.cutQueue.push({ mode: 'dlg', text: dd.text, speaker: dd.speaker });
+        });
+        self.nextCut();
+        if (r.change) this.goto(r.change.map, r.change.x, r.change.y, r.change.dir, false);
+      }
+    }
+    // ★ 开场播完（过场清空）才真正开战
+    this.pendingBattle = { key: key };
+  };
   Scene.prototype.startBattle = function (key, playerLevel) {
     var XB = global.XJBattle, P = global.XJParty;
     var lv = playerLevel != null ? playerLevel : this.mainLevel();
@@ -280,6 +310,7 @@
     var b = this.battleView && this.battleView.battle;
     this.inBattle = false;
     this.battleView = null;
+    // ★ 战后切图（排队时暂存的 goto，胜负都执行——原版后续行照跑）
     if (result === 'win' && b) {
       var exp = b.expTotal || 0, gold = b.goldTotal || 0;
       // ★ 四倍修行（fee 7）：exp/gold <<= 2（f.java:1052-1055）
@@ -328,6 +359,12 @@
       this.log('战斗失败，回到进入点');
     } else if (result === 'escape' || (b && b.phase === 3)) {
       this.log('逃跑成功');
+    }
+    // ★ 执行战后切图（有则；胜负逃都执行——原版后续行照跑）
+    if (this._afterGoto) {
+      var ag = this._afterGoto;
+      this._afterGoto = null;
+      this.goto(ag[0], ag[1], ag[2], ag[3], ag[4]);
     }
     // 切回地图 BGM
     this.audioMapBgm();
@@ -388,8 +425,9 @@
       else if (p.kind === 'branch') this.log('分支：' + JSON.stringify(p.data));
     }
     w.pending.length = 0;
-    // 未直接处理的Interp效果统一落子
-    var fx = w.applyStateEffects(w.takeEffects());
+    // 未直接处理的Interp效果统一落子（状态已即时提交，这里只取 UI 意图）
+    w.flushState();
+    var fx = w.drainDeferred();
     var self = this;
     (fx.messages || []).forEach(function (m) { self.log(m); });
     this.runIntents(fx.intents || []);
@@ -733,9 +771,10 @@
   Scene.prototype.render = function (dt) {
     var ctx = this.ctx, m = this.m;
     // 战斗中走战斗循环
+    // ★ frame() 里可能同步结束战斗（finish→onEnd→endBattle 置空），render 前重判
     if (this.inBattle && this.battleView) {
       this.battleView.frame(dt || 16);
-      this.battleView.render(dt || 16);
+      if (this.inBattle && this.battleView) this.battleView.render(dt || 16);
       return;
     }
     // 标题画面
@@ -890,6 +929,16 @@
 
   /** 每帧逻辑：剧情移动队列 / 跟随者 / 明怪 / 落石 */
   Scene.prototype.update = function (dt) {
+    // 待开战斗：过场（字幕/对话/分支/菜单/商店/等待按键）清空后开战
+    if (this.pendingBattle && !this.inBattle && !this.cut && !this.cutQueue.length &&
+        !(this.talk && this.talk.active) && !this.menu && !(this.shop && this.shop.active) && !this.branch) {
+      var pb = this.pendingBattle;
+      this.pendingBattle = null;
+      // ★ afterGoto 另存（endBattle 时用；pendingBattle 已清空）
+      this._afterGoto = pb.afterGoto || null;
+      this.waitKeys = null;
+      this.startBattle(pb.key, this.mainLevel());
+    }
     // 剧情移动队列
     if (this.moveQueue.length && !this.inBattle) {
       var wp = this.moveQueue[0];

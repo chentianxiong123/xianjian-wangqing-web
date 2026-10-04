@@ -30,6 +30,7 @@
     this.showPlayer = true;             // game.showPlayer
     this.showMonster = true;            // game.showMonster / hideMonster
     this.countdown = null;              // {until, file, line} 倒计时脚本
+    this.deferred = { intents: [], messages: [] };  // 延迟到 drain 的 UI 意图
     if (global.XJParty) global.XJParty.initParty(this);
     this.tasks = [];
     this.skills = Object.create(null);
@@ -117,22 +118,10 @@
     this.playerX = playerX || 0;
     this.playerY = playerY || 0;
 
-    // ① 地图级脚本。world.change 在这里是【立即切图】（e.java:2573 super.a(true)），
-    //    不是等玩家触发 —— 第一条生效，后面的脚本不再执行。记录下来交给宿主处理。
-    // ★ warp 进图（脚本切图/触发区切图）不再连锁切图：跳过 change 行，
-    //   否则互指的两张图（ms_syt_1↔yw_syc）会无限乒乓。其余指令（midi/字幕/道具）照常跑。
-    this.pendingChange = null;
-    var script = m.script;
-    if (opts.skipChange) {
-      script = (m.script || []).filter(function (c) { return !(c.obj === 'world' && c.cmd === 'change'); });
-    }
-    this.interp.runAll(script);
-    for (var ci = 0; ci < this.interp.effects.length; ci++) {
-      var ef = this.interp.effects[ci];
-      if (ef.kind === 'world.change') { this.pendingChange = ef.data; break; }
-    }
-
-    // ② 对象脚本：元素层(index 1) 优先，其次遮挡层(index 2)
+    // ★ 顺序：先对象脚本，后地图级脚本。
+    //   地图级过场（如 boss 战前的 npc.setPosition/showFace）要操作已装配好的演员；
+    //   若反过来，findElement 全是空，整段过场调度在原版里也会落空。
+    // ① 对象脚本：元素层(index 1) 优先，其次遮挡层(index 2)
     var self = this;
     var order = [1, 2, 0];
     for (var oi = 0; oi < order.length; oi++) {
@@ -154,6 +143,20 @@
       }
     }
     this.stats.elements = this.elements.length;
+
+    // ② 地图级脚本。world.change 在这里是【立即切图】（e.java:2573 super.a(true)），
+    //    不是等玩家触发 —— 第一条生效，后面的脚本不再执行。记录下来交给宿主处理。
+    // ★ warp 进图（脚本切图/触发区切图）不再连锁切图：跳过 change 行，
+    //   否则互指的两张图（ms_syt_1↔yw_syc）会无限乒乓。其余指令（midi/字幕/道具）照常跑。
+    this.pendingChange = null;
+    var script = m.script;
+    if (opts.skipChange) {
+      script = (m.script || []).filter(function (c) { return !(c.obj === 'world' && c.cmd === 'change'); });
+    }
+    var selfBuild = this;
+    this.interp.runAll(script, function (cmd, ran) { selfBuild._stepHook(cmd, ran); });
+    // ★ pendingChange 已由 _stepHook 在首条 change 处捕获（先记后落子）
+
     this.loadZones(mapName);
     void self;
     return this;
@@ -235,8 +238,9 @@
         continue;
       }
 
-      // 其余命名空间交给通用解释器
+      // 其余命名空间交给通用解释器（状态即时提交）
       this.interp.step(c);
+      this.flushState();
     }
     void created;
     return this.elements;
@@ -299,6 +303,38 @@
     return out;
   };
 
+  /**
+   * 即时提交：把队列里的效果落子（状态立即生效，UI 意图进 deferred）。
+   * ★ 原版 markEvent 等是立即写状态的，后续批次/指令的条件依赖它；
+   *   延迟到 drain 才写会导致同脚本内的门控全错（如 H2 开场只播出 2 段）。
+   */
+  World.prototype.flushState = function () {
+    var fxs = this.takeEffects();
+    if (!fxs.length) return;
+    var fx = this.applyStateEffects(fxs);
+    var d = this.deferred || (this.deferred = { intents: [], messages: [] });
+    if (fx.intents && fx.intents.length) d.intents.push.apply(d.intents, fx.intents);
+    if (fx.messages && fx.messages.length) d.messages.push.apply(d.messages, fx.messages);
+  };
+
+  /** 取出延迟的 UI 意图（Scene 消费） */
+  World.prototype.drainDeferred = function () {
+    var d = this.deferred || { intents: [], messages: [] };
+    this.deferred = { intents: [], messages: [] };
+    return d;
+  };
+
+  /** runAll 的钩子：首条 change 记录 pending + 每条即时提交 */
+  World.prototype._stepHook = function (cmd, ran) {
+    if (ran && !this.pendingChange && cmd && cmd.obj === 'world' && cmd.cmd === 'change') {
+      var efs = (this.interp && this.interp.effects) || [];
+      for (var i = efs.length - 1; i >= 0; i--) {
+        if (efs[i].kind === 'world.change') { this.pendingChange = efs[i].data; break; }
+      }
+    }
+    this.flushState();
+  };
+
   /** 按 id 找已装配的元素 */
   World.prototype.findElement = function (id) {
     for (var i = 0; i < (this.elements || []).length; i++) {
@@ -335,7 +371,7 @@
         case 'midi.stop': intents.push({ type: 'bgmStop' }); break;
         case 'game.markEvent': self.events[E(d.n)] = 1; break;
         case 'game.unmarkEvent': self.events[E(d.n)] = 0; break;
-        case 'game.fight': intents.push({ type: 'fight', key: d.key }); break;
+        case 'game.fight': intents.push({ type: 'fight', key: d.key, script: d.t1 }); break;
         case 'game.showMenu': intents.push({ type: 'menu' }); break;
         case 'game.showFee': intents.push({ type: 'fee' }); break;
         case 'game.black': intents.push({ type: 'subtitle', mode: 'black', text: d.text }); break;
@@ -638,8 +674,9 @@
         i++;
         continue;
       }
-      // 其余交给通用解释器
+      // 其余交给通用解释器（状态即时提交，后续条件可见）
       if (this.interp.step({ obj: c.obj, cmd: c.cmd, raw_args: c.raw_args || [], cond: null })) did = true;
+      this.flushState();
       i++;
     }
     r.did = did;

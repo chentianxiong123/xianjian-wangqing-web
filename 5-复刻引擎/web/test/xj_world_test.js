@@ -30,27 +30,37 @@ for (const f of ['xj_bin', 'xj_ant', 'xj_maps', 'xj_npc', 'xj_config', 'xj_logic
 const W = window.XJWorld;
 
 // ============================================================ 1
-head('元素装配：cs_ss_d');
+head('元素装配：cs_ss_d（Boss1 完整过场）');
 {
-  // ★ 关键：NPC 对象脚本是
-  //     element.addToNpc(34,npc_34.ant); npc.setState(stand); ...
-  //     element.remove()[!eventMarked(3)];
-  //   事件3 未设时 → 刚建好就被移除 → 净结果 0 个 NPC。
-  //   这是剧情推进后 NPC 离场的逻辑，必须先设 event3=1 才能看到 NPC。
+  // ★ 地图级脚本是逐条条件执行的线性过场（批次门控只在触发区/战斗队列语境生效）：
+  //   进 cs_ss_d → boss1 开战 → 战后对话 → markEvent(4) → 切 yw_yl_3。
+  //   对象脚本里 remove[!ev3]/remove[ev4] 让剧情演员进图即离场（净 NPC 恒为 0）。
   const w0 = new W();
   w0.build('cs_ss_d', 300, 400);
   const k0 = {}; w0.elements.forEach(e => { k0[e.kind] = (k0[e.kind] || 0) + 1; });
-  ok(!k0.npc, '事件全 0 时 addToNpc 建出的 NPC 被随后的 element.remove() 抵消：' + JSON.stringify(k0));
+  ok(!k0.npc, '事件全 0 时 NPC 进图即离场：' + JSON.stringify(k0));
+  ok(w0.pendingChange && w0.pendingChange.map === 'yw_yl_3',
+    '过场末尾切往 ' + (w0.pendingChange && w0.pendingChange.map));
+  ok(w0.events[401] === 1 && w0.events[4] === 1, 'markEvent(401/4) 即时落子（后续条件可见）');
+  const fx0 = w0.drainDeferred();
+  const f0 = fx0.intents.filter(i => i.type === 'fight');
+  ok(f0.length === 1 && f0[0].key === 'boss1' && f0[0].script === 0,
+    '开战 boss1（H2 脚本行 0）：' + JSON.stringify(f0[0]));
 
   const w = new W();
-  w.events[3] = 1;                 // ← 让 !eventMarked(3) 不成立
+  w.events[3] = 1;
   w.build('cs_ss_d', 300, 400);
   ok(w.elements.length > 0, '装配出元素 ' + w.elements.length + ' 个'
     + '（带脚本 ' + w.stats.scripted + ' / 无脚本 ' + w.stats.plain + '）');
   ok(w.plainObjects.length > 0, '无脚本元素层对象 ' + w.plainObjects.length + ' 个（用地图 elementAnt）');
 
-  // 带脚本的元素应各自带 ANT
-  const withAnt = w.elements.filter(e => e.ant);
+  // 带脚本的元素应各自带 ANT（直接跑对象脚本，不受地图级 mark 干扰）
+  const wA = new W();
+  wA.events[3] = 1;
+  const mA = window.XJ_MAPS.maps.cs_ss_d;
+  const oA = mA.layers[1].o[0];
+  wA.runElementScript(oA[3], oA);
+  const withAnt = wA.elements.filter(e => e.ant);
   ok(withAnt.length > 0, '其中 ' + withAnt.length + ' 个元素由脚本指定了自己的 ANT');
   const badAnt = withAnt.filter(e => !window.XJ.data.ant.ants[e.ant]);
   ok(badAnt.length === 0, '这些 ANT 在 XJ_ANT 里全部存在',
@@ -58,7 +68,7 @@ head('元素装配：cs_ss_d');
 
   // npc_34.ant 应当真的被用到
   const kinds = {};
-  w.elements.forEach(e => { kinds[e.kind] = (kinds[e.kind] || 0) + 1; });
+  wA.elements.forEach(e => { kinds[e.kind] = (kinds[e.kind] || 0) + 1; });
   console.log('    元素种类: ' + JSON.stringify(kinds));
   ok(kinds.npc > 0, 'addToNpc 产生了 ' + kinds.npc + ' 个 NPC');
 }
@@ -67,7 +77,7 @@ head('元素装配：cs_ss_d');
   const m = window.XJ_MAPS.maps.cs_ss_d;
   const L = m.layers[1];
   // 不同 NPC 的 element.remove 挂在不同事件上（!eventMarked(3) / !eventMarked(40) …），
-  // 所以要逐对象按它自己脚本里引用的事件号来设置，否则 NPC 建好就被抵消。
+  // 直接跑对象脚本（ bypass 地图级 mark），按它自己脚本里引用的事件号置位。
   const w = new W();
   let checked = 0, bad = [];
   const allObjs = (L.o || []).filter(o => o[3] && o[3].some(c => c.cmd === 'addToNpc'));
@@ -84,7 +94,7 @@ head('元素装配：cs_ss_d');
         if (t.fn === 'eventMarked') w2.events[t.args[0].value] = t.neg ? 1 : 0;
       }
     }
-    w2.build('cs_ss_d', 300, 400);
+    w2.runElementScript(ast, o);
     const id = ast[0].raw_args[0];
     const el = w2.elements.find(e => String(e.id) === String(id));
     if (!el) { bad.push('id=' + id + ' 未生成元素'); continue; }
@@ -152,17 +162,18 @@ head('全局状态与副作用');
   const w = new W();
   w.gold = 100;
   w.build('cs_ss_d', 300, 400);
+  // ★ 效果即时提交：状态当时写完，UI 意图进 deferred，队列无残留
+  ok(w.interp.effects.length === 0, '装配后解释器队列无残留（即时提交）');
+  const fx = w.drainDeferred();
   const kinds = {};
-  w.interp.effects.forEach(e => { kinds[e.kind] = (kinds[e.kind] || 0) + 1; });
-  ok(kinds['world.setName'] >= 0 && kinds['midi.play'] > 0,
-    '地图级脚本副作用已产生：' + Object.keys(kinds).length + ' 种');
+  fx.intents.forEach(e => { kinds[e.type] = (kinds[e.type] || 0) + 1; });
+  ok(kinds['bgm'] > 0, '地图级脚本副作用已进 deferred：' + Object.keys(kinds).join(','));
   // midi.play 的循环次数
-  const plays = w.interp.effects.filter(e => e.kind === 'midi.play');
-  ok(plays.length > 0 && plays.every(p => p.data.loop === -1),
+  const plays = fx.intents.filter(e => e.type === 'bgm');
+  ok(plays.length > 0 && plays.every(p => p.loop === -1),
     'midi.play 循环次数全部为 -1（无限循环），共 ' + plays.length + ' 首');
-  // world.setName 应记录地图名
-  const nm = w.interp.effects.find(e => e.kind === 'world.setName');
-  ok(nm && nm.data.name === '蜀山演武场', 'world.setName → ' + (nm && nm.data.name));
+  // world.setName 应记录地图名（状态即时写）
+  ok(w.mapTitle === '蜀山演武场', 'world.setName → ' + w.mapTitle);
 }
 {
   // 状态接口

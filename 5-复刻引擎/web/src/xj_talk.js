@@ -287,8 +287,9 @@
       case 'countdownTimer':
         return null;
       default:
-        // 其余交给通用解释器（会产生 effects）
+        // 其余交给通用解释器（会产生 effects，状态即时提交）
         w.interp.step({ obj: ns, cmd: cmd, raw_args: a, cond: null });
+        if (w.flushState) w.flushState();
         return null;
     }
   };

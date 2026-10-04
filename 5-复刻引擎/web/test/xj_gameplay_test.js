@@ -35,7 +35,7 @@ head('地图脚本落子');
 {
   const w = new W();
   w.build('ms_syt_1');
-  const fx = w.applyStateEffects(w.takeEffects());
+  const fx = w.drainDeferred();
   ok(w.mapTitle === '锁妖塔六层', '地图中文名：' + w.mapTitle);
   const bgm = (fx.intents || []).filter(i => i.type === 'bgm');
   ok(bgm.length === 1 && bgm[0].file === 'ss', 'BGM ss：' + JSON.stringify(bgm[0]));
@@ -69,7 +69,7 @@ head('剧情战斗意图');
 {
   const w = new W();
   w.build('cs_ss_d');
-  const fx = w.applyStateEffects(w.takeEffects());
+  const fx = w.drainDeferred();
   const fights = (fx.intents || []).filter(i => i.type === 'fight');
   ok(fights.length >= 1 && fights[0].key === 'boss1', 'cs_ss_d 进图即战 boss1：' + JSON.stringify(fights.map(f => f.key)));
 }
@@ -144,7 +144,7 @@ head('外部脚本行（branch/倒计时）');
   const r = w.runScriptEntry('xuanze.str', 8);
   ok(r && r.dialog && r.dialog.text, 'xuanze.str:8 执行出对话框：' + (r && r.dialog && String(r.dialog.text).slice(0, 18)));
   ok(r && r.dialogs && r.dialogs.length >= 1, '多段对话全部收集：' + (r && r.dialogs.length) + ' 段');
-  const fx = w.applyStateEffects(w.takeEffects());
+  const fx = w.drainDeferred();
   const kinds = (fx.intents || []).map(i => i.type);
   ok(kinds.indexOf('dlgShow') >= 0, '落子出 dlgShow：' + kinds.slice(0, 6).join(','));
   // 不存在的条目
@@ -153,7 +153,7 @@ head('外部脚本行（branch/倒计时）');
   // cs_sz_2 地图级 countdownTimer.setMillis(60000,xuanze.str,0)
   const w2 = new W();
   w2.build('cs_sz_2', 0, 0);
-  const fx2 = w2.applyStateEffects(w2.takeEffects());
+  const fx2 = w2.drainDeferred();
   const cd = (fx2.intents || []).filter(i => i.type === 'countdown')[0];
   ok(cd && cd.ms === 60000 && cd.file === 'xuanze.str' && cd.line === 0,
     '倒计时 60s→xuanze.str:0：' + JSON.stringify(cd));
@@ -162,7 +162,7 @@ head('外部脚本行（branch/倒计时）');
   // 这里用合成效果验证语义本身。
   const w3 = new W();
   w3.build('yw_wl_2', 0, 0);
-  w3.applyStateEffects(w3.takeEffects());
+  w3.drainDeferred();
   ok(w3.findElement(31) !== null, 'yw_wl_2 有 NPC31');
   w3.applyStateEffects([{ kind: 'npc.in', data: { raw: ['31', '4'] } }]);
   ok(w3.findElement(31).follow === 4, 'npc.in(31,4) 让 NPC31 跟随：follow=' + w3.findElement(31).follow);
@@ -207,6 +207,10 @@ head('未知指令集锁定');
     'npc.setAiAction', 'scripr.break', 'undef.undef'];
   const bad = keys.filter(k => allowed.indexOf(k) < 0);
   ok(bad.length === 0, '未知指令只有已知忽略类：' + keys.map(k => k + '×' + unk[k]).join(' '), bad.join(','));
+  // ★ 数量锁定（jar 原始字节 grep 实数）：scripr 5 / shoDialog 1 / setAiAction 16 / 无命名空间残留 1
+  ok((unk['scripr.break'] || 0) === 5 && (unk['dialogBox.shoDialog'] || 0) === 1 &&
+     (unk['npc.setAiAction'] || 0) === 16 && (unk['undef.undef'] || 0) === 1,
+    '忽略类数量精确：scripr×5 shoDialog×1 setAiAction×16 无命名空间×1');
 }
 
 // ============================================================ 9 变身
@@ -241,6 +245,21 @@ head('变身（魔尊真身 id7）');
     outs.push(o.dmg);
   }
   ok(outs[1] === Math.floor(outs[0] * 3 / 5), '变身伤害×3/5：' + outs[0] + '→' + outs[1]);
+}
+
+// ============================================================ 10 Boss战开场
+head('Boss战开场（H2.str）');
+{
+  // H2.str 有 7 条目：条目0=boss1开场+新手教程，条目3=第一次战斗教程
+  const w = new W();
+  const r = w.runScriptEntry('H2.str', 0);
+  ok(r && r.dialogs && r.dialogs.length > 5, 'H2:0 开场对话 ' + (r && r.dialogs.length) + ' 段');
+  ok(r.dialogs[0].speaker === '邪剑仙', '首句是邪剑仙：' + String(r.dialogs[0].text).slice(0, 18));
+  ok(w.events[1] === 1, '开场 markEvent(1) 即时落子（后续批次可见）');
+  const w3 = new W();
+  const r3 = w3.runScriptEntry('H2.str', 3);
+  ok(r3 && r3.dialogs && r3.dialogs.length > 3, 'H2:3 战斗教程 ' + (r3 && r3.dialogs.length) + ' 段');
+  ok(/可恶|偷袭/.test(r3.dialogs[0].text), '首句是被偷袭：' + String(r3.dialogs[0].text).slice(0, 16));
 }
 
 console.log('\n通过 ' + pass + ' / 失败 ' + fail);

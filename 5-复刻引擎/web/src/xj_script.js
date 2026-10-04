@@ -508,12 +508,17 @@
   };
 
   /** 跑完一整份地图脚本 AST；返回统计
-   * ★ 遇到 world.change 即停（原版立即切图，后续脚本不再执行，e.java:2573） */
-  Interp.prototype.runAll = function (ast) {
+   * ★ 遇到 world.change 即停（原版立即切图，后续脚本不再执行，e.java:2573）。
+   * ★ onStep(cmd, ran) 钩子：宿主可每条落子（World 用它做即时状态提交，
+   *   否则 markEvent 等写操作对后续批次不可见）。
+   *   break 条件按指令本身判断（不依赖 effects 队列是否已被宿主取走）。 */
+  Interp.prototype.runAll = function (ast, onStep) {
     for (var i = 0; i < (ast || []).length; i++) {
-      if (this.step(ast[i])) this.stats.exec++;
-      var last = this.effects[this.effects.length - 1];
-      if (last && last.kind === 'world.change') break;
+      var cmd = ast[i];
+      var ran = this.step(cmd);
+      if (ran) this.stats.exec++;
+      if (onStep) onStep(cmd, ran);
+      if (ran && cmd && cmd.obj === 'world' && cmd.cmd === 'change') break;
     }
     return this.stats;
   };
