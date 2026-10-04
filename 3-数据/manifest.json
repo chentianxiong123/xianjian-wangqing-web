@@ -1,0 +1,264 @@
+{
+  "byte_exact": {
+    "ant": {
+      "ok": 75,
+      "total": 75
+    },
+    "map": {
+      "ok": 69,
+      "total": 69
+    },
+    "bin": {
+      "ok": 18,
+      "total": 18
+    },
+    "str": {
+      "ok": 101,
+      "total": 101
+    }
+  },
+  "checks": [
+    {
+      "level": "OK",
+      "group": "ant",
+      "msg": "字节精确 75/75"
+    },
+    {
+      "level": "OK",
+      "group": "map",
+      "msg": "字节精确 69/69"
+    },
+    {
+      "level": "OK",
+      "group": "bin",
+      "msg": "字节精确 18/18"
+    },
+    {
+      "level": "OK",
+      "group": "str",
+      "msg": "字节精确 101/101"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "01-ant: 75 个 JSON"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "02-map: 69 个 JSON"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "05-脚本/talk: 30 个 JSON"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "05-脚本/fight: 16 个 JSON"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "05-脚本/其他: 7 个 JSON"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "06-配置: 21 个 JSON"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "08-npc/def: 39 个 JSON"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "05-资源/mid: 12 个 JSON"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "03-bin/index.json"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "08-npc/npc_总表.json"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "manifest.json"
+    },
+    {
+      "level": "OK",
+      "group": "产物",
+      "msg": "manifest_str.json"
+    },
+    {
+      "level": "OK",
+      "group": "引用",
+      "msg": "ANT: 75 个文件, sheet/layer 全部在界内"
+    },
+    {
+      "level": "OK",
+      "group": "引用",
+      "msg": "MAP: 69 张地图, 元素ANT/地砖BIN/出口 全部解析"
+    },
+    {
+      "level": "OK",
+      "group": "引用",
+      "msg": "NPC: 67 个定义, ant 全部存在"
+    },
+    {
+      "level": "OK",
+      "group": "引用",
+      "msg": "NPC: 对话文件全部存在"
+    },
+    {
+      "level": "OK",
+      "group": "引用",
+      "msg": "精灵图: 461/461 张 PNG"
+    }
+  ],
+  "coverage": [
+    {
+      "layer": "资源",
+      "item": "ANT 动画",
+      "done": 75,
+      "total": 75,
+      "pct": 100.0,
+      "note": "字节级"
+    },
+    {
+      "layer": "资源",
+      "item": "MAP 场景",
+      "done": 69,
+      "total": 69,
+      "pct": 100.0,
+      "note": "字节级"
+    },
+    {
+      "layer": "资源",
+      "item": "BIN 资源包",
+      "done": 18,
+      "total": 18,
+      "pct": 100.0,
+      "note": "字节级"
+    },
+    {
+      "layer": "资源",
+      "item": "STR 配置/脚本",
+      "done": 101,
+      "total": 101,
+      "pct": 100.0,
+      "note": "字节级"
+    },
+    {
+      "layer": "资源",
+      "item": "MID 音乐",
+      "done": 11,
+      "total": 11,
+      "pct": 100.0,
+      "note": "子代理产出"
+    },
+    {
+      "layer": "资源",
+      "item": "精灵图 PNG",
+      "done": 461,
+      "total": 461,
+      "pct": 100.0,
+      "note": "索引已修正"
+    },
+    {
+      "layer": "数据",
+      "item": "NPC 定义",
+      "done": 39,
+      "total": 39,
+      "pct": 100.0,
+      "note": ""
+    },
+    {
+      "layer": "数据",
+      "item": "NPC 总表",
+      "done": 67,
+      "total": 67,
+      "pct": 100.0,
+      "note": "地图 addToNpc 全量"
+    },
+    {
+      "layer": "数据",
+      "item": "成长公式",
+      "done": 21,
+      "total": 21,
+      "pct": 100.0,
+      "note": "三角色"
+    },
+    {
+      "layer": "数据",
+      "item": "怪物配置",
+      "done": 16,
+      "total": 16,
+      "pct": 100.0,
+      "note": ""
+    },
+    {
+      "layer": "数据",
+      "item": "物品/技能/合成/任务",
+      "done": 4,
+      "total": 4,
+      "pct": 100.0,
+      "note": ""
+    },
+    {
+      "layer": "逻辑",
+      "item": "战斗公式",
+      "done": 0,
+      "total": 1,
+      "pct": 0.0,
+      "note": "待专项逆向 f.java"
+    },
+    {
+      "layer": "逻辑",
+      "item": "脚本指令集语义",
+      "done": 0,
+      "total": 1,
+      "pct": 0.0,
+      "note": "待专项逆向 e.java"
+    },
+    {
+      "layer": "逻辑",
+      "item": "命中/闪避/暴击",
+      "done": 0,
+      "total": 1,
+      "pct": 0.0,
+      "note": "依赖战斗公式"
+    },
+    {
+      "layer": "逻辑",
+      "item": "回合状态机",
+      "done": 0,
+      "total": 1,
+      "pct": 0.0,
+      "note": "依赖战斗公式"
+    },
+    {
+      "layer": "逻辑",
+      "item": "NPC AI",
+      "done": 0,
+      "total": 1,
+      "pct": 0.0,
+      "note": "依赖战斗公式"
+    }
+  ],
+  "logic_files": [],
+  "spec_docs": [
+    "00-逆向备忘.md",
+    "MID格式.md"
+  ],
+  "errors": 0,
+  "warnings": 0
+}
