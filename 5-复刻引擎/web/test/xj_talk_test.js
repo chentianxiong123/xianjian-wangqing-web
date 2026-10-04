@@ -222,6 +222,18 @@ head('对话中的条件与副作用');
     + '] 满足后把事件标记 ' + before + ' → ' + after + ' 写入 World');
 }
 {
+  // firstTask 存的是任务【名】，不是数字
+  const w = new W();
+  w.events[8] = 1; w.events[9] = 0;
+  w.elements.push({kind:'npc',id:1,ant:'npc_16',anim:0,x:0,y:0,state:'站立',dir:'down',ai:true,showFace:true,t:0});
+  const d = new T.Dialog(w, 1);
+  d.start();
+  let g = 0;
+  while (d.active && g++<80){ const st=d.state(); if(st.branch){d.choose(0);continue;} if(st.trade) break; if(!d.advance()) break; }
+  ok(w.tasks.indexOf('十里坡除妖') >= 0,
+    '王大虎对话接到的任务是名字「十里坡除妖」：' + JSON.stringify(w.tasks));
+}
+{
   // 商店：trade 产生 trade 状态
   let found = null;
   const withTalk = Object.keys(window.XJ_NPC.npcs).filter(k => hasDialog(k));

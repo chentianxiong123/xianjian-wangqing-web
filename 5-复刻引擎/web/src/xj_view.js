@@ -184,6 +184,30 @@
     return msg;
   };
 
+  /**
+   * 回放 World.pending 里的系统级副作用。
+   * 状态变更（markEvent / addItem / task / trade…）已在 Dialog.exec 里直接写进
+   * World，这里只把「提示类」的打到日志上（showInfo / showAsideInfo）。
+   */
+  Scene.prototype.flushTalkEffects = function () {
+    var w = this.world;
+    if (!w || !w.pending) return;
+    for (var i = 0; i < w.pending.length; i++) {
+      var p = w.pending[i];
+      if (p.kind === 'showInfo') this.log('提示：' + p.data.text);
+      else if (p.kind === 'showAsideInfo') this.log('旁白：' + JSON.stringify(p.data.a));
+      else if (p.kind === 'branch') this.log('分支：' + JSON.stringify(p.data));
+    }
+    w.pending.length = 0;
+    return true;
+  };
+
+  Scene.prototype.openShop = function (items) {
+    this.shop = new global.XJShop.Shop(this.world, items);
+    this.log('商店开张，商品 ' + items.length + ' 种（←→切换买卖，回车确认，Esc 关闭）');
+    return this.shop;
+  };
+
   Scene.prototype.mapPxW = function () { return this.m ? this.m.cols * this.m.tw : 0; };
   Scene.prototype.mapPxH = function () { return this.m ? this.m.rows * this.m.th : 0; };
 
@@ -390,6 +414,9 @@
     this._blink = ((performance.now() / 500) | 0) % 2 === 0;
 
     this.drawDialog();
+    if (this.shop && this.shop.active) {
+      this.shop.render(ctx, this.cv.width, this.cv.height);
+    }
     if (this.showGrid) this.drawGrid();
     this.hud();
   };
@@ -451,10 +478,27 @@
         if (K2E[e.key]) self.battleView.key(K2E[e.key]);
         return;
       }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (self.shop && self.shop.active) { self.shop.close(); self.shop = null; }
+        return;
+      }
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
+        // 商店开着时，把确认键喂给商店
+        if (self.shop && self.shop.active) {
+          self.shop.key('ok');
+          if (!self.shop.active) self.shop = null;
+          return;
+        }
         self.interact();
         return;
+      }
+      // 商店里的方向键
+      if (self.shop && self.shop.active) {
+        var SM = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+                   w: 'up', s: 'down', a: 'left', d: 'right', Enter: 'ok', ' ': 'ok', Escape: 'cancel' };
+        if (SM[e.key]) { e.preventDefault(); self.shop.key(SM[e.key]); return; }
       }
       var dir = KEY[e.key];
       if (!dir) return;
@@ -472,13 +516,28 @@
    */
   Scene.prototype.interact = function () {
     var T = global.XJTalk;
+    // 商店开着时交给商店
+    if (this.shop && this.shop.active) return false;
     if (this.talk && this.talk.active) {
       var st = this.talk.state();
+      // 商店 / 分支 优先
+      if (st.trade) { this.openShop(st.trade.items); return true; }
+      if (st.branch) {
+        var op = st.branch.options[0];
+        this.talk.choose(0);
+        this.log('选择：' + op.label);
+        var st0 = this.talk.state();
+        if (st0.dialog) this.dialogBox = { text: st0.dialog.text, speaker: st0.dialog.speaker, type: st0.dialog.type, visible: true };
+        return true;
+      }
       if (st.dialog) this.dialogBox = { text: st.dialog.text, speaker: st.dialog.speaker, type: st.dialog.type, visible: true };
       this.talk.advance();
       var st2 = this.talk.state();
+      if (st2.trade) { this.openShop(st2.trade.items); return true; }
       if (st2.dialog) this.dialogBox = { text: st2.dialog.text, speaker: st2.dialog.speaker, type: st2.dialog.type, visible: true };
       else if (!this.talk.active) { this.dialogBox = null; this.talk = null; }
+      // 对话写进 World 的副作用（任务/事件/金钱等）在这里回放
+      this.flushTalkEffects();
       return true;
     }
     if (!this.talk) {

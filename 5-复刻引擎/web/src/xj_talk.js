@@ -212,11 +212,12 @@
         if (cmd === 'setState') { w.playerState = S(0); return null; }
         if (cmd === 'addItem') { w.addItem(S(0), a.length > 1 ? E(1) : 1); return null; }
         if (cmd === 'removeItem') { w.removeItem(S(0), a.length > 1 ? E(1) : 1); return null; }
-        if (cmd === 'task') { w.tasks.push(E(0)); return null; }
+        // ★ 任务参数是【名字】不是数字（如 十里坡除妖），存原始字符串
+        if (cmd === 'task') { w.tasks.push(S(0)); return null; }
         if (cmd === 'removeTask') {
-          var i = w.tasks.indexOf(E(0)); if (i >= 0) w.tasks.splice(i, 1); return null;
+          var i = w.tasks.indexOf(S(0)); if (i >= 0) w.tasks.splice(i, 1); return null;
         }
-        if (cmd === 'firstTask') { if (!w.tasks.length) w.tasks.push(E(0)); return null; }
+        if (cmd === 'firstTask') { if (!w.tasks.length) w.tasks.push(S(0)); return null; }
         if (cmd === 'showFace') { w.playerFace = true; return null; }
         if (cmd === 'hideFace') { w.playerFace = false; return null; }
         return null;

@@ -50,6 +50,18 @@
       <tr><th>G</th><td>显示网格</td></tr>
     </table>
 
+    <h2>任务</h2>
+    <div id="questBox" style="max-height:100px;overflow:auto;font-size:12px"></div>
+
+    <h2>存档</h2>
+    <div>
+      <button id="btnSave0">存档 0</button>
+      <button id="btnLoad0">读档 0</button>
+      <button id="btnSave1">存档 1</button>
+      <button id="btnLoad1">读档 1</button>
+    </div>
+    <div id="saveInfo" style="font-size:11px;color:#888"></div>
+
     <h2>运行时</h2>
     <table id="stat"></table>
 
@@ -73,6 +85,8 @@
 <script src="src/xj_talk.js"></script>
 <script src="src/xj_battle.js"></script>
 <script src="src/xj_view.js"></script>
+<script src="src/xj_shop.js"></script>
+<script src="src/xj_save.js"></script>
 <script src="src/xj_battleview.js"></script>
 
 <script>
@@ -207,6 +221,33 @@
         + '  脚本元素 ' + scene.world.elements.length
         + '  地图级指令 ' + scene.m.script.length);
   }
+  // 任务面板：World.tasks 存的是任务名，去任务表查描述
+  function renderQuests(){
+    var ts = scene.world.tasks || [];
+    var el = document.getElementById('questBox');
+    if (!ts.length) { el.innerHTML = '<div style="color:#666">暂无任务（和 NPC 对话接任务）</div>'; return; }
+    var rows = window.XJ_CONFIG.tasks.rows || [];
+    el.innerHTML = ts.map(function(t){
+      var hit = rows.find(function(r){ return String(r.name) === String(t); });
+      return '<div>● ' + String(t) + (hit ? '<br><span style="color:#888">' + String(hit.desc).slice(0,40) + '</span>' : ' <span style="color:#c66">（任务表里没有这个名）</span>') + '</div>';
+    }).join('');
+  }
+  setInterval(renderQuests, 1000);
+
+  // 存档按钮
+  function saveInfo(slot){
+    var i = XJSave.info(slot);
+    document.getElementById('saveInfo').textContent =
+      '槽0 ' + (XJSave.info(0) ? (XJSave.info(0).map + ' 金' + XJSave.info(0).gold) : '空')
+      + ' ｜ 槽1 ' + (XJSave.info(1) ? (XJSave.info(1).map + ' 金' + XJSave.info(1).gold) : '空');
+    return i;
+  }
+  document.getElementById('btnSave0').onclick = function(){ XJSave.save(scene.world, scene, 0); saveInfo(); log('已存档到槽 0'); };
+  document.getElementById('btnLoad0').onclick = function(){ if (XJSave.apply(XJSave.load(0), scene.world, scene)) { loadMap(); log('已读档'); } else log('槽 0 为空'); };
+  document.getElementById('btnSave1').onclick = function(){ XJSave.save(scene.world, scene, 1); saveInfo(); log('已存档到槽 1'); };
+  document.getElementById('btnLoad1').onclick = function(){ if (XJSave.apply(XJSave.load(1), scene.world, scene)) { loadMap(); log('已读档'); } else log('槽 1 为空'); };
+  saveInfo();
+
   loadMap();
   scene.start();
 
