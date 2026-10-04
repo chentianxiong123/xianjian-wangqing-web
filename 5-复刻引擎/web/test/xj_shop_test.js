@@ -50,7 +50,7 @@ head('物品表');
   }
   ok(bad.length === 0, '常用物品 ' + names.length + ' 种均可查到价格与说明', bad.join(' | '));
   ok(SH.itemRow('不存在的物品') === null, '不存在的物品返回 null');
-  ok(SH.priceOf('止血草') === 1, '止血草 价格=' + SH.priceOf('止血草'));
+  ok(SH.priceOf('止血草') === 50, '止血草 效果值=50（ae.java 买卖价读 i.b()）：' + SH.priceOf('止血草'));
   ok(SH.typeOf('木剑') === '武器', '木剑 类型=' + SH.typeOf('木剑'));
   ok(SH.typeOf('止血草') === '药品', '止血草 类型=' + SH.typeOf('止血草'));
   ok(SH.descOf('止血草').length > 0, '止血草 说明=' + SH.descOf('止血草'));
@@ -94,7 +94,7 @@ head('商店买卖');
   ok(shop.sell() === true, '卖出止血草成功');
   ok(w.gold === before + SH.sellPrice('止血草') && w.items['止血草'] === c0 - 1,
     '加钱 ' + before + '→' + w.gold + '，数量 ' + c0 + '→' + w.items['止血草']);
-  ok(SH.sellPrice('止血草') === Math.floor(SH.priceOf('止血草') / 2), '卖价 = 买价/2 向下取整');
+  ok(SH.sellPrice('止血草') === 25, '卖价 = 效果值>>1：' + SH.sellPrice('止血草'));
 }
 {
   // 空背包卖出

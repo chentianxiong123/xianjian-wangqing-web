@@ -468,8 +468,9 @@
         }
       // ---------------- countdownTimer ----------------
       case 'countdownTimer':
-        if (name === 'setMillis') return !!this.log('countdown.setMillis', { ms: E(0) });
-        if (name === 'stop')      return !!this.log('countdown.stop', {});
+        // kinds 与指令名一致（宿主按 raw 取 file/line）
+        if (name === 'setMillis') return !!this.log('countdownTimer.setMillis', { ms: E(0) });
+        if (name === 'stop')      return !!this.log('countdownTimer.stop', {});
         this.stats.unknownCmd++; return false;
       // ---------------- midi ----------------
       case 'midi':

@@ -546,6 +546,13 @@
       attacker.O -= cg; attacker.M -= cm;
     }
     attacker.s = { name: sk.name, formula: sk.formula, kindCode: sk.kindCode == null ? 0 : sk.kindCode, all: !!sk.all };
+    // ★ 变身：技能 id 7（魔尊真身）→ morph 开（ax.a: af.a==7 → c(true)）
+    if (sk.id === 7 && attacker.side === 'hero') {
+      attacker.ac = true;
+      attacker.t = 9;   // 变身动画
+      msg(attacker.name + '变身！');
+      return { ok: true, morph: true };
+    }
     var allies = (ctx.allies || []).filter(function (u) { return !u.isDead(); });
     var foes = (ctx.foes || []).filter(function (u) { return !u.isDead(); });
     var self = this;

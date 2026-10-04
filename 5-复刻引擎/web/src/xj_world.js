@@ -26,6 +26,10 @@
     this.followers = Object.create(null); // partner id → 跟随的 NPC id
     this.fly = false;                   // 御剑飞行（setFlyEnabled）
     this.mapTitle = '';                 // world.setName 的地图中文名（对接 enemy.str）
+    this.showNpc = true;                // game.showNpc（默认全显示）
+    this.showPlayer = true;             // game.showPlayer
+    this.showMonster = true;            // game.showMonster / hideMonster
+    this.countdown = null;              // {until, file, line} 倒计时脚本
     if (global.XJParty) global.XJParty.initParty(this);
     this.tasks = [];
     this.skills = Object.create(null);
@@ -223,9 +227,9 @@
           case 'showFace':        cur.showFace = true; break;
           case 'hideFace':        cur.showFace = false; break;
           case 'moveTo':          cur.moveTo = [this.E(a[0]), this.E(a[1])]; break;
-          case 'in':              cur.inScene = true; cur.delay = this.E(a[0]); break;
-          case 'bindPlayer':      cur.bound = true; break;
-          case 'unbindPlayer':    cur.bound = false; break;
+          case 'in':              cur.inScene = true; cur.delay = this.E(a[0]); cur.follow = cur.follow || 6; break;
+          case 'bindPlayer':      cur.bound = true; cur.follow = cur.follow || 6; break;
+          case 'unbindPlayer':    cur.bound = false; cur.follow = null; break;
           default: this.stats.unknown++;
         }
         continue;
@@ -387,7 +391,7 @@
         case 'player.setPosition': intents.push({ type: 'playerPos', x: E(S(0)), y: E(S(1)) }); break;
         case 'player.setDirection': intents.push({ type: 'playerDir', dir: self.dirOf(String(S(0)), 'down') }); break;
         case 'player.setState': intents.push({ type: 'playerState', st: S(0) }); break;
-        case 'player.setSequence': intents.push({ type: 'playerState', st: S(1) || S(0) }); break;
+        case 'player.setSequence': intents.push({ type: 'playerState', st: S(0) }); break;
         case 'player.setVelocity': intents.push({ type: 'playerVel', v: E(S(0)) }); break;
         case 'player.moveTo': intents.push({ type: 'playerMove', x: E(S(0)), y: E(S(1)) }); break;
         case 'player.move': intents.push({ type: 'playerStep', dir: S(0), n: E(S(1)) }); break;
@@ -470,6 +474,11 @@
         }
         case 'item.remove': messages.push('（物品被移除）'); break;
         case 'user.addHP': { var uh = mainHero(); if (uh && P) { var st3 = P.statsOf(uh); uh.hp = Math.min(st3.maxHp, uh.hp + E(S(0))); } break; }
+        case 'countdownTimer.setMillis':
+          // ★ setMillis(ms, 脚本文件, 条目)：超时执行该脚本行（e.java 超时回调）
+          intents.push({ type: 'countdown', ms: E(S(0)), file: S(1), line: E(S(2)) });
+          break;
+        case 'countdownTimer.stop': intents.push({ type: 'countdownStop' }); break;
         case 'camera.setFocusOnPlayer': intents.push({ type: 'camPlayer' }); break;
         case 'camera.setFocusOnNpc': intents.push({ type: 'camNpc', id: S(0) }); break;
         case 'camera.setPosition': intents.push({ type: 'camPos', x: E(S(0)), y: E(S(1)) }); break;
@@ -492,9 +501,11 @@
             else if (ncmd === 'addActivityRegion') el2.region = { x: E(S(1)), y: E(S(2)), r: E(S(3)), dir: S(4) };
             else if (ncmd === 'addNode') (el2.nodes = el2.nodes || []).push([E(S(1)), E(S(2))]);
             else if (ncmd === 'addInitialPosition') { el2.x = E(S(1)); el2.y = E(S(2)); }
-            else if (ncmd === 'in') el2.inScene = true;
-            else if (ncmd === 'bindPlayer') el2.bound = true;
-            else if (ncmd === 'unbindPlayer') el2.bound = false;
+            // ★ npc.in(id, 延迟)：入场并跟随主角（e.java:2760 Y 槽登记）
+            else if (ncmd === 'in') { el2.inScene = true; el2.follow = Math.max(1, E(S(1)) || 4); }
+            // ★ bindPlayer：绑定跟随；unbindPlayer 解除（e.java:2777-2779）
+            else if (ncmd === 'bindPlayer') { el2.bound = true; el2.follow = el2.follow || 6; }
+            else if (ncmd === 'unbindPlayer') { el2.bound = false; el2.follow = null; }
           }
           break;
         }
@@ -556,15 +567,13 @@
   };
 
   /**
-   * 执行一个触发区脚本。返回 {change, moveTo, dialog, effects}。
-   * ★ world.change 是立即切图（e.java:2573 super.a(true); super.y()），
-   *   走进矩形就触发，切图后后续脚本不再执行。
-   * ★ script.openScriptList[条件] 只门控【本批】（到 closeScriptList 为止），
-   *   条件不成立则跳过本批、继续往后；整区什么都没执行时不标记 fired，
-   *   否则事件达成后玩家再也进不去这个区。
+   * 执行一段脚本 AST（触发区脚本 / 外部脚本行如 xuanze.str）。
+   * 返回 {change, moveTo, dialog, gated, did}；副作用进 interp.effects，宿主负责 drain。
+   * 语义：world.change 立即切图 abort 后续（e.java:2573）；
+   *   openScriptList 只门控本批（跳到 closeScriptList 继续）。
    */
-  World.prototype.fireZone = function (z) {
-    var r = { zone: z, change: null, moveTo: null, dialog: null };
+  World.prototype.execAst = function (ast) {
+    var r = { change: null, moveTo: null, dialog: null, dialogs: [] };
     var self = this, did = false;
     function condOk(c) {
       if (c.cond == null) return true;
@@ -574,22 +583,24 @@
       }
       return true;
     }
-    for (var i = 0; i < z.ast.length; i++) {
-      var c = z.ast[i];
+    ast = ast || [];
+    var i = 0;
+    while (i < ast.length) {
+      var c = ast[i];
       // ★ 门控批：跳到配对的 closeScriptList，继续往后
       if (c.obj === 'script' && c.cmd === 'openScriptList' && !condOk(c)) {
         r.gated = true;
-        var depth = 1, j = i + 1;
-        while (j < z.ast.length && depth > 0) {
-          var cc = z.ast[j];
+        var depth = 1;
+        i++;
+        while (i < ast.length && depth > 0) {
+          var cc = ast[i];
           if (cc.obj === 'script' && cc.cmd === 'openScriptList') depth++;
           if (cc.obj === 'script' && cc.cmd === 'closeScriptList') depth--;
-          j++;
+          i++;
         }
-        i = j - 1;   // for 的 i++ 会越过 closeScriptList
         continue;
       }
-      if (!condOk(c)) continue;
+      if (!condOk(c)) { i++; continue; }
       if (c.obj === 'world' && c.cmd === 'change') {
         var a = c.raw_args || [];
         r.change = {
@@ -609,25 +620,68 @@
         var nx = this.E(b[0]), ny = this.E(b[1]);
         r.moveTo = { x: nx < 0 ? null : nx, y: ny < 0 ? null : ny };
         did = true;
+        i++;
         continue;
       }
       if (c.obj === 'player' && c.cmd === 'setDirection') {
         this.playerDir = this.dirOf(String((c.raw_args || [])[0]), this.playerDir || 'down');
         did = true;
+        i++;
         continue;
       }
       if (c.obj === 'dialogBox' && c.cmd === 'setText') {
         var da = (c.args || [])[0] || {};
-        r.dialog = { speaker: da.speaker || null, text: da.value != null ? da.value : String((c.raw_args || [])[0]) };
+        var dlg = { speaker: da.speaker || null, text: da.value != null ? da.value : String((c.raw_args || [])[0]) };
+        r.dialogs.push(dlg);
+        r.dialog = dlg;   // 兼容：保留最后一段
         did = true;
+        i++;
         continue;
       }
       // 其余交给通用解释器
       if (this.interp.step({ obj: c.obj, cmd: c.cmd, raw_args: c.raw_args || [], cond: null })) did = true;
+      i++;
     }
-    // 什么都没执行（全被门控）则保持未触发
-    if (did) z.fired = true;
+    r.did = did;
     return r;
+  };
+
+  /**
+   * 执行一个触发区脚本。返回 {change, moveTo, dialog, effects}。
+   * ★ world.change 是立即切图（e.java:2573 super.a(true); super.y()），
+   *   走进矩形就触发，切图后后续脚本不再执行。
+   * ★ script.openScriptList[条件] 只门控【本批】（到 closeScriptList 为止），
+   *   条件不成立则跳过本批、继续往后；整区什么都没执行时不标记 fired，
+   *   否则事件达成后玩家再也进不去这个区。
+   */
+  World.prototype.fireZone = function (z) {
+    var r = this.execAst(z.ast);
+    r.zone = z;
+    // 什么都没执行（全被门控）则保持未触发
+    if (r.did) z.fired = true;
+    return r;
+  };
+
+  /**
+   * 执行外部脚本行（game.branch 的 文件:行 / countdownTimer 超时）。
+   * 行号 = STR 条目索引（b.a(file, n) 取第 n 条，b.java）。
+   * 返回 execAst 结果（宿主 drainWorldFx 落子）；找不到返回 null。
+   */
+  World.prototype.runScriptEntry = function (file, entry) {
+    var base = String(file || '').replace(/\.str$/i, '');
+    var S = (XJ.data.scripts || {});
+    var book = (S.talk && S.talk[base]) || (S['其他'] && S['其他'][base]) || null;
+    if (!book) return null;
+    var blocks = book.blocks || [];
+    var want = parseInt(entry, 10);
+    var b = null;
+    for (var i = 0; i < blocks.length; i++) {
+      if (parseInt(blocks[i].entry, 10) === want) { b = blocks[i]; break; }
+    }
+    if (!b) return null;
+    // 条目条件（condRaw）先行
+    if (b.cond && !XS.testConds(this, b.cond)) return { skipped: true };
+    return this.execAst(b.nodes || []);
   };
 
   /** 重置触发区（切图后调用） */

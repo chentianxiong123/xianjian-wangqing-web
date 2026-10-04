@@ -3,12 +3,14 @@
  * 数据全部来自 xj_*.js（由 2-工具/60-生成web数据.py 从 3-数据/ 生成），
  * 本文件不内嵌任何魔法数：战斗常量等一律读 window.XJ_LOGIC。
  *
- * ★ 关键实现：精灵裁剪绘制
- *   逆向自 4-文档/反编译源码/ag.java:241 的 10 参重载，
- *   原版用 J2ME Graphics.drawRegion(src,x,y,w,h,transform,dx,dy)，
- *   transform 来自 flags 的固定映射表（见 FLAG_TABLE）。
- *   前人把 ANT 裁剪表当成「5×uint16 = 10 字节」解析，导致整体错位，
- *   所以角色渲染成了碎纹理 —— 正确解法是按 18 字节读 w/h 并实现本映射表。
+ * ★ 关键实现：精灵裁剪绘制（逆向自 y.java + ag.java，用 javap 逐项核对字节码）：
+ *   - 图层组正序绘制，后画的在上（y.java:86）
+ *   - 目标点 = base + 偏移，不做居中（y.java:94-95）
+ *   - flags → J2ME transform（ag.a 10 参）：
+ *       0=NONE；1/10=MIRROR；2/9=MIRROR_ROT180；3/8=ROT180；
+ *       4=ROT90；16=ROT270；5/18=MIRROR_ROT270；6/17=MIRROR_ROT90
+ *   - J2ME 常量不是 0-7 顺序（ROT90=5, ROT180=3, MIRROR=2…），之前理解错
+ *     导致朝右人物被画成倒立；swap 组恰好是全部转置类变换（自洽）。
  */
 (function (global) {
   'use strict';
@@ -21,32 +23,38 @@
   };
 
   // ------------------------------------------------------------ flags 映射
-  // ag.java:241 switch(n6)：flags → J2ME drawRegion transform
-  // swap 表示绘制目标宽高需要对调（setClip 用 (n5,n4)）
-  var TRANS_NONE = 0, TRANS_ROT90 = 1, TRANS_ROT180 = 2, TRANS_ROT270 = 3;
-  var TRANS_MIRROR = 4, TRANS_MIRRORROT90 = 5, TRANS_MIRRORROT180 = 6,
-      TRANS_MIRRORROT270 = 7;
+  // ag.java 10 参重载的 switch（字节码 javap 逐项核对，CFR 反编译一致）：
+  //   raw flags → drawRegion transform 编号；swap 表示目标宽高对调。
+  // ★ J2ME 变换常量（MIDP 2.0 Sprite 文档，_ORDERED_ 不是 0-7）：
+  //   0=NONE, 1=MIRROR_ROT180, 2=MIRROR, 3=ROT180,
+  //   4=MIRROR_ROT270, 5=ROT90, 6=ROT270, 7=MIRROR_ROT90
+  var TRANS_NONE = 0, TRANS_MIRRORROT180 = 1, TRANS_MIRROR = 2, TRANS_ROT180 = 3;
+  var TRANS_MIRRORROT270 = 4, TRANS_ROT90 = 5, TRANS_ROT270 = 6,
+      TRANS_MIRRORROT90 = 7;
 
   var FLAG_TABLE = {
     0:  { t: TRANS_NONE,         swap: false },
-    1:  { t: TRANS_ROT180,       swap: false },
-    2:  { t: TRANS_ROT90,        swap: false },
-    3:  { t: TRANS_ROT270,       swap: false },
-    4:  { t: TRANS_MIRRORROT90,  swap: true  },
-    5:  { t: TRANS_MIRROR,       swap: true  },
-    6:  { t: TRANS_MIRRORROT270, swap: true  },
-    8:  { t: TRANS_ROT270,       swap: false },
-    9:  { t: TRANS_ROT90,        swap: false },
-    10: { t: TRANS_ROT180,       swap: false },
-    16: { t: TRANS_MIRRORROT180, swap: true  },
-    17: { t: TRANS_MIRRORROT270, swap: true  },
-    18: { t: TRANS_MIRROR,       swap: true  }
+    1:  { t: TRANS_MIRROR,       swap: false },
+    2:  { t: TRANS_MIRRORROT180, swap: false },
+    3:  { t: TRANS_ROT180,       swap: false },
+    4:  { t: TRANS_ROT90,        swap: true  },
+    5:  { t: TRANS_MIRRORROT270, swap: true  },
+    6:  { t: TRANS_MIRRORROT90,  swap: true  },
+    8:  { t: TRANS_ROT180,       swap: false },
+    9:  { t: TRANS_MIRRORROT180, swap: false },
+    10: { t: TRANS_MIRROR,       swap: false },
+    16: { t: TRANS_ROT270,       swap: true  },
+    17: { t: TRANS_MIRRORROT90,  swap: true  },
+    18: { t: TRANS_MIRRORROT270, swap: true  }
   };
 
-  // 等价的「先镜像后旋转」拆解，便于用 Canvas 的 scale 实现
-  //   t = 0..3 纯旋转；4..7 = MIRROR 组合
+  // 等价的「先镜像后旋转」拆解，便于用 Canvas 的 scale 实现。
+  // ★ J2ME 常量不是 0-7 顺序！以 MIDP 2.0 Sprite 文档为准：
+  //   0=NONE, 1=MIRROR_ROT180, 2=MIRROR, 3=ROT180,
+  //   4=MIRROR_ROT270, 5=ROT90, 6=ROT270, 7=MIRROR_ROT90
+  //   （之前误按 1=ROT90… 解，朝右人物全被转成倒立）
   function transformToCanvas(t) {
-    // 返回 {rot: 0|90|180|270, flipX: bool}
+    // 返回 {rot: 0|90|180|270, flipX: bool}，语义是先镜像后顺时针旋转
     switch (t) {
       case TRANS_NONE:         return { rot: 0,   flipX: false };
       case TRANS_ROT90:        return { rot: 90,  flipX: false };
@@ -219,7 +227,8 @@
     ctx.translate(dx + dw / 2, dy + dh / 2);
     if (tf.flipX) ctx.scale(-1, 1);
     if (tf.rot) ctx.rotate(tf.rot * Math.PI / 180);
-    ctx.drawImage(im, -w / 2, -h / 2, w, h);
+    // ★ 9 参数形式：源矩形 (sx,sy,w,h) 必须带上（之前误用 3 参数画了整张图）
+    ctx.drawImage(im, sx, sy, w, h, -w / 2, -h / 2, w, h);
     ctx.restore();
   }
 
@@ -289,8 +298,8 @@
     }
     var seq = st.q[frame];
     var part = a.layers[seq[0]] || [];
-    // 从后往前叠加：逆序绘制让 layer0 在最上层
-    for (var k = part.length - 1; k >= 0; k--) {
+    // ★ 正序绘制：后画的在上层（y.java:86 while(n12 < f.length) 正序）
+    for (var k = 0; k < part.length; k++) {
       var q = part[k];
       var flags = q[3];
       var ft = FLAG_TABLE[flags] || FLAG_TABLE[0];
@@ -298,8 +307,9 @@
       if (!c) continue;
       var w = ft.swap ? c[4] : c[3];
       var h = ft.swap ? c[3] : c[4];
-      var cx = x + q[1] + seq[1] - (w >> 1);
-      var cy = y + q[2] + seq[2] - h;
+      // ★ 目标点就是 base+offset，不做居中（y.java:94-95 n18=n3+offX, n19=n4+offY）
+      var cx = x + q[1] + seq[1];
+      var cy = y + q[2] + seq[2];
       drawClip(ctx, a.bin, c, flags, cx, cy);
     }
     return { done: !loop && tNow >= total, frame: frame, frameNo: st.q.length, total: total };

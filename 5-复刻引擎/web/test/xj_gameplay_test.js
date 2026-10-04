@@ -136,5 +136,112 @@ head('切图不连锁');
   ok(w2.mapTitle === '渔村', '渔村标题：' + w2.mapTitle);
 }
 
+// ============================================================ 7 外部脚本行
+head('外部脚本行（branch/倒计时）');
+{
+  // xuanze.str 条目 8：短对话批（给月瑶/给紫萱的后续之一）
+  const w = new W();
+  const r = w.runScriptEntry('xuanze.str', 8);
+  ok(r && r.dialog && r.dialog.text, 'xuanze.str:8 执行出对话框：' + (r && r.dialog && String(r.dialog.text).slice(0, 18)));
+  ok(r && r.dialogs && r.dialogs.length >= 1, '多段对话全部收集：' + (r && r.dialogs.length) + ' 段');
+  const fx = w.applyStateEffects(w.takeEffects());
+  const kinds = (fx.intents || []).map(i => i.type);
+  ok(kinds.indexOf('dlgShow') >= 0, '落子出 dlgShow：' + kinds.slice(0, 6).join(','));
+  // 不存在的条目
+  ok(w.runScriptEntry('xuanze.str', 999) === null, '不存在的条目返回 null');
+  ok(w.runScriptEntry('不存在.str', 0) === null, '不存在的文件返回 null');
+  // cs_sz_2 地图级 countdownTimer.setMillis(60000,xuanze.str,0)
+  const w2 = new W();
+  w2.build('cs_sz_2', 0, 0);
+  const fx2 = w2.applyStateEffects(w2.takeEffects());
+  const cd = (fx2.intents || []).filter(i => i.type === 'countdown')[0];
+  ok(cd && cd.ms === 60000 && cd.file === 'xuanze.str' && cd.line === 0,
+    '倒计时 60s→xuanze.str:0：' + JSON.stringify(cd));
+  // npc.in(id, 延迟)：入场并跟随（e.java:2760 Y 槽登记）。
+  // 注：数据里 3 处 map 级 npc.in 的目标 NPC 都不存在，原版同样空操作；
+  // 这里用合成效果验证语义本身。
+  const w3 = new W();
+  w3.build('yw_wl_2', 0, 0);
+  w3.applyStateEffects(w3.takeEffects());
+  ok(w3.findElement(31) !== null, 'yw_wl_2 有 NPC31');
+  w3.applyStateEffects([{ kind: 'npc.in', data: { raw: ['31', '4'] } }]);
+  ok(w3.findElement(31).follow === 4, 'npc.in(31,4) 让 NPC31 跟随：follow=' + w3.findElement(31).follow);
+  w3.applyStateEffects([{ kind: 'npc.unbindPlayer', data: { raw: ['31'] } }]);
+  ok(w3.findElement(31).follow === null, 'unbindPlayer 解除跟随');
+}
+
+// ============================================================ 8 未知指令集锁定
+head('未知指令集锁定');
+{
+  // 全量扫描：解释器不认的指令必须恰好是已知忽略类
+  // （拼写错误/解析残留/大小写敏感，原版同样静默丢弃）：
+  //   scripr.break / npc.setAiAction / dialogBox.shoDialog /
+  //   System.*（大写）/ setSequence(24,xs)（无命名空间）
+  const XS2 = window.XJScript;
+  const w0 = { expr: s => { try { return XS2.evalExpr(s, {}); } catch (e) { return 0; } },
+    event: () => 0, fee: () => false, gold: () => 0, itemCount: () => 0, feeling: () => 0, partnerExists: () => false };
+  const ip = new XS2.Interp(w0);
+  const unk = {};
+  function snap() { return ip.stats.unknownNs + ',' + ip.stats.unknownCmd; }
+  function walk(cmds) {
+    (cmds || []).forEach(c => {
+      const a = snap();
+      ip.step(Object.assign({}, c, { cond: null }));
+      if (snap() !== a) { const k = (c.obj || 'undef') + '.' + (c.cmd || 'undef'); unk[k] = (unk[k] || 0) + 1; }
+      if (c.nodes) walk(c.nodes);
+      if (c.blocks) c.blocks.forEach(b => walk(b.nodes));
+    });
+  }
+  const MM = window.XJ_MAPS.maps;
+  for (const k of Object.keys(MM)) {
+    const m = MM[k];
+    walk(m.script);
+    (m.layers || []).forEach(L => {
+      (L.o || []).forEach(o => walk(o[3]));
+      (L.r || []).forEach(r => walk(r.scriptAst));
+      (L.g || []).forEach(g => walk(g.scriptAst));
+    });
+  }
+  const keys = Object.keys(unk).sort();
+  const allowed = ['System.showAsideInfo', 'System.showInfo', 'dialogBox.shoDialog',
+    'npc.setAiAction', 'scripr.break', 'undef.undef'];
+  const bad = keys.filter(k => allowed.indexOf(k) < 0);
+  ok(bad.length === 0, '未知指令只有已知忽略类：' + keys.map(k => k + '×' + unk[k]).join(' '), bad.join(','));
+}
+
+// ============================================================ 9 变身
+head('变身（魔尊真身 id7）');
+{
+  const b = new B.Battle({ rnd: new SeqRand(5) });
+  const hero = new B.Unit({ side: 'hero', slot: 0, name: '重楼', hp: 246, maxHp: 246, mp: 24, maxMp: 24, gas: 20, maxGas: 20, atk: 176, def: 31, spd: 21, luk: 0, level: 1 });
+  const foe = new B.Unit({ side: 'foe', slot: 0, name: '怪', hp: 500, maxHp: 500, atk: 50, def: 0, spd: 10, luk: 0, level: 16 });
+  b.add(hero); b.add(foe);
+  const msgs = [];
+  const r = b.execSkill(hero,
+    { id: 7, name: '魔尊真身', formula: 'atk', kindCode: 0, all: false, costGas: 10, costMp: 0, level: 1 },
+    null, { allies: [hero], foes: [foe] }, { msg: s => { if (s) msgs.push(s); } });
+  ok(r.ok && r.morph && hero.ac === true && hero.t === 9, '变身开：ac/t=9 [' + msgs.join(',') + ']');
+  ok(hero.gas === 10, '变身扣气 20→10');
+  // 变身伤害 ×3/5：打一发对比
+  const b2 = new B.Battle({ rnd: new SeqRand(5) });
+  const h2 = new B.Unit({ side: 'hero', slot: 0, name: '重楼', hp: 246, maxHp: 246, mp: 24, maxMp: 24, gas: 50, maxGas: 50, atk: 176, def: 31, spd: 21, luk: 0, level: 1 });
+  const f2 = new B.Unit({ side: 'foe', slot: 0, name: '怪', hp: 5000, maxHp: 5000, atk: 50, def: 0, spd: 10, luk: 0, level: 16 });
+  b2.add(h2); b2.add(f2);
+  h2.ac = true;
+  const atk = { name: '攻击', formula: 'atk', kindCode: 0, all: false, costGas: 0, costMp: 0, level: 4 };
+  // 直接结算对比：取 resolveHit 两次（随机种子相同看比例≈0.6）
+  const outs = [];
+  for (let k = 0; k < 2; k++) {
+    const bb = new B.Battle({ rnd: new SeqRand(77) });
+    const hh = new B.Unit({ side: 'hero', slot: 0, name: 'h', hp: 500, maxHp: 500, mp: 0, maxMp: 1, gas: 0, maxGas: 1, atk: 176, def: 0, spd: 1, luk: -1000, level: 1 });
+    const ff = new B.Unit({ side: 'foe', slot: 0, name: 'f', hp: 5000, maxHp: 5000, atk: 0, def: 0, spd: 1, luk: -1000, level: 1 });
+    bb.add(hh); bb.add(ff);
+    if (k === 1) hh.ac = true;
+    const o = bb.resolveHit(hh, ff, 3, 0);
+    outs.push(o.dmg);
+  }
+  ok(outs[1] === Math.floor(outs[0] * 3 / 5), '变身伤害×3/5：' + outs[0] + '→' + outs[1]);
+}
+
 console.log('\n通过 ' + pass + ' / 失败 ' + fail);
 if (fail) { console.log('失败项：' + failures.join(' | ')); process.exit(1); }

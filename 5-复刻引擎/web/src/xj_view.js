@@ -117,7 +117,7 @@
           self.nextCut();
           break;
         case 'dlgHide': self.cut = null; self.dialogBox = null; break;
-        case 'dlgPortrait': break;  // 立绘资源缺，先忽略
+        case 'dlgPortrait': break;  // 立绘在绘制时按 dialog.portrait 现场取（portraitAnt）
         case 'guide': self.guide = it.text; break;
         case 'guideTarget': self.guide = '目标：' + it.t; break;
         case 'flicker': self.flicker = { until: performance.now() + (it.ms || 300), color: it.color }; break;
@@ -130,6 +130,11 @@
         case 'margin': self.margin = !!it.on; break;
         case 'wait': self.waitKeys = { keys: ['ok'], msg: '', until: performance.now() + (it.ms || 0) }; break;
         case 'waitKey': self.waitKeys = { keys: String(it.keys || '').split('|'), msg: it.msg }; break;
+        case 'countdown':
+          // ★ 倒计时脚本（e.java 超时回调 this.a(aP)：时间到执行指定条目）
+          self.world.countdown = { until: Date.now() + (it.ms || 0), file: it.file, line: it.line };
+          break;
+        case 'countdownStop': self.world.countdown = null; break;
         case 'dropRock': self.spawnRocks(it.a); break;
         case 'dropRockClear': self.rocks.length = 0; break;
         case 'branch': self.branch = self.parseBranch(it.a); break;
@@ -265,7 +270,8 @@
       var sk = P.skillByName(n);
       if (sk) spell.push(Object.assign({}, sk, { level: P.artSlv(this.world, h.name, n) }));
     }, this);
-    return { normal: normal.slice(0, 1).concat([]), spell: spell };
+    // ★ 普通技能全带（攻击菜单用首个；魔尊真身 id7 走变身分支）
+    return { normal: normal, spell: spell };
   };
 
   /** 战斗结束回地图：f.java:1020 胜利结算（掉落/经验/金钱/升级/阵亡扣好感） */
@@ -369,6 +375,8 @@
    * 回放 World.pending 里的系统级副作用。
    * 状态变更（markEvent / addItem / task / trade…）已在 Dialog.exec 里直接写进
    * World，这里只把「提示类」的打到日志上（showInfo / showAsideInfo）。
+   * Dialog 未直接处理的命名空间（走 interp.step 记账的，如 countdownTimer.stop）
+   * 在这里统一落子。
    */
   Scene.prototype.flushTalkEffects = function () {
     var w = this.world;
@@ -380,6 +388,11 @@
       else if (p.kind === 'branch') this.log('分支：' + JSON.stringify(p.data));
     }
     w.pending.length = 0;
+    // 未直接处理的Interp效果统一落子
+    var fx = w.applyStateEffects(w.takeEffects());
+    var self = this;
+    (fx.messages || []).forEach(function (m) { self.log(m); });
+    this.runIntents(fx.intents || []);
     return true;
   };
 
@@ -464,7 +477,9 @@
       var dist2 = dx * dx + dy * dy;
       if (dist2 <= 10 * 10) { this.touchMonster(e); return; }
       var mv = null;
-      if (dist2 <= sight * sight && dist2 <= chase * chase) {
+      // ★ 神行飞剑（fee 1）：所到之处怪物退避，不追击
+      var noChase = this.world.fees && this.world.fees[1];
+      if (!noChase && dist2 <= sight * sight && dist2 <= chase * chase) {
         mv = { x: dx, y: dy };   // 追击
       } else if (e.t % 30 === 0) {
         // 在家附近随机走 1~3 步
@@ -581,6 +596,7 @@
     for (var i = 0; i < els.length; i++) {
       var e = els[i];
       if (e.gone) continue;
+      if (e.kind === 'npc' && this.world.showNpc === false) continue;
       var x = e.x - vp.x, y = e.y - vp.y;
       if (x < -80 || x > vp.w + 80 || y < -120 || y > vp.h + 80) continue;
       var antName = e.ant || this.m.elementAnt;
@@ -595,8 +611,13 @@
         st = XJ.state(antName, e.monState || '0') || a.states[0];
       } else {
         // 有自己 ANT 的用状态名解析；没有的退回 anim 索引
-        st = e.ant ? XJ.resolveState(antName, e.state, e.dir)
-                   : (e.anim >= 0 && e.anim < a.states.length ? a.states[e.anim] : null);
+        // ★ npc.setSequence(name) 优先按名取状态，取不到再按 state+dir 解析
+        st = null;
+        if (e.ant && e.seq != null) st = XJ.state(antName, String(e.seq));
+        if (!st) {
+          st = e.ant ? XJ.resolveState(antName, e.state, e.dir)
+                     : (e.anim >= 0 && e.anim < a.states.length ? a.states[e.anim] : null);
+        }
       }
       if (!st) { this.stats.miss++; continue; }
       // 跟随者画个小标记
@@ -619,6 +640,34 @@
   };
 
   // ---------------------------------------------------------- 对话框
+  /**
+   * 对话立绘：portrait_*.ant 的 normal 状态（npc.setPortrait / 角色配置 头像列）。
+   * 返回 {ant, state} 或 null。
+   */
+  Scene.prototype.portraitAnt = function (d) {
+    var P = global.XJParty;
+    if (!d || !d.portrait) return null;
+    if (d.portrait === 'player' && P) {
+      var hs = P.heroes(this.world);
+      var h = hs[(this.world.members || ['chonglou'])[0]] || hs.chonglou;
+      if (h) {
+        var cfg = P.roleCfg(h.role);
+        var p = cfg && cfg.scalars && cfg.scalars['头像'];
+        if (p) {
+          var parts = String(p).split(',');
+          return { ant: parts[0].replace(/\.ant$/i, ''), state: parts[1] || 'normal' };
+        }
+      }
+      return null;
+    }
+    if (d.portrait === 'npc' && this.talk) {
+      var nid = (this.talk.portraitNpc != null ? this.talk.portraitNpc : this.talk.npcId);
+      var el = this.world.findElement(nid);
+      if (el && el.portrait) return { ant: String(el.portrait).replace(/\.ant$/i, ''), state: el.portraitState || 'normal' };
+    }
+    return null;
+  };
+
   /** 画 J2ME 风格的底部对话框 */
   Scene.prototype.drawDialog = function () {
     var ctx = this.ctx, W = this.cv.width, H = this.cv.height;
@@ -635,6 +684,15 @@
     ctx.font = '13px "PingFang SC","Microsoft YaHei",sans-serif';
     ctx.textBaseline = 'top';
     var tx = pad + 8;
+    // 立绘（左 44px）
+    var pa = this.portraitAnt(d);
+    if (pa && XJ.data.ant.ants[pa.ant]) {
+      var pst = XJ.state(pa.ant, pa.state) || XJ.data.ant.ants[pa.ant].states[0];
+      if (pst) {
+        XJ.drawState(ctx, pa.ant, pst, tx, boxY + boxH - 6, 0, false);
+        tx += 46;
+      }
+    }
     if (d.speaker) {
       ctx.fillStyle = '#ffd76a';
       var name = String(d.speaker);
@@ -706,14 +764,17 @@
     this.drawObjects(1);                       // 元素层（无脚本对象，用地图 elementAnt）
     this.drawElements();                       // 脚本装配出的元素（自带 ANT）
     // 主角：优先用玩家自己的 ANT（renwu），否则退回地图元素 ANT 的 站立
-    this.drawActor(this.px, this.py, this.player.dir, this.player.state,
-      this.player.ant || m.elementAnt, 0);
+    if (this.world.showPlayer !== false) {
+      this.drawActor(this.px, this.py, this.player.dir, this.player.state,
+        this.player.ant || m.elementAnt, 0);
+    }
     this.drawObjects(2);                       // 遮挡层盖在角色之上
 
     // 闪烁提示
     this._blink = ((performance.now() / 500) | 0) % 2 === 0;
 
     this.drawDialog();
+    this.drawBranch();
     this.drawCut();
     if (this.shop && this.shop.active) {
       this.shop.render(ctx, this.cv.width, this.cv.height);
@@ -752,6 +813,13 @@
       ctx.fillRect(0, this.cv.height - 24, this.cv.width, 24);
       ctx.restore();
     }
+    if (this.mask != null) {
+      // ★ world.addMask：全屏罩（资源映射未知，先画半透明黑）
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      ctx.fillRect(0, 0, this.cv.width, this.cv.height);
+      ctx.restore();
+    }
     if (this.guide) {
       ctx.save();
       ctx.fillStyle = 'rgba(0,0,0,.6)';
@@ -764,6 +832,28 @@
     this.drawRocks();
     if (this.showGrid) this.drawGrid();
     this.hud();
+  };
+
+  /** 分支选项绘制（game.branch；1/2 或上下+回车） */
+  Scene.prototype.drawBranch = function () {
+    if (!this.branch) return false;
+    var ctx = this.ctx, W = this.cv.width, H = this.cv.height;
+    var opts = this.branch.options || [];
+    ctx.save();
+    var bw = 220, bh = opts.length * 20 + 14;
+    var bx = (W - bw) / 2, by = (H - bh) / 2 - 30;
+    ctx.fillStyle = 'rgba(0,0,12,.92)';
+    ctx.strokeStyle = '#6a6a8a';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeRect(bx + .5, by + .5, bw - 1, bh - 1);
+    ctx.font = '13px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textBaseline = 'top';
+    for (var i = 0; i < opts.length; i++) {
+      ctx.fillStyle = i === this.branch.sel ? '#ffd76a' : '#c8c8d0';
+      ctx.fillText((i === this.branch.sel ? '▶ ' : '　') + (i + 1) + '. ' + opts[i].label, bx + 10, by + 8 + i * 20);
+    }
+    ctx.restore();
+    return true;
   };
 
   /** 过场字幕绘制（black 全黑 / verse 竖排简化为居中多行） */
@@ -824,6 +914,30 @@
       var tp = self.followTrail[Math.max(0, self.followTrail.length - 6)];
       el.x = tp.x; el.y = tp.y;
     });
+    // npc.in / bindPlayer 绑定的元素跟随（el.follow = 轨迹回看格数）
+    (this.world.elements || []).forEach(function (e) {
+      if (!e.follow || !self.followTrail.length) return;
+      var back = Math.max(1, e.follow | 0);
+      var tp2 = self.followTrail[Math.max(0, self.followTrail.length - back)];
+      e.x = tp2.x; e.y = tp2.y;
+      e.state = '走路';
+    });
+    // 倒计时脚本：超时执行指定条目（e.java: 超时回调 this.a(aP)）
+    if (this.world.countdown && !this.inBattle) {
+      if (Date.now() >= this.world.countdown.until) {
+        var cd = this.world.countdown;
+        this.world.countdown = null;
+        var rr = this.world.runScriptEntry(cd.file, cd.line);
+        if (rr && !rr.skipped) {
+          this.drainWorldFx();
+          (rr.dialogs || []).forEach(function (dd) {
+            self.cutQueue.push({ mode: 'dlg', text: dd.text, speaker: dd.speaker });
+          });
+          self.nextCut();
+          if (rr.change) this.goto(rr.change.map, rr.change.x, rr.change.y, rr.change.dir, false);
+        }
+      }
+    }
     // NPC 自带 moveTo 队列
     (this.world.elements || []).forEach(function (e) {
       if (!e.moveTo) return;
@@ -940,6 +1054,13 @@
         if (self.feeMenu) self.feeMenu = null;
         return;
       }
+      // 商城菜单输入
+      if (self.feeMenu) {
+        e.preventDefault();
+        var FKEY = { ArrowUp: 'up', ArrowDown: 'down', Enter: 'ok', ' ': 'ok', Escape: 'cancel' };
+        if (FKEY[e.key]) self.feeKey(FKEY[e.key]);
+        return;
+      }
       // 分支选择：1/2 或上下+回车
       if (self.branch) {
         e.preventDefault();
@@ -1012,11 +1133,9 @@
       // 商店 / 分支 优先
       if (st.trade) { this.openShop(st.trade.items); return true; }
       if (st.branch) {
-        var op = st.branch.options[0];
-        this.talk.choose(0);
-        this.log('选择：' + op.label);
-        var st0 = this.talk.state();
-        if (st0.dialog) this.dialogBox = { text: st0.dialog.text, speaker: st0.dialog.speaker, type: st0.dialog.type, visible: true };
+        // ★ 玩家自己选（1/2），选中后跳转 文件:行
+        this.branch = { options: st.branch.options, sel: 0, fromTalk: true };
+        this.log('分支：' + st.branch.options.map(function (o) { return o.label; }).join(' / '));
         return true;
       }
       if (st.dialog) this.dialogBox = { text: st.dialog.text, speaker: st.dialog.speaker, type: st.dialog.type, visible: true };
@@ -1108,13 +1227,38 @@
     return true;
   };
 
-  /** 分支选择（game.branch 的选项；跨文件跳转只记录意图） */
+  /** 分支选择：执行 文件:行（game.branch 跳转；b.a(file, n) 取第 n 条） */
   Scene.prototype.chooseBranch = function (idx) {
     if (!this.branch) return false;
+    var self = this;
     var op = this.branch.options[idx] || this.branch.options[0];
     this.log('选择：' + op.label);
     this.world.push('branch', op);
     this.branch = null;
+    // ★ 跨文件跳转：执行目标条目（全部对话进过场队列）
+    if (op.file) {
+      var r = this.world.runScriptEntry(op.file, op.line);
+      if (r && !r.skipped) {
+        this.drainWorldFx();
+        (r.dialogs || []).forEach(function (dd) {
+          self.cutQueue.push({ mode: 'dlg', text: dd.text, speaker: dd.speaker });
+        });
+        self.nextCut();
+        if (r.change) this.goto(r.change.map, r.change.x, r.change.y, r.change.dir, false);
+        if (r.moveTo) {
+          if (r.moveTo.x != null) this.px = r.moveTo.x;
+          if (r.moveTo.y != null) this.py = r.moveTo.y;
+        }
+        if (r.dialog) this.dialogBox = { text: r.dialog.text, speaker: r.dialog.speaker, type: null, visible: true };
+      }
+      // 跳转后原对话终结（原版切到别的文件继续）
+      if (this.talk) { this.talk.active = false; this.talk = null; }
+    } else if (this.talk && this.talk.active) {
+      // 无文件目标的分支（防御性）：走原对话继续
+      this.talk.choose(idx);
+      var st2 = this.talk.state();
+      if (st2.dialog) this.dialogBox = { text: st2.dialog.text, speaker: st2.dialog.speaker, type: st2.dialog.type, visible: true };
+    }
     return true;
   };
 
@@ -1132,15 +1276,33 @@
     return true;
   };
 
-  /** fee 说明（原付费激活项；复刻版只做展示） */
+  /** fee 商城（game.showFee；原付费项，复刻版选择即激活并跑对应脚本效果） */
   Scene.prototype.openFee = function () {
-    this.feeMenu = true;
+    this.feeMenu = { sel: 0 };
     return true;
+  };
+
+  Scene.prototype.feeKey = function (k) {
+    if (!this.feeMenu) return false;
+    var rows = ((XJ.data.config.fee || {}).GotoFee) || [];
+    if (k === 'up') { this.feeMenu.sel = (this.feeMenu.sel + rows.length - 1) % rows.length; return true; }
+    if (k === 'down') { this.feeMenu.sel = (this.feeMenu.sel + 1) % rows.length; return true; }
+    if (k === 'cancel') { this.feeMenu = null; return true; }
+    if (k === 'ok') {
+      var r = rows[this.feeMenu.sel];
+      if (r && global.XJParty) {
+        var msg = global.XJParty.activateFee(this.world, parseInt((r.cols || [])[0], 10));
+        this.log(msg);
+      }
+      return true;
+    }
+    return false;
   };
 
   Scene.prototype.drawFeeMenu = function () {
     var ctx = this.ctx, W = this.cv.width, H = this.cv.height;
     var rows = ((XJ.data.config.fee || {}).GotoFee) || [];
+    var sel = (this.feeMenu && this.feeMenu.sel) || 0;
     ctx.save();
     var bw = W - 60, bh = Math.min(H - 60, 30 + rows.length * 17);
     ctx.fillStyle = 'rgba(0,0,12,.92)';
@@ -1149,12 +1311,13 @@
     ctx.strokeRect(30.5, 30.5, bw - 1, bh - 1);
     ctx.font = '13px sans-serif';
     ctx.fillStyle = '#ffd76a';
-    ctx.fillText('商城（Esc 关闭）', 40, 44);
+    ctx.fillText('商城（回车激活，Esc 关闭）', 40, 44);
     ctx.fillStyle = '#c8c8d0';
     for (var i = 0; i < rows.length; i++) {
       var c = rows[i].cols || [];
       var mark = this.world.fees[c[0]] ? '[已激活]' : '[未激活]';
-      ctx.fillText(mark + ' ' + rows[i].key, 40, 64 + i * 17);
+      ctx.fillStyle = i === sel ? '#ffd76a' : '#c8c8d0';
+      ctx.fillText((i === sel ? '▶ ' : '　') + mark + ' ' + rows[i].key, 40, 64 + i * 17);
     }
     ctx.restore();
   };

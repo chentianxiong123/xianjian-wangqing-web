@@ -23,9 +23,15 @@
     return null;
   }
 
+  /**
+   * ★ 买卖价都读「效果值」列（i.b()），不是「价格」列（ae.java 商店交易）：
+   *   买入：金钱 >= b() 则扣 b()（购买成功），否则金钱不足；
+   *   卖出：金钱 += b()>>1（卖出成功）。
+   *   「价格」列只用于装备等级判定（i.b(n)：等级 >= 价格）。
+   */
   function priceOf(name) {
     var r = itemRow(name);
-    return r ? (parseInt(r['价格'], 10) || 0) : 0;
+    return r ? (parseInt(r['效果值'], 10) || 0) : 0;
   }
 
   function descOf(name) {
@@ -38,9 +44,9 @@
     return r ? (r['类型'] || '') : '';
   }
 
-  /** 买价 = 价格；卖价 = 价格/2 向下取整（与原版 backTo 的回收逻辑一致性待验证） */
+  /** 买价 = b()；卖价 = b()>>1（ae.java，无符号右移即向下取整） */
   function buyPrice(name) { return priceOf(name); }
-  function sellPrice(name) { return Math.floor(priceOf(name) / 2); }
+  function sellPrice(name) { return priceOf(name) >> 1; }
 
   /**
    * Shop 会话。
@@ -89,7 +95,7 @@
     if (this.w.gold < o.price) { this.msg = '金钱不足'; return false; }
     this.w.gold -= o.price;
     this.w.addItem(o.name, 1);
-    this.msg = '购得 ' + o.name;
+    this.msg = '购买' + o.name + '成功';
     this.trace.push('buy ' + o.name + ' ' + o.price);
     return true;
   };
@@ -101,7 +107,7 @@
     if ((this.w.items[o.name] || 0) <= 0) { this.msg = '没有 ' + o.name; return false; }
     this.w.removeItem(o.name, 1);
     this.w.gold += o.price;
-    this.msg = '卖出 ' + o.name + ' +' + o.price;
+    this.msg = o.name + '卖出成功';
     this.trace.push('sell ' + o.name + ' ' + o.price);
     return true;
   };

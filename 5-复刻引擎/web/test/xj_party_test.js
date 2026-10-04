@@ -141,5 +141,23 @@ head('队友入队与好感');
   ok(w.members.indexOf('liyiru') < 0, 'partner.out(0) 月瑶离队');
 }
 
+// ============================================================ 7 商城激活
+head('商城激活');
+{
+  const w = new W();
+  const m4 = PT.activateFee(w, 5);
+  ok(w.fees[5] && w.gold === 300 + 10000, '无中生有：金钱 300→' + w.gold + '（' + m4 + '）');
+  const lv0 = PT.heroes(w).chonglou.level;
+  PT.activateFee(w, 4);
+  ok(PT.heroes(w).chonglou.level === lv0 + 10 && w.fees[500], '连升十级：' + lv0 + '→' + PT.heroes(w).chonglou.level + '，上限解锁');
+  PT.activateFee(w, 3);
+  ok(PT.heroes(w).chonglou.arts['雷咒'].learned, '一步登仙：雷咒已开');
+  const r = PT.craft(w, 0);
+  ok(!r.ok, '没材料也合成不了（未激活点石成金）');
+  PT.activateFee(w, 6);
+  const r2 = PT.craft(w, 0);
+  ok(r2.ok && w.items['竹蜻蜓'] === 1, '点石成金：无材料合成成功');
+}
+
 console.log('\n通过 ' + pass + ' / 失败 ' + fail);
 if (fail) { console.log('失败项：' + failures.join(' | ')); process.exit(1); }

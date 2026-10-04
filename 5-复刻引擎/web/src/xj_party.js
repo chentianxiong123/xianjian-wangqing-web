@@ -379,11 +379,57 @@
     var rec = null;
     for (var i = 0; i < rows.length; i++) if (rows[i].entry === entry) rec = rows[i];
     if (!rec) return { ok: false, msg: '无此配方' };
+    // ★ 点石成金（fee 6）：无需材料任意合成
+    if (world.fees && world.fees[6]) {
+      world.addItem(rec.product, 1);
+      return { ok: true, msg: '合成' + rec.product + '（点石成金）', product: rec.product };
+    }
     var lack = (rec.materials || []).filter(function (m) { return (world.items[m.item] || 0) < m.count; });
     if (lack.length) return { ok: false, msg: '材料不足：' + lack.map(function (m) { return m.item + '×' + m.count; }).join('、') };
     (rec.materials || []).forEach(function (m) { world.removeItem(m.item, m.count); });
     world.addItem(rec.product, 1);
     return { ok: true, msg: '合成' + rec.product, product: rec.product };
+  }
+
+  // ------------------------------------------------------------ 商城激活
+  /**
+   * 激活 fee 项（fee_str 条目：markFee / levelup / addGold / ybdx）。
+   * 对应 e.player.levelup（先 mark 500 解锁上限再全员升级）与 fee.ybdx。
+   * 复刻版无短信计费，选择即激活；原版走 激活失败 分支（短信失败）在此不会出现。
+   */
+  function activateFee(world, idx) {
+    var F = (XJ.data.config.fee || {});
+    var entries = F.fee_str || [];
+    var e = null;
+    for (var i = 0; i < entries.length; i++) {
+      if (parseInt(entries[i].entry, 10) === idx) { e = entries[i]; break; }
+    }
+    if (!e && !(idx >= 0 && idx <= 7)) return '无此商城项';
+    world.fees[idx] = true;
+    var msgs = ['激活成功'];
+    (e ? (e.markFee || []) : []).forEach(function (n) { world.fees[parseInt(n, 10)] = true; });
+    (e ? (e.levelup || []) : []).forEach(function (n) {
+      world.fees[500] = true;   // ★ e.levelup 先解锁等级上限
+      activeHeroes(world).forEach(function (h) { levelUp(world, h, parseInt(n, 10) || 1); });
+      msgs.push('等级提升' + n);
+    });
+    (e ? (e.addGold || []) : []).forEach(function (n) {
+      world.addGold(parseInt(n, 10) || 0);
+      msgs.push('得到' + n + '两');
+    });
+    if (idx === 3) {
+      // ★ 一步登仙：fee.ybdx，全员仙术全开直升满级
+      Object.keys(heroes(world)).forEach(function (key) {
+        var h = heroes(world)[key];
+        var list = (XJ.data.logic.skillFormulas || {}).player || [];
+        list.forEach(function (sk) {
+          if (sk.kindCode !== 0 && !sk.isTemplate && sk.name && sk.name !== 'name')
+            h.arts[sk.name] = { learned: true, uses: 30 };
+        });
+      });
+      msgs.push('所有仙术全开');
+    }
+    return msgs.join('，');
   }
 
   // ------------------------------------------------------------ 宝箱
@@ -451,6 +497,7 @@
     addExp: addExp, levelUp: levelUp,
     learnArt: learnArt, learnSkill: learnSkill, recordArtUse: recordArtUse, artSlv: artSlv,
     useItem: useItem, equip: equip, craft: craft,
+    activateFee: activateFee,
     boxPool: boxPool, rollTreasure: rollTreasure,
     snapshotHeroes: snapshotHeroes, restoreHeroes: restoreHeroes
   };

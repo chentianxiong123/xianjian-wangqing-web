@@ -11,6 +11,7 @@ import re
 CMD_RE = re.compile(r"^([A-Za-z_][A-Za-z_0-9]*)\.([A-Za-z_][A-Za-z_0-9]*)\s*\((.*)\)$",
                     re.S)
 COND_RE = re.compile(r"\[([^\[\]]*)\]\s*$", re.S)
+COND_MULTI_RE = re.compile(r"((?:\[[^\[\]]*\]\s*)+)$", re.S)
 IDENT_RE = re.compile(r"\b([A-Za-z_][A-Za-z_0-9]*)\b")
 
 #: 已从 Java 确认的方向值 (cn.../system/d.java → b(String))
@@ -133,18 +134,25 @@ def parse_condition(cond):
 
 def parse_line(raw):
     s = raw.strip()
-    while s.endswith(";"):
+    while s.endswith(";") or s.endswith("；"):
         s = s[:-1].strip()
     if not s:
         return None
     cond = None
-    m = COND_RE.search(s)
+    m = COND_MULTI_RE.search(s)
     if m:
-        cond = m.group(1)
+        # ★ 尾部可有多组 []（如 [c][c]）；原版 d.g 只取第一组
+        first = re.match(r"\[([^\[\]]*)\]", m.group(1))
+        cond = first.group(1) if first else None
         s = s[:m.start()].strip()
     if not s:
         return None
     m = CMD_RE.match(s)
+    if not m and s.endswith(":"):
+        # ★ 容错：行尾多余冒号（如 script.break():），原版 d.c 切行后仍能认出指令
+        m = CMD_RE.match(s[:-1].strip())
+        if m:
+            s = s[:-1].strip()
     if m:
         return {"kind": "cmd", "obj": m.group(1), "cmd": m.group(2),
                 "args": [parse_arg(a) for a in split_args(m.group(3))],
@@ -177,6 +185,10 @@ def split_statements(text):
         elif ch in ")]}":
             depth -= 1
         if depth == 0 and ch == ";":
+            out.append("".join(cur))
+            cur = []
+        elif depth == 0 and ch == "；":
+            # ★ 全角分号也是语句分隔符（原版数据里真实存在）
             out.append("".join(cur))
             cur = []
         elif depth == 0 and ch in "\r\n":

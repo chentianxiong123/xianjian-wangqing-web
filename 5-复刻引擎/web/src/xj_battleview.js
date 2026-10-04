@@ -219,7 +219,13 @@
   var MENU = ['攻击', '仙术', '物品', '防御', '逃跑'];
 
   BattleView.prototype.openMenu = function (u) {
-    this.menu = { unit: u, sel: 0, options: MENU.slice() };
+    var opts = MENU.slice();
+    // ★ 有魔尊真身（id 7）才出现变身选项
+    var ns = (u.skills && u.skills.normal) || [];
+    for (var i = 0; i < ns.length; i++) {
+      if (ns[i].id === 7 || ns[i].name === '魔尊真身') { opts.push('变身'); break; }
+    }
+    this.menu = { unit: u, sel: 0, options: opts };
   };
 
   BattleView.prototype.drawMenu = function () {
@@ -338,7 +344,8 @@
     var s = { name: skill && skill.name, formula: skill && skill.formula,
             kindCode: skill ? skill.kindCode : 0, all: !!(skill && skill.all),
             anim: skill && skill.anim, costGas: 0, costMp: 0 };
-    b.setSkillSpeed(u, '10+4*(slv-1)');
+    // ★ 怪物行动期增量 = fight_N.str 仙术速度求值（slv 恒 1，见战斗系统.md）
+    u.c = Math.max(1, u.skillSpeed || 10);
     u.t = 2;
     var self = this;
     this._queue = this._queue || [];
@@ -448,9 +455,16 @@
         }
         var cmd = opts[this.menu.sel], u = this.menu.unit;
         if (cmd === '攻击') {
-          var normals = u.skills && u.skills.normal;
-          var sk = (normals && normals[0]) || { name: '攻击', formula: 'atk', kindCode: 0 };
-          this.openTarget(u, sk);
+          var normals = (u.skills && u.skills.normal) || [];
+          var atk0 = [{ name: '攻击', formula: 'atk', kindCode: 0, all: false }];
+          var allN = atk0.concat(normals.filter(function (s) { return s.name !== '攻击'; }));
+          if (allN.length <= 1) {
+            this.openTarget(u, allN[0]);
+          } else {
+            // ★ 普通攻击子菜单：默认 攻击 + 已学普通技
+            this.menu = { unit: u, sel: 0, options: allN.map(function (s) { return s.name; }),
+                          skills: allN, isSpell: true, isAttack: true };
+          }
         } else if (cmd === '仙术') {
           var spells = u.skills && u.skills.spell;
           if (!spells || !spells.length) {
@@ -477,6 +491,13 @@
           var items = this.battleItems();
           if (!items.length) { this.msg = '没有可用的物品'; return true; }
           this.menu = { unit: u, sel: 0, options: items, isItem: true };
+        } else if (cmd === '变身') {
+          var ms = ((u.skills && u.skills.normal) || []).filter(function (s) { return s.id === 7 || s.name === '魔尊真身'; })[0];
+          if (!ms) { this.msg = '没有可变身的技能'; return true; }
+          if (u.O < (ms.costGas || 0)) { this.msg = '气不足，不能变身'; return true; }
+          this.menu = null;
+          this._actingHero = u;
+          this.heroAct(u, ms, null);
         }
         return true;
       }
@@ -493,6 +514,20 @@
                anim: sk && sk.anim, costGas: sk && sk.costGas, costMp: sk && sk.costMp,
                level: sk && sk.level };
     from.t = sk && sk.kindCode !== 0 ? 8 : 2;
+    // ★ 行动期增量按仙术速度公式设（bd.a：c = eval(仙术速度, slv)）
+    if (self.world && self.world._party && from.heroName) {
+      try {
+        var P = self.world._party;
+        var hs = P.heroes(self.world);
+        var h = P.heroByName(self.world, from.heroName) || hs[from.heroName];
+        var slv = (sk && sk.kindCode === 0) ? 4 : (sk && sk.level) || 1;
+        if (sk && sk.id === 7) slv = 5;
+        if (h) {
+          var f = (P.roleCfg(h.role).formulas || {})['仙术速度'];
+          if (f && f.expr) from.c = Math.max(1, P && b.evalFormula(f.expr, slv, 0));
+        }
+      } catch (e) { /* 兜底：onTurnStart 设 10 */ }
+    }
     this._queue = this._queue || [];
     var qfn2 = function () {
       var r = b.execSkill(from, from.s, target,

@@ -73,6 +73,33 @@ const noswap = (srcTxt.match(/setClip\(n7, n8, n4, n5\)/g) || []).length;
 ok(noswap === 4,
   '源码非 swap 分支 4 个（case 0 / (1,10) / (2,9) / (3,8)）', '实际 ' + noswap);
 
+// ============================================================ 1.5
+head('transform 语义（J2ME 常量，非 0-7 顺序）');
+{
+  // ★ MIDP 2.0 Sprite 文档值：0=NONE 1=MIRROR_ROT180 2=MIRROR 3=ROT180
+  //   4=MIRROR_ROT270 5=ROT90 6=ROT270 7=MIRROR_ROT90。
+  //   之前误按顺序理解，flags=1（站立右）被画成倒立。
+  //   判定三重锁定：y.java 裁剪数学 / swap 自洽 / 数据实证（站右=站左的水平镜像）。
+  const T = XJ.transformToCanvas;
+  const cases = [
+    [0, 0, false], [1, 180, true], [2, 0, true], [3, 180, false],
+    [4, 270, true], [5, 90, false], [6, 270, false], [7, 90, true]
+  ];
+  let bad = [];
+  for (const [t, rot, flip] of cases) {
+    const r = T(t);
+    if (r.rot !== rot || r.flipX !== flip) bad.push('t=' + t + ' 得' + JSON.stringify(r));
+  }
+  ok(bad.length === 0, 'transformToCanvas 8 种全对（先镜像后顺时针旋转）', bad.join(' | '));
+  // flags=1（站立右各部件）必须走水平镜像
+  ok(XJ.FLAG_TABLE[1].t === 2 && T(XJ.FLAG_TABLE[1].t).flipX && T(XJ.FLAG_TABLE[1].t).rot === 0,
+    'flags=1 → MIRROR（水平镜像），不是 ROT180');
+  // swap 组恰好是全部转置类变换（维度交换），非 swap 组都不交换
+  const swapFlags = Object.keys(XJ.FLAG_TABLE).filter(k => XJ.FLAG_TABLE[k].swap).sort();
+  ok(JSON.stringify(swapFlags) === JSON.stringify(['16', '17', '18', '4', '5', '6']),
+    'swap 组 = 4,5,6,16,17,18（转置类），实际 ' + swapFlags.join(','));
+}
+
 // ============================================================ 2
 head('ANT 状态与方向解析');
 const ants = Object.keys(XJ.data.ant.ants);

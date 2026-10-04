@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<title>渲染验证</title>
+<style>body{margin:0;background:#111}canvas{image-rendering:pixelated}</style>
+</head>
+<body>
+<canvas id="cv" width="960" height="544"></canvas>
+<script src="data/xj_bin.js"></script>
+<script src="data/xj_ant.js"></script>
+<script src="data/xj_maps.js"></script>
+<script src="data/xj_npc.js"></script>
+<script src="data/xj_config.js"></script>
+<script src="data/xj_logic.js"></script>
+<script src="data/xj_scripts.js"></script>
+<script src="src/xj.js"></script>
+<script>
+(function(){
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  window.__done = false;
+  // 背景棋盘格
+  function bg(){
+    ctx.fillStyle = '#181820'; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.fillStyle = '#202028';
+    for (var y=0;y<34;y++) for (var x=0;x<60;x++)
+      if ((x+y)%2===0) ctx.fillRect(x*16,y*16,16,16);
+  }
+  var jobs = [];
+  // 主角四向站立+走路
+  ['up','down','left','right'].forEach(function(d,i){
+    jobs.push({ant:'chonglou', base:'站立', dir:d, x:40+i*110, y:120, label:'chonglou 站'+d});
+    jobs.push({ant:'chonglou', base:'走路', dir:d, x:40+i*110, y:260, label:'chonglou 走'+d});
+  });
+  // 几个 NPC
+  ['npc_11','npc_21','npc_1'].forEach(function(a,i){
+    jobs.push({ant:a, base:'站立', dir:'down', x:500+i*110, y:120, label:a});
+  });
+  // 明怪
+  jobs.push({ant:'guaiwu', state:'0', x:500, y:260, label:'guaiwu 0'});
+  jobs.push({ant:'guaiwu', state:'1', x:610, y:260, label:'guaiwu 1'});
+  // 建筑元素（mishi 的宝箱开/关 + 几个大状态）
+  ['宝箱（关）','宝箱（开）','qiang1','zhuzi1','taiji1'].forEach(function(s,i){
+    jobs.push({ant:'mishi', state:s, x:40+i*110, y:420, label:'mishi '+s});
+  });
+  var t0 = performance.now();
+  XJ.preloadAll(12, function(done,total,fin){
+    var a = XJ.allStats();
+    // ★ 必须等 pending 与 idle 都归零（fin 只表示请求发完）
+    if (a.pending || a.idle) return;
+    bg();
+    ctx.font = '12px monospace'; ctx.textBaseline = 'top';
+    jobs.forEach(function(j){
+      var A = XJ.data.ant.ants[j.ant];
+      var st = j.state ? XJ.state(j.ant, j.state) : XJ.resolveState(j.ant, j.base, j.dir);
+      // 红十字标出锚点
+      ctx.strokeStyle = '#f00';
+      ctx.beginPath(); ctx.moveTo(j.x-6,j.y); ctx.lineTo(j.x+6,j.y);
+      ctx.moveTo(j.x,j.y-6); ctx.lineTo(j.x,j.y+6); ctx.stroke();
+      if (st) XJ.drawState(ctx, j.ant, st, j.x, j.y, 300, false);
+      ctx.fillStyle = '#8f8';
+      ctx.fillText(j.label + (st?'':' MISS'), j.x-40, j.y+70);
+    });
+    window.__done = true;
+  });
+})();
+</script>
+</body>
+</html>

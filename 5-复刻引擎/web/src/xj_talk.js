@@ -173,6 +173,9 @@
     if (!this.active) return false;
     if (this.branch) return false;               // 等选分支
     if (!this.waiting) return false;
+    // ★ 按键驱动：按键本身就是节奏，script.wait 只计时不拦路（原版 wait 挂起队列，
+    //   这里每段本来就要按键才继续；waitUntil 仅记录供回放）
+    this.waitUntil = 0;
     this.waiting = false;
     this.dialog = null;
     this.run(true);
@@ -188,7 +191,7 @@
     var o = this.branch.options[idx];
     this.branch = null;
     this.trace.push('choose' + idx);
-    // 分支目标是「文件:行」，这里只记录意图，跨文件跳转由 World 接管
+    // 分支目标是「文件:行」，记录后由 Scene.chooseBranch 执行跳转（World.runScriptEntry）
     this.w.push('branch', o);
     this.run(true);
     return true;
@@ -206,7 +209,7 @@
     switch (ns) {
       case 'script':
         if (cmd === 'openScriptList' || cmd === 'closeScriptList' || cmd === 'break') return null;
-        if (cmd === 'wait') { this.timer = E(0); return null; }
+        if (cmd === 'wait') { this.timer = E(0); this.waitUntil = Date.now() + (E(0) || 0); return null; }
         return null;
       case 'player':
         if (cmd === 'setState') { w.playerState = S(0); return null; }
@@ -248,7 +251,11 @@
         if (cmd === 'showDialog') { if (this.dialog) this.dialog.visible = true; return null; }
         if (cmd === 'hideDialog') { this.dialog = null; return null; }
         if (cmd === 'showPlayerPortrait') { if (this.dialog) this.dialog.portrait = 'player'; return null; }
-        if (cmd === 'showNpcPortrait') { if (this.dialog) this.dialog.portrait = 'npc'; return null; }
+        if (cmd === 'showNpcPortrait') {
+          // ★ showNpcPortrait(<npcId>)：立绘取该 NPC 的 portrait（npc.setPortrait 登记的）
+          if (this.dialog) { this.dialog.portrait = 'npc'; this.portraitNpc = a.length ? E(0) : this.npcId; }
+          return null;
+        }
         if (cmd === 'hidePortrait') { if (this.dialog) this.dialog.portrait = null; return null; }
         return null;
       case 'game':
