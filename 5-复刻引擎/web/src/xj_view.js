@@ -24,6 +24,7 @@
     this.t0 = performance.now();
     this.player = { x: 0, y: 0, dir: 'down', state: '站立', ant: null, t: 0 };
     this.world = new global.XJWorld();
+    this.world._party = global.XJParty || null;  // 战斗回写用
     this.battleView = null;  // XJBattleView —— 进入战斗时非空
     this.inBattle = false;
     this.dialog = null;     // 当前对话 {speaker,text,visible}
@@ -33,10 +34,25 @@
     this.npcs = [];        // {x,y,dir,state,ant}
     this.showGrid = false;
     this.showHitbox = false;
+    // ---- 过场/演出状态（game.black/flicker/vibrate/waitForKey…）----
+    this.cut = null;        // {text, mode} 字幕（black/verse），回车关闭
+    this.cutQueue = [];     // 待显示的字幕队列
+    this.waitKeys = null;   // {keys:[...], msg} 等待按键
+    this.flicker = null;    // {until, color}
+    this.shakeUntil = 0;    // 震屏截止时间
+    this.fade = null;       // {until} 黑场
+    this.gray = false;
+    this.margin = false;    // 黑边
+    this.guide = null;      // 引导文字
+    this.rocks = [];        // 落石演出 [{x,y,vy}]
+    this.moveQueue = [];    // 主角移动队列 [{x,y}]
+    this.followTrail = [];  // 主角轨迹（跟随者用）
+    this.menu = null;       // XJMenu
+    this.feeMenu = null;    // 简单 fee 说明
     this.stats = { tiles: 0, objs: 0, elements: 0, frames: 0, miss: 0, pending: 0 };
   }
 
-  Scene.prototype.load = function (mapName, px, py) {
+  Scene.prototype.load = function (mapName, px, py, runScript) {
     var m = XJ.map(mapName);
     if (!m) return false;
     this.mapName = mapName;
@@ -44,7 +60,8 @@
     this.px = px != null ? px : Math.floor(m.cols * m.tw / 2);
     this.py = py != null ? py : Math.floor(m.rows * m.th / 2);
     // ★ 装配世界：跑地图级脚本 + 逐个对象脚本，真正把 NPC/怪物/宝箱等建出来
-    this.world.build(mapName, this.px, this.py);
+    //   runScript=false（warp 进图）时跳过 change 行防连锁，其余照常
+    this.world.build(mapName, this.px, this.py, { skipChange: runScript === false });
     // 地图级脚本里的 world.change 是进图即切图（可能连锁），限制深度防死循环
     if (this.world.pendingChange && (this._warpDepth || 0) < 4) {
       var c = this.world.pendingChange;
@@ -53,14 +70,113 @@
       if (this._warpGuard !== this._lastWarp) {
         this._lastWarp = this._warpGuard;
         this.log('剧情切图 → ' + c.map + ' @' + c.x + ',' + c.y);
-        var okWarp = this.goto(c.map, c.x, c.y, c.dir);
+        var okWarp = this.goto(c.map, c.x, c.y, c.dir, false);
         this._warpDepth--;
         return okWarp;
       }
       this._warpDepth--;
     }
     this.checkZones();
+    // ★ 地图级脚本的副作用在这里落子（midi/剧情战斗/菜单/字幕/道具…）
+    this.drainWorldFx();
     return true;
+  };
+
+  /** 取出 World 解释器攒的效果 → 状态落子 + 意图执行 */
+  Scene.prototype.drainWorldFx = function () {
+    var fx = this.world.applyStateEffects(this.world.takeEffects());
+    var self = this;
+    (fx.messages || []).forEach(function (m) { self.log(m); });
+    this.runIntents(fx.intents || []);
+    return fx;
+  };
+
+  /**
+   * 执行意图（applyStateEffects 返回的 UI/音频/战斗类副作用）。
+   * 与 e.java 各指令的宿主行为对应。
+   */
+  Scene.prototype.runIntents = function (intents) {
+    var self = this;
+    (intents || []).forEach(function (it) {
+      switch (it.type) {
+        case 'bgm': self.audioPlay(it.file, it.loop); break;
+        case 'bgmStop': self.audioStop(); break;
+        case 'fight': self.startBattle(it.key, self.mainLevel()); break;
+        case 'menu': self.openMenu(); break;
+        case 'fee': self.openFee(); break;
+        case 'shop': self.openShop(it.items); break;
+        case 'subtitle':
+          self.cutQueue.push({ mode: it.mode, text: it.text });
+          self.nextCut();
+          break;
+        case 'dlgText': self._cutText = it.text; break;
+        case 'dlgType': self._cutType = it.t; break;
+        case 'dlgShow':
+          self.cutQueue.push({ mode: 'dlg', text: self._cutText || '', type: self._cutType });
+          self._cutText = null;
+          self.nextCut();
+          break;
+        case 'dlgHide': self.cut = null; self.dialogBox = null; break;
+        case 'dlgPortrait': break;  // 立绘资源缺，先忽略
+        case 'guide': self.guide = it.text; break;
+        case 'guideTarget': self.guide = '目标：' + it.t; break;
+        case 'flicker': self.flicker = { until: performance.now() + (it.ms || 300), color: it.color }; break;
+        case 'shake': self.shakeUntil = performance.now() + (it.ms || 400); break;
+        case 'clearFx': self.flicker = null; self.shakeUntil = 0; break;
+        case 'fade': self.fade = { until: performance.now() + (it.ms || 500) }; break;
+        case 'mask': self.mask = it.id; break;
+        case 'unmask': self.mask = null; break;
+        case 'gray': self.gray = !!it.on; break;
+        case 'margin': self.margin = !!it.on; break;
+        case 'wait': self.waitKeys = { keys: ['ok'], msg: '', until: performance.now() + (it.ms || 0) }; break;
+        case 'waitKey': self.waitKeys = { keys: String(it.keys || '').split('|'), msg: it.msg }; break;
+        case 'dropRock': self.spawnRocks(it.a); break;
+        case 'dropRockClear': self.rocks.length = 0; break;
+        case 'branch': self.branch = self.parseBranch(it.a); break;
+        case 'playerPos': self.px = it.x; self.py = it.y; self.moveQueue.length = 0; break;
+        case 'playerMove': self.moveQueue.push({ x: it.x, y: it.y }); break;
+        case 'playerStep': for (var i = 0; i < (it.n || 1); i++) self.stepOnce(it.dir); break;
+        case 'playerDir': self.player.dir = it.dir; break;
+        case 'playerState':
+          self.player.state = (it.st === 'fly') ? '飞行' : (it.st === 'walk' || it.st === 'move' ? '走路' : '站立');
+          break;
+        case 'playerVel': self.playerVel = it.v; break;
+        case 'camPlayer': self.camFocus = null; break;
+        case 'camNpc': {
+          var el = self.world.findElement(it.id);
+          if (el) self.camFocus = { x: el.x, y: el.y };
+          break;
+        }
+        case 'camPos': self.camFocus = { x: it.x, y: it.y }; break;
+        case 'mainMenu': self.boot(true); break;
+      }
+    });
+    return true;
+  };
+
+  /** 过场字幕推进 */
+  Scene.prototype.nextCut = function () {
+    if (this.cut || !this.cutQueue.length) return false;
+    this.cut = this.cutQueue.shift();
+    return true;
+  };
+
+  Scene.prototype.parseBranch = function (a) {
+    a = a || [];
+    return { options: [
+      { label: a[0], file: a[1], line: a[2] },
+      { label: a[3], file: a[4], line: a[5] }
+    ], sel: 0 };
+  };
+
+  /** 主角等级（遇敌缩放用，f.java:443 取主角等级） */
+  Scene.prototype.mainLevel = function () {
+    var P = global.XJParty;
+    if (P) {
+      var h = P.heroes(this.world).chonglou;
+      if (h) return h.level;
+    }
+    return 1;
   };
 
   /**
@@ -68,14 +184,14 @@
    * @param mapName 目标地图
    * @param x,y 落点（像素）；缺省用出口数据里的落点
    */
-  Scene.prototype.goto = function (mapName, x, y, dir) {
+  Scene.prototype.goto = function (mapName, x, y, dir, runScript) {
     var prev = this.mapName;
     var px = x, py = y;
     if (px == null || py == null) {
       var ex = this.world.nearestExit(px || this.px, py || this.py, dir || this.player.dir);
       if (ex) { px = ex.x; py = ex.y; }
     }
-    if (!this.load(mapName, px, py)) return false;
+    if (!this.load(mapName, px, py, runScript === false ? false : true)) return false;
     if (dir) this.player.dir = dir;
     this.log('切图 ' + prev + ' → ' + mapName + ' @' + this.px + ',' + this.py);
     return true;
@@ -84,28 +200,34 @@
   /**
    * 进入战斗：game.fight(key, 脚本行, 回合A, 回合B)
    * H2.str 是空的（脚本行与回合数全部无效），只用 key 组建遇敌。
+   * 我方用队伍真实属性（bd 构造器语义：公式+装备）。
    */
   Scene.prototype.startBattle = function (key, playerLevel) {
-    var XB = global.XJBattle;
-    var enc = XB.encounter(key, playerLevel != null ? playerLevel : 5,
-                           null, this.world);
+    var XB = global.XJBattle, P = global.XJParty;
+    var lv = playerLevel != null ? playerLevel : this.mainLevel();
+    var enc = XB.encounter(key, lv, null, this.world);
     if (!enc || !enc.monsters.length) {
       this.log('战斗组建失败 key=' + key);
       return false;
     }
     var b = new XB.Battle({});
-    // 主角团：暂用三英雄默认属性（后续接存档）
-    var HERO = [
-      { name: '李逍遥', hp: 300, maxHp: 300, atk: 60, def: 25, spd: 35, luk: 40, level: 5 },
-      { name: '林月如', hp: 260, maxHp: 260, atk: 55, def: 22, spd: 30, luk: 35, level: 5 },
-      { name: '赵灵儿', hp: 240, maxHp: 240, atk: 50, def: 20, spd: 28, luk: 45, level: 5 }
-    ];
     var self = this;
-    HERO.forEach(function (h, i) {
-      var u = new XB.Unit(Object.assign({ side: 'hero', slot: i }, h));
-      u.skills = self.heroSkills(u, i);
+    var members = P ? P.activeHeroes(this.world) : [];
+    members.slice(0, 3).forEach(function (h, i) {
+      var st = P.statsOf(h);
+      var u = new XB.Unit({
+        side: 'hero', slot: i, name: h.name,
+        hp: h.hp, maxHp: st.maxHp, mp: h.mp, maxMp: st.maxMp,
+        gas: h.gas, maxGas: st.maxGas,
+        atk: st.atk, def: st.def, spd: st.spd, luk: st.luk,
+        level: h.level, gainGas: 0
+      });
+      u.heroName = h.name;
+      u.T = h.feeling;
+      u.skills = self.heroBattleSkills(h);
       b.add(u);
     });
+    if (!b.heroes.length) { this.log('无出战队员'); return false; }
     enc.monsters.forEach(function (m, i) {
       m.side = 'foe'; m.slot = i;
       if (!m.skills || !m.skills.normal.length)
@@ -119,36 +241,93 @@
     this.battleView.setBattle(b, enc.bgAnt);
     this.battleView.onEnd = function (result) { self.endBattle(result); };
     this.inBattle = true;
+    this.audioPlay(enc.bgm, -1);
     this.log('进入战斗 ' + key + ' ' + b.foes.length + ' 只怪（' +
       b.foes.map(function (u) { return u.name + ' Lv' + u.H; }).join(',') + '）');
     return true;
   };
 
-  /** 英雄技能：从 config_skill 拿普通攻击 + 对应仙术 */
-  Scene.prototype.heroSkills = function (u, slot) {
-    var L = (XJ.data.logic && XJ.data.logic.skillFormulas) || {};
-    var all = L.player || [];
-    var normal = all.filter(function (s) { return s.kindCode === 0; });
-    var spells = all.filter(function (s) { return s.kindCode !== 0 && s.kindCode !== 7 && s.formula !== '0'; });
-    var pick = spells.slice(slot * 2, slot * 2 + 2);
-    if (!pick.length && spells.length) pick = [spells[slot % spells.length]];
-    return { normal: normal.slice(0, 1).concat([]), spell: pick };
+  /**
+   * 出战技能：普通技能（首个）+ 已学仙术（slv 折算 Bj.b）。
+   * 普通攻击 slv 强制 4，走 execSkill 的 skillLevel。
+   */
+  Scene.prototype.heroBattleSkills = function (h) {
+    var P = global.XJParty;
+    var normal = [];
+    (h.normalSkills || []).forEach(function (n) {
+      var sk = P.skillByName(n);
+      if (sk) normal.push(Object.assign({}, sk, { level: 4 }));
+    });
+    if (!normal.length) normal.push({ name: '攻击', formula: 'atk', kindCode: 0, all: false, level: 4 });
+    var spell = [];
+    Object.keys(h.arts || {}).forEach(function (n) {
+      if (!h.arts[n].learned) return;
+      var sk = P.skillByName(n);
+      if (sk) spell.push(Object.assign({}, sk, { level: P.artSlv(this.world, h.name, n) }));
+    }, this);
+    return { normal: normal.slice(0, 1).concat([]), spell: spell };
   };
 
-  /** 战斗结束回地图 */
+  /** 战斗结束回地图：f.java:1020 胜利结算（掉落/经验/金钱/升级/阵亡扣好感） */
   Scene.prototype.endBattle = function (result, settle) {
-    var bv = this.battleView;
+    var P = global.XJParty, XB = global.XJBattle;
+    var b = this.battleView && this.battleView.battle;
     this.inBattle = false;
     this.battleView = null;
-    if (result === 'win') {
-      this.log('战斗胜利' + (settle ? ' 经验 ' + settle.exp + ' 金钱 ' + settle.gold : ''));
-      // 阵亡扣好感在 settleWin 里已经处理，这里只落事件
+    if (result === 'win' && b) {
+      var exp = b.expTotal || 0, gold = b.goldTotal || 0;
+      // ★ 四倍修行（fee 7）：exp/gold <<= 2（f.java:1052-1055）
+      if (this.world.fees && this.world.fees[7]) { exp <<= 2; gold <<= 2; }
+      // ★ 掉落（逐条命中，最多 3 件）
+      var drops = XB.rollDrops(b.foes, null);
+      drops.forEach(function (n) { this.world.addItem(n, 1); }, this);
+      if (gold > 0) this.world.addGold(gold);
+      var r = b.settleWin(exp, gold);
+      // ★ 结算写回持久角色：存活恢复快照、阵亡扣好感精置1、经验升级
+      var notes = [];
+      if (P) {
+        b.heroes.forEach(function (u) {
+          var h = P.heroByName(this.world, u.heroName || u.name);
+          if (!h) return;
+          if (!u.isDead()) {
+            h.hp = u.I; h.mp = u.M; h.gas = u.O;
+            h.feeling = u.T;
+            this.world.party[h.name] = h.feeling;
+            var lr = P.addExp(this.world, h, exp);
+            if (lr.leveled) notes.push(h.name + '升级到' + h.level + '级！');
+            else if (lr.capped) notes.push(h.name + '已到等级上限');
+          } else {
+            h.feeling = Math.max(0, (h.feeling || 0) - 5);
+            this.world.party[h.name] = h.feeling;
+            h.hp = 1;   // 精强制置 1（f.java:1070）
+            P.clampHero(h);
+            notes.push(h.name + '阵亡，好感-5');
+          }
+        }, this);
+      }
+      this.log('战斗胜利 经验 ' + exp + ' 金钱 ' + gold +
+        (drops.length ? ' 掉落 ' + drops.join('、') : '') +
+        (notes.length ? '（' + notes.join('；') + '）' : ''));
+      this.drainWorldFx();
     } else if (result === 'lose') {
+      // ★ 失败：伤害写回（f 把战斗快照写回持久记录），回地图
+      if (b && P) {
+        b.heroes.forEach(function (u) {
+          var h = P.heroByName(this.world, u.heroName || u.name);
+          if (!h) return;
+          h.hp = Math.max(0, u.I); h.mp = u.M; h.gas = u.O;
+          P.clampHero(h);
+        }, this);
+      }
       this.log('战斗失败，回到进入点');
+    } else if (result === 'escape' || (b && b.phase === 3)) {
+      this.log('逃跑成功');
     }
+    // 切回地图 BGM
+    this.audioMapBgm();
   };
 
-  Scene.prototype.fireZoneOld = function (z) {
+  Scene.prototype.fireZone = function (z) {
     var r = this.world.fireZone(z);
     // player.moveTo(-1, y) —— -1 保持不变
     if (r.moveTo) {
@@ -159,9 +338,11 @@
       this.dialogBox = { text: r.dialog.text, speaker: r.dialog.speaker, type: null, visible: true };
     }
     if (this.world.playerDir) { this.player.dir = this.world.playerDir; }
+    // ★ 触发区里其余指令（game.fight/midi/道具/字幕…）在这里落子
+    this.drainWorldFx();
     if (r.change) {
       var c = r.change;
-      if (this.goto(c.map, c.x, c.y, c.dir)) return true;
+      if (this.goto(c.map, c.x, c.y, c.dir, false)) return true;
     }
     return false;
   };
@@ -216,20 +397,115 @@
     up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0]
   };
 
-  /** 尝试移动；返回是否真的移动了（撞边界则 false） */
+  /** 尝试移动；返回是否真的移动了（撞边界/撞元素则 false） */
   Scene.prototype.tryMove = function (dir) {
     if (!this.m) return false;
+    if (this.cut || this.cutQueue.length || this.waitKeys || this.menu || this.branch) return false;
     var d = DIRS[dir];
     if (!d) return false;
     this.player.dir = dir;
-    var nx = this.px + d[0] * this.m.tw;
-    var ny = this.py + d[1] * this.m.th;
-    if (nx < 0 || ny < 0 ||
-        nx >= this.mapPxW() || ny >= this.mapPxH()) return false;
+    var step = this.world.fly ? 32 : this.m.tw;
+    var nx = this.px + d[0] * step;
+    var ny = this.py + d[1] * step;
+    if (nx < 0 || ny < 0 || nx >= this.mapPxW() || ny >= this.mapPxH()) return false;
+    if (this.hitElement(nx, ny)) return false;
     this.px = nx; this.py = ny;
-    this.player.state = '走路';
+    this.player.state = this.world.fly ? '飞行' : '走路';
+    this.pushTrail(nx, ny);
+    this.checkZones();
+    this.touchMonsters();
+    return true;
+  };
+
+  /** 剧情移动一格（player.move，无视演出锁） */
+  Scene.prototype.stepOnce = function (dir) {
+    var d = DIRS[dir] || DIRS[this.player.dir] || [0, 1];
+    var nx = this.px + d[0] * this.m.tw, ny = this.py + d[1] * this.m.th;
+    if (nx < 0 || ny < 0 || nx >= this.mapPxW() || ny >= this.mapPxH()) return false;
+    this.px = nx; this.py = ny;
+    this.pushTrail(nx, ny);
     this.checkZones();
     return true;
+  };
+
+  /** 是否撞上可碰撞元素（NPC/怪/箱/石；鸟鱼云等氛围物不挡路） */
+  Scene.prototype.hitElement = function (x, y) {
+    var els = this.world.elements || [];
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i];
+      if (e.kind !== 'npc' && e.kind !== 'monster' && e.kind !== 'box' && e.kind !== 'rock') continue;
+      if (Math.abs(e.x - x) < 14 && Math.abs(e.y - y) < 14) return true;
+    }
+    return false;
+  };
+
+  /** 主角轨迹（跟随者沿轨迹走） */
+  Scene.prototype.pushTrail = function (x, y) {
+    this.followTrail.push({ x: x, y: y });
+    if (this.followTrail.length > 40) this.followTrail.shift();
+  };
+
+  /**
+   * 明怪 AI（ar.java 简化：视线 50 追击、接触 10 开战、否则在家 30 范围内随机走）。
+   * 半径全部读 config_game（明怪视线半径/追击半径/移动半径/移动速度……）。
+   */
+  Scene.prototype.updateMonsters = function () {
+    if (this.world.showMonster === false) return;
+    var cfg = (XJ.data.config.gameCfg && XJ.data.config.gameCfg.scalars) || {};
+    function N(k, d) { var v = parseInt(cfg[k], 10); return isNaN(v) ? d : v; }
+    var sight = N('明怪视线半径', 50), chase = N('明怪追击半径', 100),
+        home = N('明怪移动半径', 30), spd = N('明怪移动速度', 10);
+    var els = this.world.elements || [];
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i];
+      if (e.kind !== 'monster') continue;
+      e.t = (e.t || 0) + 1;
+      var dx = this.px - e.x, dy = this.py - e.y;
+      var dist2 = dx * dx + dy * dy;
+      if (dist2 <= 10 * 10) { this.touchMonster(e); return; }
+      var mv = null;
+      if (dist2 <= sight * sight && dist2 <= chase * chase) {
+        mv = { x: dx, y: dy };   // 追击
+      } else if (e.t % 30 === 0) {
+        // 在家附近随机走 1~3 步
+        var a = Math.random() * Math.PI * 2, st = 1 + ((Math.random() * 3) | 0);
+        var tx = e.homeX + Math.cos(a) * st * 16, ty = e.homeY + Math.sin(a) * st * 16;
+        if ((tx - e.homeX) * (tx - e.homeX) + (ty - e.homeY) * (ty - e.homeY) <= home * home) mv = { x: tx - e.x, y: ty - e.y };
+      }
+      if (mv) {
+        var len = Math.sqrt(mv.x * mv.x + mv.y * mv.y) || 1;
+        var step = Math.min(spd, len);
+        e.x += Math.round(mv.x / len * step);
+        e.y += Math.round(mv.y / len * step);
+        e.monState = '1';
+      } else {
+        e.monState = '0';
+      }
+    }
+  };
+
+  /** 接触明怪 → 按地图中文名组建遭遇（e.s() 取地图名 B） */
+  Scene.prototype.touchMonsters = function () {
+    var els = this.world.elements || [];
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i];
+      if (e.kind !== 'monster') continue;
+      var dx = this.px - e.x, dy = this.py - e.y;
+      if (dx * dx + dy * dy <= 10 * 10) { this.touchMonster(e); return; }
+    }
+  };
+
+  Scene.prototype.touchMonster = function (e) {
+    if (this.inBattle) return;
+    var key = this.world.mapTitle;
+    if (!key || !global.XJBattle.enemySpec(key)) {
+      this.log('此地无遭遇配置（' + (key || '无地图名') + '）');
+      return;
+    }
+    // 打完这只怪就消失（避免原地连续开战）
+    e.gone = true;
+    this.world.elements = (this.world.elements || []).filter(function (x) { return x !== e; });
+    this.startBattle(key, this.mainLevel());
   };
 
   // ---------------------------------------------------------- 地砖
@@ -297,20 +573,33 @@
   Scene.prototype.drawElements = function () {
     var els = this.world.elements, ctx = this.ctx, vp = this.vp;
     if (!els) return;
+    if (this.world.showMonster === false) {
+      els = els.filter(function (e) { return e.kind !== 'monster'; });
+    }
     var t = performance.now() - this.t0;
     var n = 0;
     for (var i = 0; i < els.length; i++) {
       var e = els[i];
+      if (e.gone) continue;
       var x = e.x - vp.x, y = e.y - vp.y;
       if (x < -80 || x > vp.w + 80 || y < -120 || y > vp.h + 80) continue;
       var antName = e.ant || this.m.elementAnt;
       var a = antName ? XJ.data.ant.ants[antName] : null;
       if (!a) { this.stats.miss++; continue; }
-      // 有自己 ANT 的用状态名解析；没有的退回 anim 索引
-      var st = e.ant ? XJ.resolveState(antName, e.state, e.dir)
-                     : (e.anim >= 0 && e.anim < a.states.length ? a.states[e.anim] : null);
+      var st = null;
+      if (e.kind === 'box') {
+        // ★ 宝箱开合是命名状态（ad 构造器取 宝箱（开/关））
+        st = XJ.state(antName, e.opened ? '宝箱（开）' : '宝箱（关）');
+      } else if (e.kind === 'monster') {
+        // ★ 明怪用 guaiwu 的 "0"/"1" 两帧
+        st = XJ.state(antName, e.monState || '0') || a.states[0];
+      } else {
+        // 有自己 ANT 的用状态名解析；没有的退回 anim 索引
+        st = e.ant ? XJ.resolveState(antName, e.state, e.dir)
+                   : (e.anim >= 0 && e.anim < a.states.length ? a.states[e.anim] : null);
+      }
       if (!st) { this.stats.miss++; continue; }
-      // 每个元素用位置哈希做相位偏移，避免整齐同步
+      // 跟随者画个小标记
       XJ.drawState(ctx, antName, st, x, y, t + ((e.x * 31 + e.y * 17) % 1000), true);
       n++;
     }
@@ -400,7 +689,18 @@
     this.stats.frames = 0; this.stats.miss = 0; this.stats.pending = 0;
     this.stats.elements = 0;
 
+    this.update(dt || 16);
+
     this.vp.centerOn(this.px, this.py, this.mapPxW(), this.mapPxH());
+    if (this.camFocus) {
+      this.vp.centerOn(this.camFocus.x, this.camFocus.y, this.mapPxW(), this.mapPxH());
+    }
+    // 震屏
+    if (this.shakeUntil && performance.now() < this.shakeUntil) {
+      ctx.translate(((Math.random() * 6) | 0) - 3, ((Math.random() * 6) | 0) - 3);
+    } else {
+      this.shakeUntil = 0;
+    }
 
     this.drawTiles();
     this.drawObjects(1);                       // 元素层（无脚本对象，用地图 elementAnt）
@@ -414,11 +714,159 @@
     this._blink = ((performance.now() / 500) | 0) % 2 === 0;
 
     this.drawDialog();
+    this.drawCut();
     if (this.shop && this.shop.active) {
       this.shop.render(ctx, this.cv.width, this.cv.height);
     }
+    if (this.menu && this.menu.active) {
+      this.menu.render(ctx, this.cv.width, this.cv.height);
+    }
+    if (this.feeMenu) this.drawFeeMenu();
+    if (this.flicker && performance.now() < this.flicker.until) {
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.globalAlpha = 0.7;
+      ctx.fillRect(0, 0, this.cv.width, this.cv.height);
+      ctx.restore();
+    } else {
+      this.flicker = null;
+    }
+    if (this.fade && performance.now() < this.fade.until) {
+      ctx.save();
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, this.cv.width, this.cv.height);
+      ctx.restore();
+    } else {
+      this.fade = null;
+    }
+    if (this.gray) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(128,128,128,.45)';
+      ctx.fillRect(0, 0, this.cv.width, this.cv.height);
+      ctx.restore();
+    }
+    if (this.margin) {
+      ctx.save();
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, this.cv.width, 24);
+      ctx.fillRect(0, this.cv.height - 24, this.cv.width, 24);
+      ctx.restore();
+    }
+    if (this.guide) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,.6)';
+      ctx.fillRect(6, 44, this.cv.width - 12, 20);
+      ctx.fillStyle = '#ffd76a';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(String(this.guide).slice(0, 40), 12, 58);
+      ctx.restore();
+    }
+    this.drawRocks();
     if (this.showGrid) this.drawGrid();
     this.hud();
+  };
+
+  /** 过场字幕绘制（black 全黑 / verse 竖排简化为居中多行） */
+  Scene.prototype.drawCut = function () {
+    if (!this.cut) return false;
+    var ctx = this.ctx, W = this.cv.width, H = this.cv.height;
+    ctx.save();
+    if (this.cut.mode === 'black') {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#eee';
+      ctx.font = '14px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.textBaseline = 'top';
+      wrapText(ctx, String(this.cut.text || ''), 30, 60, W - 60, 22);
+    } else {
+      var pad = 4, boxH = 76, boxY = H - boxH - pad;
+      ctx.fillStyle = 'rgba(0,0,0,.85)';
+      ctx.fillRect(pad, boxY, W - pad * 2, boxH);
+      ctx.strokeStyle = '#6a6a8a';
+      ctx.strokeRect(pad + .5, boxY + .5, W - pad * 2 - 1, boxH - 1);
+      ctx.fillStyle = '#eee';
+      ctx.font = '13px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.textBaseline = 'top';
+      wrapText(ctx, String(this.cut.text || ''), pad + 8, boxY + 8, W - pad * 2 - 16, 17);
+    }
+    ctx.fillStyle = '#8a8aa0';
+    ctx.font = '11px monospace';
+    ctx.fillText('▼', W - 18, H - 22);
+    ctx.restore();
+    return true;
+  };
+
+  /** 每帧逻辑：剧情移动队列 / 跟随者 / 明怪 / 落石 */
+  Scene.prototype.update = function (dt) {
+    // 剧情移动队列
+    if (this.moveQueue.length && !this.inBattle) {
+      var wp = this.moveQueue[0];
+      var dx = wp.x - this.px, dy = wp.y - this.py;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 4) {
+        this.px = wp.x; this.py = wp.y;
+        this.moveQueue.shift();
+        this.player.state = '站立';
+      } else {
+        var sp = Math.max(2, this.playerVel || 6);
+        this.px += Math.round(dx / dist * Math.min(sp, dist));
+        this.py += Math.round(dy / dist * Math.min(sp, dist));
+        this.player.state = '走路';
+        this.pushTrail(this.px, this.py);
+      }
+    }
+    // 跟随者沿轨迹走（partner.in 绑定的 NPC）
+    var fl = this.world.followers || {};
+    var self = this;
+    Object.keys(fl).forEach(function (pid) {
+      var el = self.world.findElement(fl[pid]);
+      if (!el || !self.followTrail.length) return;
+      var tp = self.followTrail[Math.max(0, self.followTrail.length - 6)];
+      el.x = tp.x; el.y = tp.y;
+    });
+    // NPC 自带 moveTo 队列
+    (this.world.elements || []).forEach(function (e) {
+      if (!e.moveTo) return;
+      var mx = e.moveTo[0] - e.x, my = e.moveTo[1] - e.y;
+      var md = Math.sqrt(mx * mx + my * my);
+      if (md < 4) { e.x = e.moveTo[0]; e.y = e.moveTo[1]; e.moveTo = null; e.state = '站立'; }
+      else {
+        var s2 = Math.max(2, e.velocity || 4);
+        e.x += Math.round(mx / md * Math.min(s2, md));
+        e.y += Math.round(my / md * Math.min(s2, md));
+        e.state = '走路';
+      }
+    });
+    if (!this.inBattle) this.updateMonsters();
+    // 落石演出
+    if (this.rocks.length) {
+      for (var i = this.rocks.length - 1; i >= 0; i--) {
+        var r = this.rocks[i];
+        r.vy += dt * 0.02; r.y += r.vy;
+        if (r.y > this.mapPxH() + 40) this.rocks.splice(i, 1);
+      }
+    }
+    void dt;
+  };
+
+  /** 落石演出：从屏幕上方掉落一批石头 */
+  Scene.prototype.spawnRocks = function () {
+    for (var i = 0; i < 8; i++) {
+      this.rocks.push({ x: Math.random() * this.mapPxW(), y: -20 - i * 30, vy: 1 + i * 0.3 });
+    }
+  };
+
+  /** 落石演出绘制（game.dropRock 的视觉部分） */
+  Scene.prototype.drawRocks = function () {
+    if (!this.rocks.length) return;
+    var ctx = this.ctx, vp = this.vp;
+    ctx.save();
+    ctx.fillStyle = '#999';
+    for (var i = 0; i < this.rocks.length; i++) {
+      var r = this.rocks[i];
+      ctx.fillRect(r.x - vp.x - 4, r.y - vp.y - 4, 8, 8);
+    }
+    ctx.restore();
   };
 
   Scene.prototype.drawGrid = function () {
@@ -478,9 +926,40 @@
         if (K2E[e.key]) self.battleView.key(K2E[e.key]);
         return;
       }
+      // 菜单开着时走菜单输入
+      if (self.menu && self.menu.active) {
+        e.preventDefault();
+        var MKEY = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+                     w: 'up', s: 'down', a: 'left', d: 'right', Enter: 'ok', ' ': 'ok', Escape: 'cancel' };
+        if (MKEY[e.key]) self.menuKey(MKEY[e.key]);
+        return;
+      }
       if (e.key === 'Escape') {
         e.preventDefault();
         if (self.shop && self.shop.active) { self.shop.close(); self.shop = null; }
+        if (self.feeMenu) self.feeMenu = null;
+        return;
+      }
+      // 分支选择：1/2 或上下+回车
+      if (self.branch) {
+        e.preventDefault();
+        if (e.key === '1') { self.chooseBranch(0); return; }
+        if (e.key === '2') { self.chooseBranch(1); return; }
+        if (e.key === 'ArrowUp' || e.key === 'w') { self.branch.sel = 0; return; }
+        if (e.key === 'ArrowDown' || e.key === 's') { self.branch.sel = 1; return; }
+        if (e.key === 'Enter' || e.key === ' ') { self.chooseBranch(self.branch.sel); return; }
+        return;
+      }
+      // 等待按键（game.waitForKey）：任意列出的键都可通过
+      if (self.waitKeys) {
+        var keys = self.waitKeys.keys || [];
+        var KN = { fire: ['Enter', ' '], up: ['ArrowUp', 'w'], down: ['ArrowDown', 's'],
+                   left: ['ArrowLeft', 'a'], right: ['ArrowRight', 'd'] };
+        for (var i = 0; i < keys.length; i++) {
+          if ((KN[keys[i]] || []).indexOf(e.key) >= 0) { self.waitKeys = null; e.preventDefault(); return; }
+        }
+        // 没列出的键也允许用回车通过（避免卡死）
+        if (e.key === 'Enter' || e.key === ' ') { self.waitKeys = null; e.preventDefault(); return; }
         return;
       }
       if (e.key === 'Enter' || e.key === ' ') {
@@ -494,6 +973,8 @@
         self.interact();
         return;
       }
+      // M 开菜单（game.showMenu 对应）
+      if (e.key === 'm' || e.key === 'M') { e.preventDefault(); self.openMenu(); return; }
       // 商店里的方向键
       if (self.shop && self.shop.active) {
         var SM = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
@@ -511,13 +992,21 @@
 
   /**
    * 交互（回车/空格）：
-   *   ① 对话进行中 → 推进一步
-   *   ② 否则 → 查找面前 NPC 并启动对话
+   *   ① 过场字幕/等待按键/分支 → 推进过场
+   *   ② 对话进行中 → 推进一步
+   *   ③ 宝箱/落石 → 开箱
+   *   ④ 否则 → 查找面前 NPC 并启动对话
    */
   Scene.prototype.interact = function () {
     var T = global.XJTalk;
     // 商店开着时交给商店
     if (this.shop && this.shop.active) return false;
+    // 过场优先
+    if (this.cut) { this.cut = null; this.nextCut(); return true; }
+    if (this.waitKeys) {
+      if (!this.waitKeys.until || performance.now() >= this.waitKeys.until) this.waitKeys = null;
+      return true;
+    }
     if (this.talk && this.talk.active) {
       var st = this.talk.state();
       // 商店 / 分支 优先
@@ -555,6 +1044,9 @@
         return false;
       }
     }
+    // 宝箱 / 落石：30px 内互动（ad.java:23 j.a(...,30)）
+    var box = this.nearBox();
+    if (box) { this.openBox(box); return true; }
     // 没 facingNpc 时退化：找最近的有对话 NPC
     var els = this.world.elements || [];
     var best = null, bd = 1e9;
@@ -576,6 +1068,134 @@
       }
     }
     return false;
+  };
+
+  /** 30px 内的宝箱（ad.java:23） */
+  Scene.prototype.nearBox = function () {
+    var els = this.world.elements || [];
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i];
+      if (e.kind !== 'box' || e.opened) continue;
+      var dx = this.px - e.x, dy = this.py - e.y;
+      if (dx * dx + dy * dy <= 30 * 30) return e;
+    }
+    return null;
+  };
+
+  /**
+   * 开箱（ad.java:20-41）：
+   * 未激活「神秘宝藏」→ 请到商城激活；否则按累积权重拿一件（可能空箱），
+   * 标记事件 id（下次进图显示开箱状态）。
+   */
+  Scene.prototype.openBox = function (e) {
+    var P = global.XJParty;
+    if (!this.world.fees[2]) {
+      this.log('请到商城激活');
+      this.dialogBox = { text: '请到商城激活', speaker: null, type: null, visible: true };
+      return false;
+    }
+    e.opened = true;
+    this.world.events[e.id] = 1;
+    var got = P ? P.rollTreasure(null) : null;
+    if (!got) {
+      this.log('这是空箱子');
+      this.dialogBox = { text: '这是空箱子', speaker: null, type: null, visible: true };
+    } else {
+      this.world.addItem(got, 1);
+      this.log('获得' + got);
+      this.dialogBox = { text: '获得' + got, speaker: null, type: null, visible: true };
+    }
+    return true;
+  };
+
+  /** 分支选择（game.branch 的选项；跨文件跳转只记录意图） */
+  Scene.prototype.chooseBranch = function (idx) {
+    if (!this.branch) return false;
+    var op = this.branch.options[idx] || this.branch.options[0];
+    this.log('选择：' + op.label);
+    this.world.push('branch', op);
+    this.branch = null;
+    return true;
+  };
+
+  /** 开菜单（game.showMenu / M 键） */
+  Scene.prototype.openMenu = function () {
+    if (!global.XJMenu) { this.log('菜单模块未加载'); return null; }
+    this.menu = new global.XJMenu.Menu(this.world, this);
+    return this.menu;
+  };
+
+  Scene.prototype.menuKey = function (k) {
+    if (!this.menu) return false;
+    this.menu.key(k);
+    if (!this.menu.active) this.menu = null;
+    return true;
+  };
+
+  /** fee 说明（原付费激活项；复刻版只做展示） */
+  Scene.prototype.openFee = function () {
+    this.feeMenu = true;
+    return true;
+  };
+
+  Scene.prototype.drawFeeMenu = function () {
+    var ctx = this.ctx, W = this.cv.width, H = this.cv.height;
+    var rows = ((XJ.data.config.fee || {}).GotoFee) || [];
+    ctx.save();
+    var bw = W - 60, bh = Math.min(H - 60, 30 + rows.length * 17);
+    ctx.fillStyle = 'rgba(0,0,12,.92)';
+    ctx.fillRect(30, 30, bw, bh);
+    ctx.strokeStyle = '#6a6a8a';
+    ctx.strokeRect(30.5, 30.5, bw - 1, bh - 1);
+    ctx.font = '13px sans-serif';
+    ctx.fillStyle = '#ffd76a';
+    ctx.fillText('商城（Esc 关闭）', 40, 44);
+    ctx.fillStyle = '#c8c8d0';
+    for (var i = 0; i < rows.length; i++) {
+      var c = rows[i].cols || [];
+      var mark = this.world.fees[c[0]] ? '[已激活]' : '[未激活]';
+      ctx.fillText(mark + ' ' + rows[i].key, 40, 64 + i * 17);
+    }
+    ctx.restore();
+  };
+
+  // ---------------------------------------------------------- 音频
+  Scene.prototype.audioPlay = function (file, loop) {
+    if (global.XJAudio) global.XJAudio.play(file, loop);
+  };
+  Scene.prototype.audioStop = function () {
+    if (global.XJAudio) global.XJAudio.stop();
+  };
+  /** 按地图脚本的 midi.play 切 BGM（进图/战斗结束时调用） */
+  Scene.prototype.audioMapBgm = function () {
+    if (this.inBattle) return;
+    var m = this.m;
+    if (!m) return;
+    for (var i = 0; i < (m.script || []).length; i++) {
+      var c = m.script[i];
+      if (c.obj === 'midi' && c.cmd === 'play' && c.raw_args && c.raw_args[0]) {
+        this.audioPlay(c.raw_args[0], c.raw_args[1]);
+        return;
+      }
+    }
+  };
+
+  /**
+   * 开机：读 config_game 初始地图/主角动画，进第一张图。
+   * reboot=true 时保留全局状态只重进初始图（system.returnToMainMenu）。
+   */
+  Scene.prototype.boot = function (reboot) {
+    var cfg = (XJ.data.config.gameCfg && XJ.data.config.gameCfg.scalars) || {};
+    var map0 = String(cfg['初始场景地图文件'] || 'ms_syt_1.map').replace(/\.map$/i, '');
+    var ant0 = String(cfg['主角动画文件'] || 'chonglou.ant').replace(/\.ant$/i, '');
+    this.player.ant = ant0;
+    this.player.state = '站立';
+    this.cutQueue.length = 0; this.cut = null;
+    this.waitKeys = null; this.branch = null;
+    this.load(map0);
+    this.audioMapBgm();
+    this.log('开机：' + map0 + '（' + (this.world.mapTitle || '') + '）');
+    return true;
   };
 
   Scene.prototype.start = function () {

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
 <title>仙剑奇侠传-忘情篇</title>
 <style>
   html,body{margin:0;padding:0;background:#0b0b12;color:#c8c8d0;
@@ -44,7 +45,9 @@
     <h2>操作</h2>
     <table>
       <tr><th>方向键 / WASD</th><td>移动</td></tr>
-      <tr><th>回车 / 空格</th><td>对话 / 推进</td></tr>
+      <tr><th>回车 / 空格</th><td>对话 / 推进 / 开箱</td></tr>
+      <tr><th>M</th><td>菜单（道具/装备/技能/状态/任务/合成/系统）</td></tr>
+      <tr><th>1 / 2</th><td>分支选择</td></tr>
       <tr><th>T</th><td>传送到本图出口</td></tr>
       <tr><th>B</th><td>测试战斗（boss1）</td></tr>
       <tr><th>G</th><td>显示网格</td></tr>
@@ -81,11 +84,14 @@
 <!-- 引擎 -->
 <script src="src/xj.js"></script>
 <script src="src/xj_script.js"></script>
+<script src="src/xj_party.js"></script>
 <script src="src/xj_world.js"></script>
 <script src="src/xj_talk.js"></script>
 <script src="src/xj_battle.js"></script>
 <script src="src/xj_view.js"></script>
 <script src="src/xj_shop.js"></script>
+<script src="src/xj_menu.js"></script>
+<script src="src/xj_audio.js"></script>
 <script src="src/xj_save.js"></script>
 <script src="src/xj_battleview.js"></script>
 
@@ -115,9 +121,9 @@
   ants.forEach(function(n){
     var o = document.createElement('option'); o.value = o.textContent = n; asel.appendChild(o);
   });
-  // 注意：不存在 renwu.ant，角色地图精灵由游戏内逻辑决定；
-  // 这里先用 npc_1 做渲染验证
-  asel.value = 'npc_1';
+  // 注意：主角 ANT/动画由游戏内逻辑决定（config_game 主角动画文件 = chonglou）；
+  // 这里只做渲染验证
+  asel.value = 'chonglou';
 
   var STATES = ['站立','走路','攻击','闪避','死亡'];
   var si = 0;
@@ -200,7 +206,7 @@
   window.addEventListener('keydown', function(e){
     if (e.key==='b'||e.key==='B'){
       log('手动触发测试战斗 boss1');
-      scene.startBattle('boss1', 60);
+      scene.startBattle('boss1', scene.mainLevel());
     }
   });
   window.addEventListener('keydown', function(e){
@@ -243,12 +249,22 @@
     return i;
   }
   document.getElementById('btnSave0').onclick = function(){ XJSave.save(scene.world, scene, 0); saveInfo(); log('已存档到槽 0'); };
-  document.getElementById('btnLoad0').onclick = function(){ if (XJSave.apply(XJSave.load(0), scene.world, scene)) { loadMap(); log('已读档'); } else log('槽 0 为空'); };
+  document.getElementById('btnLoad0').onclick = function(){
+    var d = XJSave.load(0);
+    if (d && XJSave.apply(d, scene.world, scene)) { sel.value = scene.mapName; asel.value = scene.player.ant; log('已读档'); }
+    else log('槽 0 为空');
+  };
   document.getElementById('btnSave1').onclick = function(){ XJSave.save(scene.world, scene, 1); saveInfo(); log('已存档到槽 1'); };
-  document.getElementById('btnLoad1').onclick = function(){ if (XJSave.apply(XJSave.load(1), scene.world, scene)) { loadMap(); log('已读档'); } else log('槽 1 为空'); };
+  document.getElementById('btnLoad1').onclick = function(){
+    var d = XJSave.load(1);
+    if (d && XJSave.apply(d, scene.world, scene)) { sel.value = scene.mapName; asel.value = scene.player.ant; log('已读档'); }
+    else log('槽 1 为空');
+  };
   saveInfo();
 
-  loadMap();
+  // ★ 开机：读 config_game 进初始图（ms_syt_1），不是调试用的 cs_ljb_1
+  scene.boot();
+  sel.value = scene.mapName;
   scene.start();
 
   // 全库预载：浏览器对同域并发连接数有限，一次发 461 个请求会互相排队

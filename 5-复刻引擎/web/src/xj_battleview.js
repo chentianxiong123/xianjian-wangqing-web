@@ -241,11 +241,13 @@
     ctx.restore();
   };
 
-  /** 目标选择：敌方存活单位 */
+  /** 目标选择：增益类选己方，否则选敌方存活单位 */
   BattleView.prototype.openTarget = function (from, skill) {
-    var foes = this.battle.foes.filter(function (u) { return !u.isDead(); });
-    if (!foes.length) return false;
-    this.target = { from: from, skill: skill, options: foes, sel: 0 };
+    var pool = skill && skill.gain
+      ? this.battle.heroes.filter(function (u) { return !u.isDead(); })
+      : this.battle.foes.filter(function (u) { return !u.isDead(); });
+    if (!pool.length) return false;
+    this.target = { from: from, skill: skill, options: pool, sel: 0 };
     return true;
   };
 
@@ -292,11 +294,37 @@
     }
   };
 
-  /** 怪物行动：AI 选技能 → 直接执行 */
+  /** 双方队伍（供 execSkill 选目标） */
+  BattleView.prototype.ctxTeams = function () {
+    var b = this.battle;
+    return { allies: b.heroes.slice(), foes: b.foes.slice() };
+  };
+
+  BattleView.prototype.fx = function () {
+    var self = this, b = this.battle;
+    return {
+      msg: function (s) { if (s) self.msg = s; },
+      // ★ 偷窃：从携带表扣 1 个进背包（ax.java:825-837）
+      steal: function (foe) {
+        if (!foe || !foe.carryList) return null;
+        for (var i = 0; i < foe.carryList.length; i++) {
+          if (foe.carryList[i].count > 0) {
+            foe.carryList[i].count--;
+            if (self.world) self.world.addItem(foe.carryList[i].name, 1);
+            return foe.carryList[i].name;
+          }
+        }
+        return null;
+      }
+    };
+  };
+
+  /** 怪物行动：AI 选技能 → execSkill 直接执行 */
   BattleView.prototype.monsterAct = function (u) {
     var b = this.battle;
     var sk = b.aiPickSkill(u, {
-      carryItems: (u.carry || '').split(',').filter(Boolean).map(function (s) { return s.split('(')[0]; }),
+      carryItems: ((u.carryList || []).filter(function (c) { return c.count > 0; })
+        .map(function (c) { return c.name; })),
       spellSkills: (u.skills && u.skills.spell) || [],
       normalSkills: (u.skills && u.skills.normal) || []
     });
@@ -307,15 +335,20 @@
     }
     var skill = sk.skill;
     var targets = skill && skill.all ? b.heroes : [this.pickHero()];
-    u.s = { name: skill && skill.name, formula: skill && skill.formula,
-            kindCode: skill ? skill.kindCode : 0, all: !!(skill && skill.all) };
+    var s = { name: skill && skill.name, formula: skill && skill.formula,
+            kindCode: skill ? skill.kindCode : 0, all: !!(skill && skill.all),
+            anim: skill && skill.anim, costGas: 0, costMp: 0 };
     b.setSkillSpeed(u, '10+4*(slv-1)');
     u.t = 2;
     var self = this;
     this._queue = this._queue || [];
-    this._queue.push(function () {
-      b.attack(u, u.s, targets.filter(function (t) { return !t.isDead(); }));
-    });
+    var qfn = function () {
+      var r = b.execSkill(u, s, (targets.filter(function (t) { return !t.isDead(); }))[0],
+        { allies: b.foes.slice(), foes: b.heroes.slice() }, self.fx());
+      void r;
+    };
+    qfn._unit = u;
+    this._queue.push(qfn);
   };
 
   BattleView.prototype.pickHero = function () {
@@ -326,14 +359,19 @@
     return alive[(Math.random() * alive.length) | 0];
   };
 
-  /** 回合结束执行技能 */
+  /** 回合结束执行技能（只执行属于本单位的队列项，避免串招） */
   BattleView.prototype.unitAct = function (u) {
     var b = this.battle;
     if (u.side === 'hero' && u === this._actingHero) {
       // 玩家指令已在选择时直接执行，这里只重置
     }
-    var q = this._queue || [];
-    while (q.length) q.shift()();
+    var q = this._queue || [], rest = [];
+    while (q.length) {
+      var fn = q.shift();
+      if (fn && fn._unit && fn._unit !== u) { rest.push(fn); continue; }
+      fn();
+    }
+    this._queue = rest;
     b.resetGauge(u);
     this._actingHero = null;
   };
@@ -341,12 +379,13 @@
   /** 战斗结束 */
   BattleView.prototype.finish = function (over) {
     var b = this.battle;
-    var exp = 0, gold = 0;
     if (over === 1) {
-      exp = b.foes.reduce(function (s, u) { return s + 0; }, 0);
       var r = b.settleWin(b.expTotal || 0, b.goldTotal || 0);
       this.msg = '战斗胜利！';
       if (this.onEnd) this.onEnd('win', r);
+    } else if (over === 3) {
+      this.msg = '逃跑成功！';
+      if (this.onEnd) this.onEnd('escape', null);
     } else {
       this.msg = '你失败了！！';
       if (this.onEnd) this.onEnd('lose', null);
@@ -367,17 +406,26 @@
         var from = this.target.from, sk = this.target.skill;
         this.target = null; this.menu = null;
         this._actingHero = from;
-        from.s = { name: sk && sk.name, formula: sk && sk.formula,
-                   kindCode: sk ? sk.kindCode : 0, all: !!(sk && sk.all) };
-        from.t = sk && sk.kindCode !== 0 ? 8 : 2;
-        var self = this;
-        this._queue = this._queue || [];
-        // 单体或全体
-        var targets = (sk && sk.all) ? b.foes.filter(function (u) { return !u.isDead(); }) : [t];
-        this._queue.push(function () { b.attack(from, from.s, targets); });
+        this.heroAct(from, sk, t);
         return true;
       }
       if (e === 'cancel') { this.target = null; this.openMenu(this.menu.unit); return true; }
+      return false;
+    }
+
+    // 物品子菜单：选物品 → 选己方目标
+    if (this.menu && this.menu.isItem) {
+      var io = this.menu.options;
+      if (e === 'up') { this.menu.sel = (this.menu.sel + io.length - 1) % io.length; return true; }
+      if (e === 'down') { this.menu.sel = (this.menu.sel + 1) % io.length; return true; }
+      if (e === 'cancel') { this.openMenu(this.menu.unit); return true; }
+      if (e === 'ok') {
+        var itemName = io[this.menu.sel];
+        var u2 = this.menu.unit;
+        this.menu = null;
+        this.useBattleItem(u2, itemName);
+        return true;
+      }
       return false;
     }
 
@@ -387,6 +435,17 @@
       if (e === 'down') { this.menu.sel = (this.menu.sel + 1) % opts.length; return true; }
       if (e === 'cancel') { this.menu = null; return true; }
       if (e === 'ok') {
+        // ★ 仙术子菜单：先验神气再选目标
+        if (this.menu.isSpell) {
+          var su0 = this.menu.unit;
+          var ssk0 = this.menu.skills[this.menu.sel];
+          if (su0.O < (ssk0.costGas || 0) || su0.M < (ssk0.costMp || 0)) {
+            this.msg = '神气不足，放不出' + ssk0.name;
+            return true;
+          }
+          this.openTarget(su0, ssk0);
+          return true;
+        }
         var cmd = opts[this.menu.sel], u = this.menu.unit;
         if (cmd === '攻击') {
           var normals = u.skills && u.skills.normal;
@@ -409,25 +468,94 @@
           this.msg = u.name + ' 逃跑';
           this._queue = this._queue || [];
           var bb = b;
-          this._queue.push(function () {
+          var qfn4 = function () {
             if (Math.random() < 0.5) { bb.phase = 3; }
-          });
+          };
+          qfn4._unit = u;
+          this._queue.push(qfn4);
         } else if (cmd === '物品') {
-          this.msg = '物品栏尚未开放';
+          var items = this.battleItems();
+          if (!items.length) { this.msg = '没有可用的物品'; return true; }
+          this.menu = { unit: u, sel: 0, options: items, isItem: true };
         }
         return true;
       }
       return false;
     }
-
-    // 仙术子菜单
-    if (this.menu && this.menu.isSpell && e === 'ok') {
-      var u = this.menu.unit;
-      var sk = this.menu.skills[this.menu.sel];
-      this.openTarget(u, sk);
-      return true;
-    }
     return false;
+  };
+
+  /** 英雄行动：execSkill 入队（到 1000 时真正执行） */
+  BattleView.prototype.heroAct = function (from, sk, target) {
+    var b = this.battle, self = this;
+    from.s = { name: sk && sk.name, formula: sk && sk.formula,
+               kindCode: sk ? sk.kindCode : 0, all: !!(sk && sk.all),
+               anim: sk && sk.anim, costGas: sk && sk.costGas, costMp: sk && sk.costMp,
+               level: sk && sk.level };
+    from.t = sk && sk.kindCode !== 0 ? 8 : 2;
+    this._queue = this._queue || [];
+    var qfn2 = function () {
+      var r = b.execSkill(from, from.s, target,
+        { allies: b.heroes.slice(), foes: b.foes.slice() }, self.fx());
+      if (!r.ok) self.msg = r.reason || '放不出技能';
+      else if (self.world && self.world._party && from.heroName && sk && sk.kindCode !== 0 && sk.id != null) {
+        // ★ 仙术命中后记使用次数（升级/连招用，bj.a/b）
+        var rec = self.world._party.recordArtUse(self.world, from.heroName, sk.id);
+        if (rec.unlocked.length) self.msg = '领悟了新技能' + rec.unlocked.join('、');
+      }
+    };
+    qfn2._unit = from;
+    this._queue.push(qfn2);
+  };
+
+  /** 战斗中可用物品：背包里的药品 */
+  BattleView.prototype.battleItems = function () {
+    var out = [];
+    var items = (this.world && this.world.items) || {};
+    Object.keys(items).forEach(function (k) {
+      if (items[k] > 0 && window.XJShop && window.XJShop.typeOf(k) === '药品') out.push(k);
+    });
+    return out;
+  };
+
+  /** 战斗中使用物品：选己方目标 */
+  BattleView.prototype.useBattleItem = function (u, itemName) {
+    var b = this.battle;
+    var allies = b.heroes.filter(function (x) { return !x.isDead() || /还魂|九转/.test(itemName); });
+    if (!allies.length) { this.msg = '没有可用目标'; this.openMenu(u); return; }
+    // 默认给自己用；复活类给第一个阵亡者
+    var target = allies[0];
+    for (var i = 0; i < allies.length; i++) {
+      if (allies[i].isDead()) { target = allies[i]; break; }
+    }
+    if (!target.isDead() && target === u) target = u;
+    this._actingHero = u;
+    u.t = 8;
+    var self = this;
+    this._queue = this._queue || [];
+    var qfn3 = function () {
+      if ((self.world.items[itemName] || 0) <= 0) { self.msg = '没有' + itemName; return; }
+      var P = window.XJParty;
+      var hname = target.heroName || target.name;
+      var r = P ? P.useItem(self.world, hname, itemName) : { ok: false };
+      if (r.ok) {
+        // 同步回战斗单位
+        var h = P ? (P.heroByName(self.world, hname) || P.heroes(self.world)[hname]) : null;
+        if (h) {
+          var st = P.statsOf(h);
+          target.I = h.hp; target.J = st.maxHp;
+          target.M = h.mp; target.N = st.maxMp;
+          if (target.isDead() && h.hp > 0) { target.t = 0; target.dead = false; }
+        }
+        b.popup(target, 3, 0);
+        self.msg = r.msg;
+      } else {
+        self.msg = r.msg || '用不出';
+      }
+    };
+    qfn3._unit = u;
+    this._queue.push(qfn3);
+    this.menu = null;
   };
 
   // ------------------------------------------------------------ 渲染入口

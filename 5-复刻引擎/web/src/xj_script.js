@@ -182,7 +182,9 @@
   Cond.prototype.args = function () {
     var m = this.line.match(/\(([^)]*)\)/);
     if (!m) return [];
-    return m[1].split(',').map(function (s) { return s.trim(); });
+    // ★ 条件参数用 `|` 分隔（如 partner.feelingIsGreaterThan(0|40)，见 d.f）；
+    //   逗号分隔的同样兼容
+    return m[1].split(/[|,]/).map(function (s) { return s.trim(); });
   };
   Cond.prototype.name = function () {
     var m = this.line.match(/^\s*([^(]+)/);
@@ -219,11 +221,21 @@
   /**
    * 条件串切分后逐条 AND，任一不满足即跳过整行。
    * 支持用逗号或分号分隔（原脚本用 [a,b] 或 (a)(b) 两种写法）。
+   * ★ 也接受已解析的 AST 条件对象（{terms:[{raw}]}），地图级 runAll 直接传 AST。
    */
-  function testConds(world, condStr) {
-    if (condStr == null) return true;
-    var parts = String(condStr).split(/[,;]/).map(function (s) { return s.trim(); })
-      .filter(function (s) { return s.length > 0; });
+  function testConds(world, cond) {
+    if (cond == null) return true;
+    var parts;
+    if (typeof cond === 'string') {
+      parts = String(cond).split(/[,;]/).map(function (s) { return s.trim(); })
+        .filter(function (s) { return s.length > 0; });
+    } else if (cond.terms) {
+      parts = cond.terms.map(function (t) { return t.raw; });
+    } else if (cond.raw) {
+      parts = [cond.raw];
+    } else {
+      parts = [];
+    }
     if (!parts.length) return true;
     for (var i = 0; i < parts.length; i++) {
       if (!new Cond(world, parts[i]).test()) return false;
@@ -265,6 +277,19 @@
     var name = cmd.cmd;
     var a = cmd.raw_args || cmd.args || [];
     var self = this;
+    // ★ 给每条效果自动附上原始参数（宿主落子时区分「地图级带 id」与「对象级裸指令」用）
+    var _log = this.log;
+    this.log = function (kind, data) {
+      data = data || {};
+      if (data.a == null && data.raw == null) data.raw = a.slice ? a.slice() : a;
+      return _log.call(self, kind, data);
+    };
+    try { return this._stepInner(ns, name, a); }
+    finally { this.log = _log; }
+  };
+
+  Interp.prototype._stepInner = function (ns, name, a) {
+    var self = this;
     function E(i) { try { return self.w.expr(a[i]); } catch (e) { return 0; } }
     function S(i) { return a[i]; }
 
@@ -274,7 +299,17 @@
       case 'world':
         switch (name) {
           case 'setName':        return !!this.log('world.setName', { name: S(0) });
-          case 'change':         return !!this.log('world.change', { map: S(0), x: E(1), y: E(2) });
+          case 'change': {
+            // ★ world.change(目标map, 地砖bin, 元素ant, 元素bin, x, y, dir)
+            //   落子时需要全套参数（切图要带 ANT），这里全部记下
+            return !!this.log('world.change', {
+              map: String(S(0) || '').replace(/\.map$/i, ''),
+              tileBin: String(S(1) || '').replace(/\.bin$/i, ''),
+              elementAnt: String(S(2) || '').replace(/\.ant$/i, ''),
+              elementBin: String(S(3) || '').replace(/\.bin$/i, ''),
+              x: E(4), y: E(5), dir: S(6)
+            });
+          }
           case 'addMask':        return !!this.log('world.addMask', { id: S(0) });
           case 'removeAllMask':  return !!this.log('world.removeAllMask', {});
           case 'fadeOut':        return !!this.log('world.fadeOut', { ms: E(0) });
@@ -471,10 +506,13 @@
     }
   };
 
-  /** 跑完一整份地图脚本 AST；返回统计 */
+  /** 跑完一整份地图脚本 AST；返回统计
+   * ★ 遇到 world.change 即停（原版立即切图，后续脚本不再执行，e.java:2573） */
   Interp.prototype.runAll = function (ast) {
     for (var i = 0; i < (ast || []).length; i++) {
       if (this.step(ast[i])) this.stats.exec++;
+      var last = this.effects[this.effects.length - 1];
+      if (last && last.kind === 'world.change') break;
     }
     return this.stats;
   };

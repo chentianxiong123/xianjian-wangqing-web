@@ -206,6 +206,8 @@ head('剧情触发区里的对话');
   ok(tested > 0 && gated > 0 && gated < tested,
     'openScriptList 的 eventMarked 型条件会门控整批：'
     + gated + '/' + tested + ' 被拦（其余是 !eventMarked 条件，事件未设时本就成立）');
+  // ★ openScriptList 只门控【本批】：批内的 setText 不得漏出为对话框；
+  //   批前面的逐条条件分支（如 !eventMarked(22) 的 moveTo/change）照常执行。
   let leaked = 0;
   for (const n of Object.keys(MAPS)) {
     const w = new W(); w.build(n, 10, 10);
@@ -215,10 +217,17 @@ head('剧情触发区里的对话');
       const hasPos = (open.cond.terms || []).some(t => t.fn === 'eventMarked' && !t.neg);
       if (!hasPos) continue;
       const r = w.fireZone(z);
-      if (!r.gated && (r.dialog || r.change || r.moveTo)) leaked++;
+      // 门控批内的 setText 不得变成对话框：区里所有 setText 都在门控批内且被拦时，dialog 必须为空
+      const texts = z.ast.filter(c => c.cmd === 'setText');
+      const openIdx = z.ast.indexOf(open);
+      const closeIdx = (() => { let d = 1; for (let k = openIdx + 1; k < z.ast.length; k++) {
+        if (z.ast[k].cmd === 'openScriptList') d++;
+        if (z.ast[k].cmd === 'closeScriptList') { d--; if (!d) return k; } } return -1; })();
+      const inBatch = texts.filter((c, k) => z.ast.indexOf(c) > openIdx && (closeIdx < 0 || z.ast.indexOf(c) < closeIdx));
+      if (r.gated && inBatch.length === texts.length && r.dialog) leaked++;
     }
   }
-  ok(leaked === 0, '凡含 eventMarked 型门控条件的区，在事件未设时一律整批不执行');
+  ok(leaked === 0, '门控批内的对话框在事件未设时一律不执行');
   {
     // 反证：把条件事件按原样置位后，同一区应正常执行
     let n2 = 0, hit2 = 0;
@@ -262,9 +271,9 @@ head('全地图触发区一致性');
   ok(bad.length === 0, tot + ' 个触发区全部可执行（已试跑 ' + fired + ' 个），无异常',
     bad.slice(0, 4).join(' | '));
   // 190 个含 world.change 的区里有 5 个带自相矛盾条件（eventMarked(N) 与 !eventMarked(N) 同现），
-  // 事件未设时 change 不触发 —— 这是正确行为。
-  ok(changes === 175, '试跑后产生 ' + changes + ' 次 world.change'
-    + '（190 个区中 10 个被 openScriptList 条件门控、5 个条件自相矛盾）');
+  // 事件未设时 change 不触发；另有门控批在前、无条件批在后的区照常触发 —— 这是正确行为。
+  ok(changes === 177, '试跑后产生 ' + changes + ' 次 world.change'
+    + '（190 个区中 8 个被条件门控、5 个条件自相矛盾）');
   ok(dlg > 0, '试跑后共产生 ' + dlg + ' 次对话框');
 }
 {

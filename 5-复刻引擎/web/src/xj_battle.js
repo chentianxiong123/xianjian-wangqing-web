@@ -185,7 +185,8 @@
   Battle.prototype.note = function (s) { this.log.push(s); return s; };
 
   // ------------------------------------------------------------ 技能表
-  /** 从 XJ_LOGIC.skillFormulas.player 建立 名字→{公式, 类型, 全体, …} */
+  var SK_KIND = { '普通': 0, '水系': 1, '雷系': 2, '火系': 3, '风系': 4, '土系': 5, '双系': 6 };
+  /** 从 XJ_LOGIC.skillFormulas.player 建立 名字→{公式, 类型, 全体, …}，kindCode 归一为数字 */
   Battle.prototype.skillByName = function (n) {
     if (!this._skillCache) {
       this._skillCache = {};
@@ -195,7 +196,21 @@
         if (s.name) this._skillCache[s.name] = s;
       }
     }
-    return this._skillCache[n] || null;
+    var sk = this._skillCache[n] || null;
+    if (!sk) return null;
+    // ★ af.java:24 kindCode 映射（产物里是中文字符串，这里归一成数字）
+    var kc = (typeof sk.kindCode === 'number') ? sk.kindCode :
+      (SK_KIND[sk.kindCode] != null ? SK_KIND[sk.kindCode] : 7);
+    return {
+      id: sk.index, name: sk.name, kindCode: kc,
+      attackType: sk.attackType, gain: !!sk.gain, all: !!sk.allTargets,
+      anim: sk.anim, formula: sk.formula, desc: sk.desc,
+      // ★ ax.c(8)：普通技扣气 af.j，玩家仙术扣神 af.k
+      //   产物 cost神列==af.j、cost气列==af.k，按源码语义使用
+      costGas: kc === 0 ? num(sk['cost神']) : 0,
+      costMp: kc === 0 ? 0 : num(sk['cost气'])
+    };
+    function num(v) { var x = parseInt(v, 10); return isNaN(x) ? 0 : x; }
   };
 
   /**
@@ -235,12 +250,31 @@
    *   ⑤ 回合开始 !已行动 && i==W
    *   ⑥ 回合结束 已行动 && i==1000
    */
-  Battle.prototype.tick = function () {
+  Battle.prototype.tick = function (dtMs) {
+    var dt = dtMs || 16;
     var allFoesDead = this.foes.every(function (u) { return u.isDead(); });
     var began = [], ended = [];
     for (var k = 0; k < this.units.length; k++) {
       var u = this.units[k];
       if (u.isDead()) { u.i = 0; continue; }
+
+      // ★ 持续掉血（skill.dmgoftime）：每 interval 扣一次（ax.java:841-887）
+      if (u.u && u.dot) {
+        u.dot.acc += dt;
+        while (u.dot.acc >= u.dot.every && u.dot.total > 0) {
+          u.dot.acc -= u.dot.every;
+          u.dot.total -= u.dot.every;
+          u.addHp(u.I - u.dot.dmg);
+          this.popup(u, POPUP.DOT, u.dot.dmg);
+          if (u.isDead()) break;
+        }
+        if (u.dot.total <= 0) { u.u = false; u.dot = null; }
+      }
+      // ★ 定身计时（skill.stopspeed）：时间到解除（ax.java:888-922 的 bk 计时）
+      if (u.z && u.stunT != null) {
+        u.stunT -= dt;
+        if (u.stunT <= 0) { u.z = false; u.stunT = null; }
+      }
 
       // ① 推进
       if (!allFoesDead && !u.z) {
@@ -441,6 +475,214 @@
     return res;
   };
 
+  // ------------------------------------------------------------ 技能脚本执行
+  /**
+   * 取技能的 tag 行（ax.a(Object,Object) 的执行对象）。
+   * 顺序：fight_skill.ant 里同名状态 → 施法者 ANT 里同名状态 → 无。
+   * （f.a(af,ax2,ax3) 给仙术加载 fight_skill 状态；普攻走施法者自己的 攻击 状态）
+   */
+  Battle.prototype.skillTagLines = function (attacker, sk) {
+    var out = [];
+    var anim = (sk && sk.anim) || (sk && sk.name);
+    if (!anim) return out;
+    function tagsOf(antName, stName) {
+      var A = XJ.data.ant.ants && XJ.data.ant.ants[antName];
+      if (!A) return null;
+      for (var i = 0; i < A.states.length; i++) {
+        if (A.states[i].n === stName) return XJ.stateScripts(antName, A.states[i], -1);
+      }
+      return null;
+    }
+    // XJ.stateScripts 按帧取 tag；这里要整段状态的全部 tag，按帧序拼起来
+    function allTags(antName, stName) {
+      var A = XJ.data.ant.ants && XJ.data.ant.ants[antName];
+      if (!A) return null;
+      for (var i = 0; i < A.states.length; i++) {
+        if (A.states[i].n !== stName) continue;
+        var st = A.states[i], r = [];
+        for (var f = 0; f < st.q.length; f++) {
+          var lines = XJ.stateScripts(antName, st, f);
+          for (var k = 0; k < lines.length; k++) r.push(lines[k]);
+        }
+        return r;
+      }
+      return null;
+    }
+    var t = allTags('fight_skill', anim);
+    if (t && t.length) return t;
+    if (attacker && attacker.ant) {
+      var t2 = allTags(attacker.ant, anim);
+      if (t2 && t2.length) return t2;
+    }
+    void tagsOf;
+    return out;
+  };
+
+  function parseTag(line) {
+    var m = String(line || '').trim().match(/^([A-Za-z]+)\.([A-Za-z]+)\((.*)\)$/);
+    if (!m) return null;
+    return { ns: m[1], cmd: m[2], args: m[3].split(',').map(function (s) { return s.trim(); }) };
+  }
+
+  /**
+   * 执行一次技能（含 tag 脚本）。
+   * @param attacker 施法者 Unit
+   * @param sk 技能 {name,formula,kindCode,all,anim,costGas,costMp,level}
+   * @param primary 主目标（单体时用；全体时忽略）
+   * @param ctx {allies:[], foes:[]} 双方存活单位由调用方传入
+   * @param fx {msg(s), steal(foe)->name|null, world} 宿主回调
+   * @return {ok, reason?, hits?}
+   */
+  Battle.prototype.execSkill = function (attacker, sk, primary, ctx, fx) {
+    fx = fx || {};
+    ctx = ctx || {};
+    function msg(s) { if (fx.msg) fx.msg(s); }
+    sk = sk || {};
+    var slv = this.skillLevel(attacker, sk);
+    // ★ 消耗（ax.c(8)：普通扣气，仙术扣神；怪物不扣）
+    if (attacker.side === 'hero') {
+      var cg = sk.costGas || 0, cm = sk.costMp || 0;
+      if (attacker.O < cg || attacker.M < cm) return { ok: false, reason: '神气不足' };
+      attacker.O -= cg; attacker.M -= cm;
+    }
+    attacker.s = { name: sk.name, formula: sk.formula, kindCode: sk.kindCode == null ? 0 : sk.kindCode, all: !!sk.all };
+    var allies = (ctx.allies || []).filter(function (u) { return !u.isDead(); });
+    var foes = (ctx.foes || []).filter(function (u) { return !u.isDead(); });
+    var self = this;
+    // 增益/治疗类打己方，否则打对方
+    var pool = sk.gain ? (attacker.side === 'hero' ? allies : foes) : (attacker.side === 'hero' ? foes : allies);
+    var targets = sk.all ? pool.slice() : (primary && !primary.isDead() ? [primary] : pool.slice(0, 1));
+    if (!targets.length) return { ok: false, reason: '无目标' };
+
+    var lines = this.skillTagLines(attacker, sk);
+    // 无 tag：退化为一次普通伤害结算（公式 atk）
+    if (!lines.length) {
+      var res = [];
+      targets.forEach(function (t) { res.push(self._strike(attacker, t, HITTYPE.NORMAL, 0)); });
+      return { ok: true, hits: res };
+    }
+    var hits = [];
+    lines.forEach(function (ln) {
+      var tag = parseTag(ln);
+      if (!tag) return;
+      var args = tag.args || [];
+      function EV(expr) {
+        try { return XS.evalExpr(String(expr), { slv: Math.max(slv, 1) }); }
+        catch (e) { return 0; }
+      }
+      if (tag.ns === 'attacker') {
+        if (tag.cmd === 'hurt') {
+          var delay = EV(tag.args[2] || '0');
+          targets.forEach(function (t) { hits.push(self._strike(attacker, t, HITTYPE.NORMAL, delay)); });
+        } else if (tag.cmd === 'steal') {
+          // ★ 20% 偷 1 个携带物品（ax.java:825-837；仅英雄方有背包可装）
+          if (attacker.side === 'hero' && fx.steal && chance(20, 100, self.rnd)) {
+            var got = null;
+            var cands = (attacker.side === 'hero' ? foes : allies).filter(function (u) { return !u.isDead(); });
+            if (cands.length) got = fx.steal(cands[randInt(0, cands.length - 1, self.rnd)]);
+            msg(got ? '获得物品:' + got : '物品获取失败！');
+          } else if (attacker.side === 'hero') {
+            msg('物品获取失败！');
+          }
+        }
+        // blackGround / splash / shake 纯表现，由宿主做视觉（这里只记日志）
+        else msg(null);
+      } else if (tag.ns === 'skill') {
+        if (tag.cmd === 'dmgoftime') {
+          // ★ dmgoftime(时长ms, 间隔ms, 每次掉血, 命中概率)（ax.java:841）
+          var p = EV(args[3]);
+          var list = sk.all ? pool.slice() : targets.slice();
+          list.forEach(function (t) {
+            if (t.isDead()) return;
+            if (chance(p, 100, self.rnd)) {
+              t.u = true;
+              t.dot = { total: EV(args[0]), every: Math.max(1, EV(args[1])), dmg: EV(args[2]), acc: 0 };
+              msg(t.name + '持续掉血');
+            }
+          });
+        } else if (tag.cmd === 'stopspeed') {
+          // ★ stopspeed(定身ms, 命中概率)（ax.java:888）
+          var ps = EV(args[1]);
+          var list2 = sk.all ? pool.slice() : targets.slice();
+          list2.forEach(function (t) {
+            if (!t.isDead() && chance(ps, 100, self.rnd)) { t.z = true; t.stunT = EV(args[0]); }
+          });
+        } else if (tag.cmd === 'resetspeed') {
+          // ★ resetspeed(命中概率)：行动条清零立即行动（ax.java:923）
+          var pr = EV(args[0]);
+          var list3 = sk.all ? pool.slice() : targets.slice();
+          list3.forEach(function (t) {
+            if (!t.isDead() && chance(pr, 100, self.rnd)) { self.resetGauge(t); self.popup(t, POPUP.RESET, 0); }
+          });
+        } else if (tag.cmd === 'kill') {
+          // ★ kill(伤害表达式实为秒杀概率)：直接清精（ax.java:954）
+          var pk = EV(args[0]);
+          var list4 = sk.all ? pool.slice() : targets.slice();
+          list4.forEach(function (t) {
+            if (!t.isDead() && chance(pk, 100, self.rnd)) {
+              t.addHp(0);
+              self.popup(t, POPUP.DOT, 0);
+              msg(t.name + '被秒杀');
+            }
+          });
+        } else if (tag.cmd === 'dmgtohp') {
+          // ★ 下次受击按 1/4 回精（反击标记 ax.java:997）
+          if (chance(EV(args[0]), 100, self.rnd)) { attacker.B = true; self.popup(attacker, POPUP.COUNTER, 0); }
+        } else if (tag.cmd === 'clear') {
+          attacker.B = false;
+        }
+      } else if (tag.ns === 'player') {
+        // ★ 仅玩家单位可用（ax.java:1015）
+        if (attacker.side !== 'hero') return;
+        var lv = slv;
+        if (tag.cmd === 'addatk' || tag.cmd === 'adddef' || tag.cmd === 'addspeed') {
+          var who = (sk.all ? allies : targets.slice(0, 1));
+          who.forEach(function (t) {
+            if (tag.cmd === 'addatk') self.applyBuff(attacker, t, 'atk', lv);
+            else if (tag.cmd === 'adddef') self.applyBuff(attacker, t, 'def', lv);
+            else self.applyBuff(attacker, t, 'spd', lv);
+          });
+          msg(tag.cmd === 'addatk' ? '武增加' : (tag.cmd === 'adddef' ? '防增加' : '速增加'));
+        } else if (tag.cmd === 'addAll') {
+          self.applyBuffAll(attacker, allies, lv);
+          msg('武防速增加');
+        } else if (tag.cmd === 'addhp' || tag.cmd === 'addhpall') {
+          var amt = EV(args[0]);
+          var list5 = tag.cmd === 'addhpall' ? allies : targets.slice(0, 1);
+          list5.forEach(function (t) {
+            if (t.isDead()) return;
+            t.addHp(t.I + amt);
+            self.popup(t, POPUP.HEAL, amt);
+          });
+          msg((tag.cmd === 'addhpall' ? '全体增加' : '精增加') + amt + '点');
+        } else if (tag.cmd === 'againlife') {
+          var amt2 = EV(args[0]);
+          var list6 = targets.slice(0, 1);
+          list6.forEach(function (t) {
+            if (t.isDead() || t.I === 0) { t.addHp(amt2); t.t = STATE.STAND; t.dead = false; msg('复活并加' + amt2 + '点精'); }
+            else { t.addHp(t.I + amt2); msg('加' + amt2 + '点精'); }
+            self.popup(t, POPUP.HEAL, amt2);
+          });
+        } else if (tag.cmd === 'setnone' || tag.cmd === 'setnoneall') {
+          // ★ 原版只显示文案，不实际清状态（ax.java:1131-1137）
+          msg(tag.cmd === 'setnoneall' ? '全体解除异常状态' : '解除异常状态');
+        }
+      }
+    });
+    return { ok: true, hits: hits };
+  };
+
+  /**
+   * 单次打击（含格挡/闪避判定）。
+   * bd.java:160 / g.java:143：先格挡后闪避，否则普通攻击。
+   */
+  Battle.prototype._strike = function (attacker, t, type, delay) {
+    if (!t || t.isDead()) { this.popup(t || attacker, POPUP.MISS, 0); return { dmg: 0 }; }
+    if (t.ab) return this.resolveHit(attacker, t, HITTYPE.BLOCK, delay);
+    if (!attacker.j && t.I > 0 && chance(t.S, this.EVADE_DEN, this.rnd))
+      return this.resolveHit(attacker, t, HITTYPE.EVADE, delay);
+    return this.resolveHit(attacker, t, HITTYPE.NORMAL, delay);
+  };
   // ------------------------------------------------------------ buff
   /**
    * ax.java:1021-1070  技能施加增益
@@ -663,6 +905,7 @@
     u.expRange = [num('最小经验', 0), num('最大经验', 0)];
     u.goldRange = [num('最小金钱', 0), num('最大金钱', 0)];
     u.carry = String(sc['携带物品'] || '');
+    u.carryList = parseDropList(u.carry).map(function (c) { return { name: c.name, count: c.pct }; });
     u.drops = String(sc['掉落物品'] || '');
     u.cfgId = cfgId;
     u.def_ = sc;
@@ -733,11 +976,39 @@
     }
   }
 
+  // ------------------------------------------------------------ 掉落
+  /** 解析 "止血草(50),鼠儿果(50)" → [{name, pct}] */
+  function parseDropList(s) {
+    var out = [];
+    String(s || '').split(',').forEach(function (part) {
+      var m = part.trim().match(/^(.*)\((\d+)\)$/);
+      if (m) out.push({ name: m[1], pct: parseInt(m[2], 10) });
+    });
+    return out;
+  }
+
+  /**
+   * f.java:1020 胜利掉落：逐条 rand(百分比,100) 命中则掉，最多 3 件。
+   * @return [物品名...]
+   */
+  function rollDrops(monsters, rnd) {
+    var out = [];
+    var b = new Battle({ rnd: rnd });
+    for (var i = 0; i < (monsters || []).length && out.length < 3; i++) {
+      var list = parseDropList(monsters[i].drops);
+      for (var j = 0; j < list.length && out.length < 3; j++) {
+        if (chance(list[j].pct, 100, b.rnd)) out.push(list[j].name);
+      }
+    }
+    return out;
+  }
+
   global.XJBattle = {
     Battle: Battle, Unit: Unit,
     encounter: encounter, enemySpec: enemySpec, makeMonster: makeMonster,
     parseIdSpec: parseIdSpec, parseLevelSpec: parseLevelSpec,
     resolveLevelSpec: resolveLevelSpec, kindCode: kindCode,
+    parseDropList: parseDropList, rollDrops: rollDrops,
     randInt: randInt, chance: chance, isqrt: isqrt,
     STATE: STATE, HITTYPE: HITTYPE, POPUP: POPUP
   };

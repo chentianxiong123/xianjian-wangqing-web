@@ -21,6 +21,12 @@
     this.gold = opts.gold != null ? opts.gold : 0;
     this.items = Object.create(null);
     this.party = Object.create(null);   // 队友名 → 好感度
+    this.heroes = Object.create(null);  // 持久角色记录（XJParty）
+    this.members = ['chonglou'];        // 出战 key（chonglou/liyiru/zixuan）
+    this.followers = Object.create(null); // partner id → 跟随的 NPC id
+    this.fly = false;                   // 御剑飞行（setFlyEnabled）
+    this.mapTitle = '';                 // world.setName 的地图中文名（对接 enemy.str）
+    if (global.XJParty) global.XJParty.initParty(this);
     this.tasks = [];
     this.skills = Object.create(null);
     this.mapName = '';
@@ -47,8 +53,23 @@
   World.prototype.event = function (n) { return this.events[n] || 0; };
   World.prototype.fee = function (n) { return !!this.fees[n]; };
   World.prototype.itemCount = function (n) { return this.items[n] || 0; };
-  World.prototype.feeling = function (n) { return this.party[n] || 0; };
-  World.prototype.partnerExists = function (n) { return this.party[n] !== undefined; };
+  // ★ 好感条件用数字 id（0=月瑶 1=紫萱），名字也兼容
+  World.prototype._feelingKey = function (n) {
+    var P = global.XJParty;
+    if (P && P.PARTNER_ROLE && P.PARTNER_ROLE[n] != null) {
+      var hs = this.heroes || {};
+      var h = hs[P.PARTNER_ROLE[n]];
+      return h ? h.name : n;
+    }
+    return n;
+  };
+  World.prototype.feeling = function (n) { return this.party[this._feelingKey(n)] || 0; };
+  World.prototype.partnerExists = function (n) {
+    var P = global.XJParty;
+    if (P && P.PARTNER_ROLE && P.PARTNER_ROLE[n] != null)
+      return (this.members || []).indexOf(P.PARTNER_ROLE[n]) >= 0;
+    return this.party[n] !== undefined;
+  };
 
   World.prototype.addItem = function (n, c) { this.items[n] = (this.items[n] || 0) + (c || 1); };
   World.prototype.removeItem = function (n, c) {
@@ -67,8 +88,9 @@
    * 装配一张地图的全部元素。
    * 顺序：地图级脚本 → 逐个对象脚本（元素层优先，再遮挡层）
    */
-  World.prototype.build = function (mapName, playerX, playerY) {
+  World.prototype.build = function (mapName, playerX, playerY, opts) {
     var m = XJ.map(mapName);
+    opts = opts || {};
     this.elements = [];
     this.plainObjects = [];
     this.zones = [];
@@ -77,16 +99,33 @@
     this.stats = { elements: 0, scripted: 0, plain: 0, removed: 0, unknown: 0 };
     if (!m) return this;
     this.mapName = mapName;
+    // ★ 每次装配前清空解释器效果队列，否则切图后旧效果会残留
+    this.interp.effects.length = 0;
+    // ★ 地图中文名（world.setName 首个）→ 对接 enemy.str 遇敌键
+    this.mapTitle = '';
+    for (var si = 0; si < (m.script || []).length; si++) {
+      var sc = m.script[si];
+      if (sc.obj === 'world' && sc.cmd === 'setName' && sc.raw_args && sc.raw_args[0]) {
+        this.mapTitle = String(sc.raw_args[0]);
+        break;
+      }
+    }
     this.playerX = playerX || 0;
     this.playerY = playerY || 0;
 
     // ① 地图级脚本。world.change 在这里是【立即切图】（e.java:2573 super.a(true)），
-    //    不是等玩家触发 —— 记录下来交给宿主（Scene.goto）处理。
+    //    不是等玩家触发 —— 第一条生效，后面的脚本不再执行。记录下来交给宿主处理。
+    // ★ warp 进图（脚本切图/触发区切图）不再连锁切图：跳过 change 行，
+    //   否则互指的两张图（ms_syt_1↔yw_syc）会无限乒乓。其余指令（midi/字幕/道具）照常跑。
     this.pendingChange = null;
-    this.interp.runAll(m.script);
+    var script = m.script;
+    if (opts.skipChange) {
+      script = (m.script || []).filter(function (c) { return !(c.obj === 'world' && c.cmd === 'change'); });
+    }
+    this.interp.runAll(script);
     for (var ci = 0; ci < this.interp.effects.length; ci++) {
       var ef = this.interp.effects[ci];
-      if (ef.kind === 'world.change') this.pendingChange = ef.data;
+      if (ef.kind === 'world.change') { this.pendingChange = ef.data; break; }
     }
 
     // ② 对象脚本：元素层(index 1) 优先，其次遮挡层(index 2)
@@ -220,7 +259,11 @@
     var antArg = a.length > 1 ? String(a[1]) : null;
     var ant = null;
     if (antArg && /\.ant$/i.test(antArg)) ant = antArg.replace(/\.ant$/i, '');
-    return {
+    // ★ 明怪固定用 guaiwu.ant（状态 "0"/"1"；config_game 明怪动画文件）
+    if (kind === 'monster') ant = 'guaiwu';
+    // ★ 落石用 npc_<id>.ant（e.java:2346）
+    if (kind === 'rock') ant = 'npc_' + id;
+    var el = {
       kind: kind,
       id: id,
       ant: ant,                       // null → 用地图 elementAnt
@@ -238,6 +281,226 @@
       inScene: false,
       t: 0
     };
+    // ★ 宝箱开合由事件标记决定（ad 构造器：e(n) 已标记即开箱）
+    if (kind === 'box') el.opened = !!this.events[id];
+    // ★ 明怪家坐标（追击/返回用，ar.b/c）
+    if (kind === 'monster') { el.homeX = el.x; el.homeY = el.y; el.monState = '0'; }
+    return el;
+  };
+
+  /** 取出并清空解释器效果队列（宿主 Scene 负责落子） */
+  World.prototype.takeEffects = function () {
+    var out = (this.interp && this.interp.effects) ? this.interp.effects.slice() : [];
+    if (this.interp) this.interp.effects.length = 0;
+    return out;
+  };
+
+  /** 按 id 找已装配的元素 */
+  World.prototype.findElement = function (id) {
+    for (var i = 0; i < (this.elements || []).length; i++) {
+      if (String(this.elements[i].id) === String(id)) return this.elements[i];
+    }
+    return null;
+  };
+
+  /**
+   * 把 Interp 记录的效果真正落到 World 状态。
+   * 需要宿主（Scene/音频/菜单）处理的返回为 intents，由调用方执行；
+   * 纯状态变更在这里直接写完。
+   * 返回 {intents:[], messages:[]}。
+   */
+  World.prototype.applyStateEffects = function (effects) {
+    var P = global.XJParty;
+    var intents = [], messages = [];
+    var self = this;
+    function E(v) { try { return self.expr(String(v)); } catch (e) { return 0; } }
+    function mainHero() {
+      if (!P) return null;
+      var hs = P.heroes(self);
+      return hs[(self.members || ['chonglou'])[0]] || hs.chonglou || null;
+    }
+    (effects || []).forEach(function (ef) {
+      var d = ef.data || {}, k = ef.kind, handled = true;
+      switch (k) {
+        case 'world.setName': self.mapTitle = String(d.name || ''); break;
+        case 'world.setFlyEnabled': self.fly = (String((ef.raw && ef.raw[0]) || d.on) === 'true') || d.on === true; break;
+        case 'world.fadeOut': intents.push({ type: 'fade', ms: d.ms || 0 }); break;
+        case 'world.addMask': intents.push({ type: 'mask', id: d.id }); break;
+        case 'world.removeAllMask': intents.push({ type: 'unmask' }); break;
+        case 'midi.play': intents.push({ type: 'bgm', file: d.file, loop: d.loop }); break;
+        case 'midi.stop': intents.push({ type: 'bgmStop' }); break;
+        case 'game.markEvent': self.events[E(d.n)] = 1; break;
+        case 'game.unmarkEvent': self.events[E(d.n)] = 0; break;
+        case 'game.fight': intents.push({ type: 'fight', key: d.key }); break;
+        case 'game.showMenu': intents.push({ type: 'menu' }); break;
+        case 'game.showFee': intents.push({ type: 'fee' }); break;
+        case 'game.black': intents.push({ type: 'subtitle', mode: 'black', text: d.text }); break;
+        case 'game.verse': intents.push({ type: 'subtitle', mode: 'verse', text: d.text }); break;
+        case 'game.flicker': intents.push({ type: 'flicker', ms: d.ms, color: d.color }); break;
+        case 'game.vibrate': intents.push({ type: 'shake', ms: 400 }); break;
+        case 'game.dropRock': intents.push({ type: 'dropRock', a: d }); break;
+        case 'game.dropRockClear': intents.push({ type: 'dropRockClear' }); break;
+        case 'game.waitForKey': intents.push({ type: 'waitKey', keys: d.keys, msg: d.msg }); break;
+        case 'game.branch': intents.push({ type: 'branch', a: d.a }); break;
+        case 'game.gray': intents.push({ type: 'gray', on: !!d.on }); break;
+        case 'game.clear': intents.push({ type: 'clearFx' }); break;
+        case 'game.showNpc': self.showNpc = true; break;
+        case 'game.showPlayer': self.showPlayer = true; break;
+        case 'game.showMonster': self.showMonster = true; break;
+        case 'game.hideMonster': self.showMonster = false; break;
+        case 'dialog.setText': intents.push({ type: 'dlgText', text: d.text }); break;
+        case 'dialog.setType': intents.push({ type: 'dlgType', t: d.type }); break;
+        case 'dialog.show': intents.push({ type: 'dlgShow' }); break;
+        case 'dialog.hide': intents.push({ type: 'dlgHide' }); break;
+        case 'dialog.showPlayerPortrait': intents.push({ type: 'dlgPortrait', who: 'player' }); break;
+        case 'dialog.showNpcPortrait': intents.push({ type: 'dlgPortrait', who: 'npc' }); break;
+        case 'dialog.hidePortrait': intents.push({ type: 'dlgPortrait', who: null }); break;
+        case 'guide.setText': intents.push({ type: 'guide', text: d.text }); break;
+        case 'guide.setTarget': intents.push({ type: 'guideTarget', t: d.t }); break;
+        case 'system.showInfo': messages.push(String(d.text || '')); break;
+        case 'system.showAsideInfo': messages.push('[旁白] ' + (d.a || []).join(' ')); break;
+        case 'system.trade': intents.push({ type: 'shop', items: d.items || [] }); break;
+        case 'system.markFee': self.fees[E(d.n)] = true; break;
+        case 'system.unmarkFee': self.fees[E(d.n)] = false; break;
+        case 'system.returnToMainMenu': intents.push({ type: 'mainMenu' }); break;
+        case 'system.showScreenMargin': intents.push({ type: 'margin', on: true }); break;
+        case 'system.hideScreenMargin': intents.push({ type: 'margin', on: false }); break;
+        case 'fee.ybdx': if (P) {
+          Object.keys(P.heroes(self)).forEach(function (key) {
+            var h = P.heroes(self)[key];
+            var list = (XJ.data.logic.skillFormulas || {}).player || [];
+            list.forEach(function (sk) {
+              if (sk.kindCode !== 0 && !sk.isTemplate && sk.name && sk.name !== 'name')
+                h.arts[sk.name] = { learned: true, uses: 30 };
+            });
+          });
+          messages.push('一步登仙：全体仙术全开');
+        } break;
+        case 'script.wait': intents.push({ type: 'wait', ms: d.ms || 0 }); break;
+        default: handled = false;
+      }
+      if (handled) return;
+      // ---- 以下 kind 需要读 raw 参数 ----
+      var raw = ef.raw || (d && (d.raw || d.a)) || [];
+      function S(i) { return raw[i]; }
+      switch (k) {
+        case 'player.setPosition': intents.push({ type: 'playerPos', x: E(S(0)), y: E(S(1)) }); break;
+        case 'player.setDirection': intents.push({ type: 'playerDir', dir: self.dirOf(String(S(0)), 'down') }); break;
+        case 'player.setState': intents.push({ type: 'playerState', st: S(0) }); break;
+        case 'player.setSequence': intents.push({ type: 'playerState', st: S(1) || S(0) }); break;
+        case 'player.setVelocity': intents.push({ type: 'playerVel', v: E(S(0)) }); break;
+        case 'player.moveTo': intents.push({ type: 'playerMove', x: E(S(0)), y: E(S(1)) }); break;
+        case 'player.move': intents.push({ type: 'playerStep', dir: S(0), n: E(S(1)) }); break;
+        case 'player.takeTheStairs': intents.push({ type: 'playerStep', dir: self.playerDir, n: 2 }); break;
+        case 'player.playAnimation': intents.push({ type: 'playerState', st: S(0) }); break;
+        case 'player.addItem': self.addItem(S(0), raw.length > 1 ? E(S(1)) : 1); break;
+        case 'player.removeItem': self.removeItem(S(0), raw.length > 1 ? E(S(1)) : 1); break;
+        case 'player.addGold': self.addGold(E(S(0))); break;
+        case 'player.reduceGold': self.addGold(-E(S(0))); break;
+        case 'player.setGold': self.gold = Math.max(0, E(S(0))); break;
+        case 'player.healing': { var mh = mainHero(); if (mh && P) P.fullRestore(mh); break; }
+        case 'player.levelup': {
+          if (P) {
+            self.fees[500] = true;
+            P.activeHeroes(self).forEach(function (h) { P.levelUp(self, h, E(S(0)) || 1); });
+            messages.push('等级提升' + (E(S(0)) || 1) + '级');
+          }
+          break;
+        }
+        case 'player.task': {
+          var tn = String(S(0));
+          if (self.tasks.indexOf(tn) < 0) self.tasks.push(tn);
+          messages.push('接受任务：' + tn);
+          break;
+        }
+        case 'player.firstTask': {
+          var fn2 = String(S(0));
+          if (!self.tasks.length) self.tasks.push(fn2);
+          else self.tasks[0] = fn2;
+          messages.push('当前任务：' + fn2);
+          break;
+        }
+        case 'player.removeTask': {
+          var ri = self.tasks.indexOf(String(S(0)));
+          if (ri >= 0) self.tasks.splice(ri, 1);
+          break;
+        }
+        case 'player.startSkill': if (P) { var m0 = mainHero(); if (m0) P.learnSkill(self, m0.name, String(S(0))); messages.push('开通技能' + S(0)); } break;
+        case 'player.startArtSkill': if (P) { var m1 = mainHero(); if (m1) P.learnArt(self, m1.name, String(S(0))); messages.push('开通技能' + S(0)); } break;
+        case 'player.addspeed': case 'player.addluck': case 'player.addgod':
+        case 'player.addhp': case 'player.addlove': {
+          if (P) {
+            var mh2 = mainHero();
+            if (mh2) {
+              var st2 = P.statsOf(mh2), v = E(S(0));
+              if (k === 'player.addhp') mh2.hp = Math.min(st2.maxHp, mh2.hp + v);
+              else if (k === 'player.addgod') mh2.mp = Math.min(st2.maxMp, mh2.mp + v);
+              else if (k === 'player.addspeed') mh2.bonusSpd = (mh2.bonusSpd || 0) + v;
+              else if (k === 'player.addluck') mh2.bonusLuk = (mh2.bonusLuk || 0) + v;
+              else if (k === 'player.addlove') {
+                mh2.feeling = Math.max(0, Math.min(100, mh2.feeling + v));
+                self.party[mh2.name] = mh2.feeling;
+              }
+              P.clampHero(mh2);
+              messages.push(mh2.name + ' ' + k.replace('player.', '') + '+' + v);
+            }
+          }
+          break;
+        }
+        case 'player.showFace': self.playerFace = true; break;
+        case 'player.hideFace': self.playerFace = false; break;
+        case 'partner.addFeeling': if (P) P.addFeeling(self, E(S(0)), E(S(1))); break;
+        case 'partner.reduceFeeling': if (P) P.addFeeling(self, E(S(0)), -E(S(1))); break;
+        case 'partner.in': {
+          // ★ in(队友id, NPC编号, 延迟)：该 NPC 开始跟随主角
+          var pi = E(S(0)), npcId = E(S(1));
+          if (P) P.partnerIn(self, pi);
+          self.followers[pi] = npcId;
+          messages.push('队友加入：' + (P && P.PARTNER_ROLE[pi] ? P.heroes(self)[P.PARTNER_ROLE[pi]].name : pi));
+          break;
+        }
+        case 'partner.out': {
+          // ★ out(队友id, NPC编号, x, y, 延迟)：停止跟随并落到 x,y
+          var po = E(S(0));
+          if (P) P.partnerOut(self, po);
+          delete self.followers[po];
+          var el = self.findElement(E(S(1)));
+          if (el) { el.x = E(S(2)); el.y = E(S(3)); }
+          break;
+        }
+        case 'item.remove': messages.push('（物品被移除）'); break;
+        case 'user.addHP': { var uh = mainHero(); if (uh && P) { var st3 = P.statsOf(uh); uh.hp = Math.min(st3.maxHp, uh.hp + E(S(0))); } break; }
+        case 'camera.setFocusOnPlayer': intents.push({ type: 'camPlayer' }); break;
+        case 'camera.setFocusOnNpc': intents.push({ type: 'camNpc', id: S(0) }); break;
+        case 'camera.setPosition': intents.push({ type: 'camPos', x: E(S(0)), y: E(S(1)) }); break;
+        case 'camera.moveTo': intents.push({ type: 'camPos', x: E(S(0)), y: E(S(1)) }); break;
+        default: {
+          // ★ 地图级 npc.* 带 NPC 编号（与对象级裸 npc.* 不同）
+          if (/^npc\./.test(k)) {
+            var ncmd = k.slice(4), el2 = self.findElement(E(S(0)));
+            if (!el2) break;
+            if (ncmd === 'setPosition') { el2.x = E(S(1)); el2.y = E(S(2)); }
+            else if (ncmd === 'setDirection') el2.dir = self.dirOf(String(S(1)), el2.dir);
+            else if (ncmd === 'setState') el2.state = S(1) === 'walk' ? '走路' : '站立';
+            else if (ncmd === 'setSequence') el2.seq = S(1);
+            else if (ncmd === 'setVelocity') el2.velocity = E(S(1));
+            else if (ncmd === 'setAiEnabled') el2.ai = S(1) === 'true';
+            else if (ncmd === 'setIgnoreEvent') el2.ignoreEvent = S(1) === 'true';
+            else if (ncmd === 'moveTo') el2.moveTo = [E(S(1)), E(S(2))];
+            else if (ncmd === 'showFace') el2.showFace = true;
+            else if (ncmd === 'hideFace') el2.showFace = false;
+            else if (ncmd === 'addActivityRegion') el2.region = { x: E(S(1)), y: E(S(2)), r: E(S(3)), dir: S(4) };
+            else if (ncmd === 'addNode') (el2.nodes = el2.nodes || []).push([E(S(1)), E(S(2))]);
+            else if (ncmd === 'addInitialPosition') { el2.x = E(S(1)); el2.y = E(S(2)); }
+            else if (ncmd === 'in') el2.inScene = true;
+            else if (ncmd === 'bindPlayer') el2.bound = true;
+            else if (ncmd === 'unbindPlayer') el2.bound = false;
+          }
+          break;
+        }
+      }
+    });
+    return { intents: intents, messages: messages };
   };
 
   // ------------------------------------------------------------ 触发区
@@ -295,11 +558,14 @@
   /**
    * 执行一个触发区脚本。返回 {change, moveTo, dialog, effects}。
    * ★ world.change 是立即切图（e.java:2573 super.a(true); super.y()），
-   *   不是走出边界才触发 —— 走进矩形就触发。
+   *   走进矩形就触发，切图后后续脚本不再执行。
+   * ★ script.openScriptList[条件] 只门控【本批】（到 closeScriptList 为止），
+   *   条件不成立则跳过本批、继续往后；整区什么都没执行时不标记 fired，
+   *   否则事件达成后玩家再也进不去这个区。
    */
   World.prototype.fireZone = function (z) {
     var r = { zone: z, change: null, moveTo: null, dialog: null };
-    var self = this;
+    var self = this, did = false;
     function condOk(c) {
       if (c.cond == null) return true;
       var terms = (c.cond && c.cond.terms) ? c.cond.terms.map(function (t) { return t.raw; }) : [c.cond];
@@ -310,12 +576,18 @@
     }
     for (var i = 0; i < z.ast.length; i++) {
       var c = z.ast[i];
-      // ★ script.openScriptList[条件] —— 条件不成立则整批指令都不执行。
-      //   实测 272 个区里有 94 处条件挂在这里；break[条件] 只控制单次等待。
-      // ★ 被门控时【不能】标记 fired，否则事件达成后玩家再也进不去这个区。
+      // ★ 门控批：跳到配对的 closeScriptList，继续往后
       if (c.obj === 'script' && c.cmd === 'openScriptList' && !condOk(c)) {
         r.gated = true;
-        return r;
+        var depth = 1, j = i + 1;
+        while (j < z.ast.length && depth > 0) {
+          var cc = z.ast[j];
+          if (cc.obj === 'script' && cc.cmd === 'openScriptList') depth++;
+          if (cc.obj === 'script' && cc.cmd === 'closeScriptList') depth--;
+          j++;
+        }
+        i = j - 1;   // for 的 i++ 会越过 closeScriptList
+        continue;
       }
       if (!condOk(c)) continue;
       if (c.obj === 'world' && c.cmd === 'change') {
@@ -328,29 +600,33 @@
           x: this.E(a[4]), y: this.E(a[5]),
           dir: this.dirOf(String(a[6]), 'down')
         };
-        continue;
+        did = true;
+        break;   // ★ 立即切图，后续脚本不再执行（e.java:2573）
       }
       if (c.obj === 'player' && c.cmd === 'moveTo') {
         // moveTo(x, y, flag)：-1 表示保持当前值
         var b = c.raw_args || [];
         var nx = this.E(b[0]), ny = this.E(b[1]);
         r.moveTo = { x: nx < 0 ? null : nx, y: ny < 0 ? null : ny };
+        did = true;
         continue;
       }
       if (c.obj === 'player' && c.cmd === 'setDirection') {
         this.playerDir = this.dirOf(String((c.raw_args || [])[0]), this.playerDir || 'down');
+        did = true;
         continue;
       }
       if (c.obj === 'dialogBox' && c.cmd === 'setText') {
         var da = (c.args || [])[0] || {};
         r.dialog = { speaker: da.speaker || null, text: da.value != null ? da.value : String((c.raw_args || [])[0]) };
+        did = true;
         continue;
       }
       // 其余交给通用解释器
-      this.interp.step({ obj: c.obj, cmd: c.cmd, raw_args: c.raw_args || [], cond: null });
+      if (this.interp.step({ obj: c.obj, cmd: c.cmd, raw_args: c.raw_args || [], cond: null })) did = true;
     }
-    // 真正执行了才标记已触发（门控的区保持未触发）
-    z.fired = true;
+    // 什么都没执行（全被门控）则保持未触发
+    if (did) z.fired = true;
     return r;
   };
 
