@@ -96,6 +96,7 @@
 <script src="src/quest.js"></script>
 <script src="src/shop.js"></script>
 <script src="src/craft.js"></script>
+<script src="src/ant_parser.js"></script>
 <script src="src/battle.js"></script>
 <script src="src/menu.js"></script>
 <script>
@@ -119,12 +120,20 @@ function loadTileBin(binName){
   const arr = new Array(n);
   const ps = [];
   for (let i = 0; i < n; i++){
-    const idx = String(i).padStart(3,'0');
-    const url = `data/tiles/${binName.replace('.bin','')}/${idx}.png`;
+    const dir = binName.replace('.bin','');
+    // 尝试两种命名格式: 000.png / sprite_0.png
+    const url = `data/tiles/${dir}/${String(i).padStart(3,'0')}.png`;
+    const url2 = `data/tiles/${dir}/sprite_${i}.png`;
     const p = new Promise(res=>{
       const img = new Image();
       img.onload = ()=>{arr[i]=img; res()};
-      img.onerror = ()=>{arr[i]=null; res()};
+      img.onerror = ()=>{
+        // fallback: 尝试 sprite_N.png
+        const img2 = new Image();
+        img2.onload = ()=>{arr[i]=img2; res()};
+        img2.onerror = ()=>{arr[i]=null; res()};
+        img2.src = url2;
+      };
       img.src = url;
     });
     ps.push(p);
@@ -243,28 +252,35 @@ function render(){
 function drawNpcs(){
   const m = state.map;
   const cx = state.camera.x, cy = state.camera.y;
-  // 取第一层的 NPC 列表作为本地图的 NPC
   const layer = m.layers[0];
   if (!layer || !layer.npcs) return;
   const renwu = tileImgCache['renwu.bin'] || [];
-  const npcSpriteMap = window.NPC_SPRITE_MAP.npcToRenwu || {};
+  const npcSpriteMap = (window.NPC_SPRITE_MAP && window.NPC_SPRITE_MAP.npcToRenwu) || {};
+  const sheet = renwu[0]; // renwu.bin sprite 0 = 181x44 合并精灵图
   for (const n of layer.npcs){
     const sx = n.x - cx, sy = n.y - cy;
-    if (sx < -32 || sx > cv.width+32 || sy < -32 || sy > cv.height+32) continue;
-    const spriteIdx = npcSpriteMap[String(n.id)];
-    const img = (typeof spriteIdx === 'number') ? renwu[spriteIdx] : renwu[n.id % renwu.length];
-    if (img){
-      // Assume sprite sheet with 4 horizontal frames, use first frame for standing pose
-      const sheetW = img.naturalWidth || 16, sheetH = img.naturalHeight || 16;
-      const frameW = sheetW / 4;
-      const frameH = sheetH;
-      const scale = 1;
-      ctx.drawImage(img, 0, 0, frameW, frameH, sx - frameW*scale/2, sy - frameH*scale, frameW*scale, frameH*scale);
+    if (sx < -64 || sx > cv.width+64 || sy < -64 || sy > cv.height+64) continue;
+    const frame = window.XJ_GET_NPC_FRAMES && window.XJ_GET_NPC_FRAMES(n.id);
+    if (sheet && sheet.naturalWidth > 0 && frame){
+      // 有 ANT 裁剪数据：从合并精灵图中裁剪
+      ctx.drawImage(sheet, frame.srcX, frame.srcY, frame.w, frame.h,
+        sx - frame.w/2, sy - frame.h, frame.w, frame.h);
+    } else if (sheet && sheet.naturalWidth > 0){
+      // fallback：无 ANT 数据，按 npcToRenwu 映射找到独立立绘
+      const idx = npcSpriteMap[String(n.id)];
+      const img = (typeof idx === 'number' && renwu[idx]) ? renwu[idx] : null;
+      if (img && img.naturalWidth > 0){
+        ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight,
+          sx - img.naturalWidth/2, sy - img.naturalHeight, img.naturalWidth, img.naturalHeight);
+      } else {
+        // 最终兜底：画小方块
+        ctx.fillStyle = '#ff0';
+        ctx.fillRect(sx-4, sy-8, 8, 16);
+      }
     } else {
       ctx.fillStyle = '#ff0';
       ctx.fillRect(sx-4, sy-8, 8, 16);
     }
-    // NPC id 标签
     if (state.keys['g'] || state.keys['G']){
       ctx.fillStyle = '#fff';
       ctx.font = '8px monospace';
@@ -276,13 +292,12 @@ function drawNpcs(){
 function drawPlayer(){
   const cx = state.camera.x, cy = state.camera.y;
   const px = state.player.x - cx, py = state.player.y - cy;
-  // 用 renwu.bin[0] 作为玩家立绘 (主角 景天)
-  const renwu = tileImgCache['renwu.bin'] || [];
-  const img = renwu[0];
-  if (img){
-    const sheetW = img.naturalWidth || 16, sheetH = img.naturalHeight || 16;
-    const frameW = sheetW / 4, frameH = sheetH;
-    ctx.drawImage(img, 0, 0, frameW, frameH, px - frameW/2, py - frameH, frameW, frameH);
+  const chonglou = tileImgCache['chonglou.bin'] || [];
+  const img = chonglou[0];
+  if (img && img.naturalWidth > 0){
+    // 80x91 立绘缩放到约 1/3 以适配 240x320 视口
+    const drawW = 27, drawH = 30;
+    ctx.drawImage(img, 0, 0, 80, 91, px - drawW/2, py - drawH, drawW, drawH);
   } else {
     ctx.fillStyle = '#f44';
     ctx.fillRect(px-6, py-12, 12, 12);
@@ -518,9 +533,10 @@ let dlgTextEl = document.getElementById('dlgText');
 
 // ---- 启动 ----
 (async ()=>{
-  // 预加载 cs.bin + renwu.bin
+  // 预加载 cs.bin + renwu.bin + chonglou.bin
   await loadTileBin('cs.bin');
   await loadTileBin('renwu.bin');
+  await loadTileBin('chonglou.bin');
   await loadMap(state.mapId);
   loop();
 })();
