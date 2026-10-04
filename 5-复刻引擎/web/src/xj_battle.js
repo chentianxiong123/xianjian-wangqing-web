@@ -43,17 +43,20 @@
     this.ant = opts.ant || null;            // ANT 名
     this.stateName = opts.stateName || '站立';
 
-    // ★ 字段名与 ax.java 保持一致，便于与源码逐条对照
-    this.I = opts.hp != null ? opts.hp : 1000;          // 当前精
-    this.J = opts.maxHp != null ? opts.maxHp : 1000;     // 最大精
-    this.K = opts.atk || 0;                              // 攻击
+    // ★ 字段名与 ax.java 保持一致，便于与源码逐条对照。
+    //   先设上限再设当前值，否则钳制会把它压到默认的 1。
+    this.N = Math.max(1, opts.maxMp != null ? opts.maxMp : 1);
+    this.M = Math.max(0, Math.min(opts.mp || 0, this.N));
+    this.P = Math.max(1, opts.maxGas != null ? opts.maxGas : 1);
+    this.O = Math.max(0, Math.min(opts.gas || 0, this.P));
+    this.J = Math.max(1, opts.maxHp != null ? opts.maxHp : 1000);
+    this.I = Math.max(0, Math.min(opts.hp != null ? opts.hp : 1000, this.J));
+    this.K = Math.max(0, opts.atk || 0);                 // 攻击
     this.L = opts.def != null ? opts.def : 0;            // 防御 ★ 怪物恒 0
-    this.M = opts.mp || 0; this.N = opts.maxMp || 1;    // 神 / 最大神
-    this.O = opts.gas || 0; this.P = opts.maxGas || 1;  // 气 / 最大气
-    this.Q = opts.spd != null ? opts.spd : 1;            // 速度
+    this.Q = Math.max(0, opts.spd != null ? opts.spd : 1);  // 速度
     this.S = opts.luk || 0;                              // 运
     this.R = opts.gainGas || 0;                          // 攻击时目标增加的气
-    this.H = opts.level != null ? opts.level : 1;        // 等级
+    this.H = Math.max(opts.level != null ? opts.level : 1, 1);   // 等级
     this.T = 0;                                          // 好感度（玩家）
     this.i = 0;                                          // 行动条 0..1000
     this.c = 0;                                          // 技能速度（行动期增量）
@@ -72,6 +75,47 @@
     this.dead = false;
     this.y = 0;                 // 动画帧计时
   }
+
+  /* ---- 带钳制的 setter，严格照 ax.java 的 getter/setter ----
+   * k(J>=1)  m(DEF 无钳制)  g(K>=0)  h(M 0..N)  i(N>=1)
+   * e(O 0..P)  f(P>=1)  n(Q>=0)  p(S 无)  q(T 无)  l(H>=1)              */
+  Unit.prototype.k = function (v) { this.J = Math.max(1, v | 0); return this.J; };
+  Unit.prototype.m = function (v) { this.L = v | 0; return this.L; };
+  Unit.prototype.g = function (v) { this.K = Math.max(0, v | 0); return this.K; };
+  Unit.prototype.h = function (v) { this.M = Math.max(0, Math.min(v | 0, this.N)); return this.M; };
+  Unit.prototype.i = function (v) { this.N = Math.max(1, v | 0); return this.N; };
+  Unit.prototype.e = function (v) { this.O = Math.max(0, Math.min(v | 0, this.P)); return this.O; };
+  Unit.prototype.f = function (v) { this.P = Math.max(1, v | 0); return this.P; };
+  Unit.prototype.n = function (v) { this.Q = Math.max(0, v | 0); return this.Q; };
+  Unit.prototype.p = function (v) { this.S = v | 0; return this.S; };
+  Unit.prototype.q = function (v) { this.T = v | 0; return this.T; };
+  Unit.prototype.l = function (v) { this.H = Math.max(v | 0, 1); return this.H; };
+
+  /* ---- 便捷别名（内部字段沿用 ax.java 的单字母名） ---- */
+  Object.defineProperties(Unit.prototype, {
+    level:  { get: function () { return this.H; }, set: function (v) { this.H = v; } },
+    hp:     { get: function () { return this.I; }, set: function (v) { this.addHp(v); } },
+    maxHp:  { get: function () { return this.J; }, set: function (v) { this.k(v); } },
+    atk:    { get: function () { return this.K; }, set: function (v) { this.g(v); } },
+    def:    { get: function () { return this.L; }, set: function (v) { this.m(v); } },
+    mp:     { get: function () { return this.M; }, set: function (v) { this.h(v); } },
+    maxMp:  { get: function () { return this.N; }, set: function (v) { this.i(v); } },
+    gas:    { get: function () { return this.O; }, set: function (v) { this.e(v); } },
+    maxGas: { get: function () { return this.P; }, set: function (v) { this.f(v); } },
+    spd:    { get: function () { return this.Q; }, set: function (v) { this.n(v); } },
+    luk:    { get: function () { return this.S; }, set: function (v) { this.p(v); } },
+    exp:    { get: function () { return this.T; }, set: function (v) { this.q(v); } },
+    gauge:  { get: function () { return this.i; }, set: function (v) { this.i = v; } },
+    acted:  { get: function () { return this.j; }, set: function (v) { this.j = v; } },
+    state:  { get: function () { return this.t; }, set: function (v) { this.t = v; } },
+    block:  { get: function () { return this.ab; }, set: function (v) { this.ab = v; } },
+    morph:  { get: function () { return this.ac; }, set: function (v) { this.ac = v; } },
+    counter:{ get: function () { return this.B; }, set: function (v) { this.B = v; } },
+    frozen: { get: function () { return this.z; }, set: function (v) { this.z = v; } },
+    atkBuff:{ get: function () { return this.C; }, set: function (v) { this.C = v; } },
+    defBuff:{ get: function () { return this.E; }, set: function (v) { this.E = v; } },
+    spdBuff:{ get: function () { return this.a; }, set: function (v) { this.a = v; } }
+  });
 
   Unit.prototype.isDead = function () { return this.t === STATE.DEAD; };
   Unit.prototype.hpPct = function () { return this.J > 0 ? this.I / this.J : 0; };
@@ -498,8 +542,200 @@
     return dx * dx + dy * dy <= r * r;
   };
 
+  // ------------------------------------------------------------ 遇敌组建
+  /**
+   * enemy.str 的键值表（由 30-解析脚本与配置.py 从 enemy.str 抽出）。
+   * 值为 5 段逗号分隔：
+   *   ID范围, 怪物种类, 等级范围, 战斗背景ANT, BGM
+   * 例：
+   *   boss1     = 9,1,60,fight_mishi,boss.mid      单种怪 id9，等级 60
+   *   十里坡东  = 1-2,2,#32?25-35:0-10,...        两种怪 id1/id2，按等级与事件选段
+   */
+  function enemySpec(key) {
+    var D = XJ.data.config || {};
+    var raw = D.enemyDistRaw || {};
+    var v = raw[key];
+    if (v == null) return null;
+    if (Array.isArray(v)) v = v.join(',');
+    var a = String(v).split(',').map(function (s) { return s.trim(); });
+    if (a.length < 5) return null;
+    return { key: key, idSpec: a[0], kinds: parseInt(a[1], 10) || 1,
+             levelSpec: a[2], bgAnt: a[3].replace(/\.ant$/i, ''), bgm: a[4] };
+  }
+
+  /** ID范围 "1-2-5" → [1,2,5]；"9" → [9] */
+  function parseIdSpec(s) {
+    return String(s).split('-').map(function (x) { return parseInt(x, 10); })
+      .filter(function (x) { return !isNaN(x); });
+  }
+
+  /** 等级范围 "0-20" → [0,20]；"60" → [60,60] */
+  function parseLevelSpec(s) {
+    var a = String(s).split('-').map(function (x) { return parseInt(x, 10); })
+      .filter(function (x) { return !isNaN(x); });
+    if (!a.length) return [1, 1];
+    return a.length === 1 ? [a[0], a[0]] : [a[0], a[1]];
+  }
+
+  /**
+   * 等级范围里的条件形式：#事件ID?成立段:不成立段
+   * 例 "#32?25-35:0-10" —— event32 为 1 用 25-35，否则用 0-10
+   */
+  function resolveLevelSpec(spec, world) {
+    var s = String(spec);
+    if (s.charAt(0) !== '#') return parseLevelSpec(s);
+    var m = s.match(/^#(\d+)\?([^:]+):(.+)$/);
+    if (!m) return parseLevelSpec(s);
+    var on = !!(world && world.event && world.event(parseInt(m[1], 10)) === 1);
+    return parseLevelSpec(on ? m[2] : m[3]);
+  }
+
+  /** 从 fight_<id>.str 的产物建怪物单位 */
+  function makeMonster(cfgId, level, rnd, cfgIndex) {
+    var F = (XJ.data.scripts && XJ.data.scripts.fight) || {};
+    var key = 'fight_' + cfgId;
+    var cfg = F[key];
+    if (!cfg) return null;
+    var sc = cfg.scalars || {};
+    var fm = cfg.formulas || {};
+    var env = new XS.Expr({ lv: level, slv: 1 });
+    /**
+     * 取一个属性值。产物里有两种存放方式：
+     *   scalars  —— 字面量（如 fight_9 的 最小生命 = "50000"）
+     *   formulas —— 含 lv/slv 的表达式（如 fight_2 的 最小生命 = ((100+26*lv)*…)*3/2）
+     * 两处都要查，否则公式型配置全部取不到值。
+     */
+    function num(field, dflt) {
+      var raw = sc[field];
+      if (raw != null) {
+        try { return env.eval(String(raw)); } catch (e) { /* 落到 formulas */ }
+      }
+      var f = fm[field];
+      if (f && f.expr) {
+        try { return env.eval(String(f.expr)); } catch (e) { return dflt; }
+      }
+      return dflt;
+    }
+    // 生命/速度/经验/金钱都是「最小/最大两列各自求值后取区间随机」（bm.java:33-41）
+    function rng2(loField, hiField) {
+      var a = num(loField, null), b = num(hiField, null);
+      if (a == null || b == null) return 0;
+      return randInt(Math.min(a, b), Math.max(a, b), rnd);
+    }
+    // 战斗位置 ID：1..5 的敌人不移动（g.java:41-51）
+    var posId = parseInt(sc['ID'], 10) || 0;
+    var skillSpeed = Math.max(1, num('仙术速度', 10));
+
+    // af 构造器固定 12 个字段，而产物把整行按 '#' 拍平成一个列表，
+    // 所以多技能要按 12 一切块，末尾不足 12 的残缺记录丢弃。
+    var SKILL_FIELDS = 12;
+    var skills = { normal: [], spell: [] };
+    (cfg.tables || []).forEach(function (t) {
+      var c = t.cols || [];
+      if (c.length < 11) return;
+      if (t.key === '普通技能') {
+        skills.normal.push({ name: c[2], formula: c[10], anim: c[3], kindCode: 0,
+                             all: c[4] === '是', costQi: parseInt(c[9], 10) || 0 });
+      } else if (t.key === '仙术技能') {
+        for (var i = 0; i + 10 < c.length; i += SKILL_FIELDS) {
+          skills.spell.push({ name: c[i + 2], formula: c[i + 10], anim: c[i + 3],
+                              kindCode: kindCode(c[i]), all: c[i + 4] === '是',
+                              costQi: parseInt(c[i + 9], 10) || 0 });
+        }
+      }
+    });
+
+    var hpRoll = rng2('最小生命', '最大生命');
+    var u = new Unit({
+      side: 'foe', slot: 0,
+      name: sc['名字'] || ('怪物' + cfgId),
+      hp: hpRoll, maxHp: hpRoll,                     // 满血出场（g.java:27-28）
+      atk: num('攻击值', 1), def: 0,                 // ★ 怪物防御恒 0
+      spd: rng2('最小速度', '最大速度'), luk: num('运', 0),
+      level: level, gas: 0, maxGas: 1, mp: 0, maxMp: 1,
+      gainGas: num('攻击时增加的气值', 0)
+    });
+    u.moves = !(posId >= 1 && posId <= 5);
+    u.skills = skills;
+    u.skillSpeed = skillSpeed;
+    u.expRange = [num('最小经验', 0), num('最大经验', 0)];
+    u.goldRange = [num('最小金钱', 0), num('最大金钱', 0)];
+    u.carry = String(sc['携带物品'] || '');
+    u.drops = String(sc['掉落物品'] || '');
+    u.cfgId = cfgId;
+    u.def_ = sc;
+    void cfgIndex;
+    return u;
+  }
+
+  function kindCode(s) {
+    var m = { '普通': 0, '水系': 1, '雷系': 2, '火系': 3, '风系': 4, '土系': 5, '双系': 6 };
+    return m[s] != null ? m[s] : 7;
+  }
+
+  /**
+   * 按 enemy.str 的键组建一场遭遇。
+   * f.java:346 d(int) 与 f.java:428 a(String,int,int) 的完整实现。
+   *
+   * @param key      enemy.str 的键（地图名 或 boss1/liyao/…）
+   * @param playerLv 主角等级（怪物等级 = 主角等级 ±1 再夹区间）
+   * @param world    用于解析等级范围里的 #事件 条件
+   */
+  function encounter(key, playerLv, rnd, world) {
+    var spec = enemySpec(key);
+    if (!spec) return null;
+    var ids = parseIdSpec(spec.idSpec);
+    if (!ids.length) return null;
+    var lvRange = resolveLevelSpec(spec.levelSpec, world);
+    var out = { key: key, bgAnt: spec.bgAnt, bgm: spec.bgm, monsters: [], kinds: spec.kinds };
+
+    if (spec.kinds === 2 && ids.length >= 2) {
+      // 两种怪：随机拆分总数（f.java:388-404）
+      var b = new Battle({ rnd: rnd });
+      var per = b.rollCount(3);                     // 每种的数量（f.java:350 的表）
+      var n1 = randInt(0, per, rnd), n2 = per - n1;
+      var t1 = ids[randInt(0, ids.length - 1, rnd)];
+      var ids2 = ids.filter(function (x) { return x !== t1; });
+      var t2 = ids2.length ? ids2[randInt(0, ids2.length - 1, rnd)] : t1;
+      var i;
+      for (i = 0; i < n1; i++) out.monsters.push(mk(t1, playerLv, lvRange, rnd, i));
+      for (i = 0; i < n2; i++) out.monsters.push(mk(t2, playerLv, lvRange, rnd, i));
+    } else {
+      var one = ids[randInt(0, ids.length - 1, rnd)];
+      var n = 1;
+      var bb = new Battle({ rnd: rnd });
+      n = bb.rollCount(3);                          // f.java:350 的数量分配
+      var k;
+      for (k = 0; k < n; k++) out.monsters.push(mk(one, playerLv, lvRange, rnd, k));
+    }
+    out.monsters = out.monsters.filter(Boolean);
+    if (out.monsters.length) {
+      out.monsters[0].slot = 0;
+      if (out.monsters[1]) out.monsters[1].slot = 1;
+      if (out.monsters[2]) out.monsters[2].slot = 2;
+      out.exp = 0; out.gold = 0;
+      out.monsters.forEach(function (m) {
+        out.exp += randInt(Math.min(m.expRange[0], m.expRange[1]),
+                           Math.max(m.expRange[0], m.expRange[1]), rnd);
+        out.gold += randInt(Math.min(m.goldRange[0], m.goldRange[1]),
+                            Math.max(m.goldRange[0], m.goldRange[1]), rnd);
+      });
+    }
+    return out;
+
+    function mk(cfgId, plv, lvR, r, slot) {
+      var lv = new Battle({ rnd: r }).rollEnemyLevel(plv, lvR[0], lvR[1]);
+      var u = makeMonster(cfgId, lv, r);
+      if (u) { u.slot = slot; u.c = u.skillSpeed; }
+      return u;
+    }
+  }
+
   global.XJBattle = {
     Battle: Battle, Unit: Unit,
+    encounter: encounter, enemySpec: enemySpec, makeMonster: makeMonster,
+    parseIdSpec: parseIdSpec, parseLevelSpec: parseLevelSpec,
+    resolveLevelSpec: resolveLevelSpec, kindCode: kindCode,
     randInt: randInt, chance: chance, isqrt: isqrt,
     STATE: STATE, HITTYPE: HITTYPE, POPUP: POPUP
   };

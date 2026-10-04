@@ -206,6 +206,16 @@ CONFIG_MAP = [
 
 def gen_config():
     out = {}
+    # enemy.str 的原始键值表（键 = 地图名 或 boss1/liyao/…），战斗遇敌直接查它
+    ed = jload("06-配置", "_汇总_敌人分布.json") or {}
+    raw = {}
+    for r in ed.get("rows") or []:
+        k = r.get("map")
+        if k:
+            raw[k] = r.get("raw") or ",".join(r.get("cols") or [])
+    if raw:
+        out["enemyDistRaw"] = raw
+        out["_enemyKeys"] = len(raw)
     miss = []
     for key, rel, label in CONFIG_MAP:
         d = jload(*rel)
@@ -216,7 +226,9 @@ def gen_config():
     out["_note"] = "各 key 对应 3-数据/06-配置/ 下的同名汇总或原始表"
     if miss:
         out["_missing"] = miss
-    return emit("xj_config.js", "XJ_CONFIG", out, "配置 %d 组" % (len(out) - 2))
+    return emit("xj_config.js", "XJ_CONFIG", out,
+                "配置 %d 组（含 enemy.str 键值表 %d 条）"
+                % (len(out) - 3, out.get("_enemyKeys", 0)))
 
 
 # --------------------------------------------------------------- 逻辑
