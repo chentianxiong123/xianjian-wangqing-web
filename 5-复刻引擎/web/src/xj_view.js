@@ -23,10 +23,11 @@
     this.vp = new XJ.Viewport(canvas.width, canvas.height);
     this.t0 = performance.now();
     this.player = { x: 0, y: 0, dir: 'down', state: '站立', ant: null, t: 0 };
+    this.world = new global.XJWorld();
     this.npcs = [];        // {x,y,dir,state,ant}
     this.showGrid = false;
     this.showHitbox = false;
-    this.stats = { tiles: 0, objs: 0, frames: 0, miss: 0, pending: 0 };
+    this.stats = { tiles: 0, objs: 0, elements: 0, frames: 0, miss: 0, pending: 0 };
   }
 
   Scene.prototype.load = function (mapName, px, py) {
@@ -36,14 +37,8 @@
     this.m = m;
     this.px = px != null ? px : Math.floor(m.cols * m.tw / 2);
     this.py = py != null ? py : Math.floor(m.rows * m.th / 2);
-    // 收集该地图脚本里的 element.addToNpc 作为 NPC
-    this.npcs = [];
-    for (var i = 0; i < m.script.length; i++) {
-      var c = m.script[i];
-      if (c.obj === 'element' && /^addToNpc$/.test(c.cmd) && c.cond === null) {
-        this.npcs.push({ x: 0, y: 0, dir: 'down', state: '站立', ant: null, pending: true });
-      }
-    }
+    // ★ 装配世界：跑地图级脚本 + 逐个对象脚本，真正把 NPC/怪物/宝箱等建出来
+    this.world.build(mapName, this.px, this.py);
     return true;
   };
 
@@ -128,6 +123,33 @@
     this.stats.objs += n;
   };
 
+  /**
+   * 绘制脚本装配出来的元素（自带 ANT 的 NPC / 怪物 / 宝箱 / 鸟 / 云 …）。
+   * 与 drawObjects 的区别：这些元素有【自己的 ANT】，不用地图的 elementAnt。
+   */
+  Scene.prototype.drawElements = function () {
+    var els = this.world.elements, ctx = this.ctx, vp = this.vp;
+    if (!els) return;
+    var t = performance.now() - this.t0;
+    var n = 0;
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i];
+      var x = e.x - vp.x, y = e.y - vp.y;
+      if (x < -80 || x > vp.w + 80 || y < -120 || y > vp.h + 80) continue;
+      var antName = e.ant || this.m.elementAnt;
+      var a = antName ? XJ.data.ant.ants[antName] : null;
+      if (!a) { this.stats.miss++; continue; }
+      // 有自己 ANT 的用状态名解析；没有的退回 anim 索引
+      var st = e.ant ? XJ.resolveState(antName, e.state, e.dir)
+                     : (e.anim >= 0 && e.anim < a.states.length ? a.states[e.anim] : null);
+      if (!st) { this.stats.miss++; continue; }
+      // 每个元素用位置哈希做相位偏移，避免整齐同步
+      XJ.drawState(ctx, antName, st, x, y, t + ((e.x * 31 + e.y * 17) % 1000), true);
+      n++;
+    }
+    this.stats.elements = n;
+  };
+
   // ---------------------------------------------------------- 角色
   Scene.prototype.drawActor = function (x, y, dir, baseState, antName, tOffset) {
     var ctx = this.ctx;
@@ -150,11 +172,13 @@
     ctx.fillRect(0, 0, this.cv.width, this.cv.height);
     this.stats.tiles = 0; this.stats.objs = 0;
     this.stats.frames = 0; this.stats.miss = 0; this.stats.pending = 0;
+    this.stats.elements = 0;
 
     this.vp.centerOn(this.px, this.py, this.mapPxW(), this.mapPxH());
 
     this.drawTiles();
-    this.drawObjects(1);                       // 元素层
+    this.drawObjects(1);                       // 元素层（无脚本对象，用地图 elementAnt）
+    this.drawElements();                       // 脚本装配出的元素（自带 ANT）
     // 主角：优先用玩家自己的 ANT（renwu），否则退回地图元素 ANT 的 站立
     this.drawActor(this.px, this.py, this.player.dir, this.player.state,
       this.player.ant || m.elementAnt, 0);
@@ -196,6 +220,7 @@
         + (m ? Math.floor(this.px / m.tw) + ',' + Math.floor(this.py / m.th) : '')
         + '  朝向 ' + this.player.dir + '  状态 ' + this.player.state,
       '本帧 地砖 ' + this.stats.tiles + '  元素 ' + this.stats.objs
+        + '  脚本元素 ' + this.stats.elements
         + '  角色帧 ' + this.stats.frames + '  缺资源 ' + this.stats.miss
         + '   [G]网格'
     ];

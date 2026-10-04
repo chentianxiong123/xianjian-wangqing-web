@@ -37,6 +37,10 @@
     <select id="antSel"></select>
     <button id="btnState">切换状态</button>
 
+    <h2>事件标记</h2>
+    <div id="evBox" style="max-height:120px;overflow:auto"></div>
+    <button id="btnReloadEv">按当前标记重装</button>
+
     <h2>操作</h2>
     <table>
       <tr><th>方向键 / WASD</th><td>移动</td></tr>
@@ -61,6 +65,9 @@
 <script src="data/xj_scripts.js"></script>
 <!-- 引擎 -->
 <script src="src/xj.js"></script>
+<script src="src/xj_script.js"></script>
+<script src="src/xj_world.js"></script>
+<script src="src/xj_battle.js"></script>
 <script src="src/xj_view.js"></script>
 
 <script>
@@ -101,7 +108,7 @@
   };
   asel.onchange = function(){ scene.player.ant = asel.value; log('主角 ANT → ' + asel.value); };
 
-  function loadMap(){
+  function loadMapOld(){
     var n = sel.value;
     if (!scene.load(n)) { log('✗ 地图不存在 ' + n); return; }
     scene.player.ant = asel.value;
@@ -114,12 +121,11 @@
     bins = bins.concat(bins2).filter(function(v,i,a){return a.indexOf(v)===i;});
     var left = bins.length;
     bins.forEach(function(b){ XJ.preloadBin(b, function(){ if(--left===0) log('精灵图预载完成'); }); });
-    log('载入 ' + n + '  ' + scene.m.cols + '×' + scene.m.rows + ' 格  '
-        + '元素 ' + scene.m.layers.reduce(function(s,L){return s+L.o.length;},0)
-        + '  脚本 ' + scene.m.script.length + ' 条  BIN=' + bins.join(','));
+    log('(旧)预载 BIN=' + bins.join(','));
   }
   sel.onchange = loadMap;
   document.getElementById('btnReload').onclick = loadMap;
+  void loadMapOld;
 
   // ---- 运行时统计 ----
   setInterval(function(){
@@ -136,6 +142,46 @@
       '<tr><th>加载失败</th><td>' + Object.keys(XJ.imgFailed).length + '</td></tr>';
   }, 500);
 
+  // 事件标记面板：条件驱动的 NPC 出现/离场靠它
+  var evBox = document.getElementById('evBox');
+  function evNumbers(){
+    var s = new Set();
+    (scene.m ? scene.m.script : []).concat.apply([], (scene.m ? scene.m.layers : [])
+      .map(function(L){ return (L.o||[]).map(function(o){return o[3]||[];}); }));
+    (scene.m ? scene.m.script : []).forEach(function(c){
+      if (c.cond && c.cond.terms) c.cond.terms.forEach(function(t){
+        if (t.fn==='eventMarked') s.add(t.args[0].value); }); });
+    (scene.m ? scene.m.layers : []).forEach(function(L){
+      (L.o||[]).forEach(function(o){ (o[3]||[]).forEach(function(c){
+        if (c.cond && c.cond.terms) c.cond.terms.forEach(function(t){
+          if (t.fn==='eventMarked') s.add(t.args[0].value); }); }); }); });
+    return Array.from(s).sort(function(a,b){return a-b;});
+  }
+  function renderEvPanel(){
+    var nums = evNumbers();
+    evBox.innerHTML = nums.length ? '' : '<div style="color:#666">本图无条件依赖的事件</div>';
+    nums.forEach(function(n){
+      var lab = document.createElement('label');
+      lab.style.cssText='display:block;font:11px monospace';
+      var cb = document.createElement('input');
+      cb.type='checkbox'; cb.checked = !!scene.world.events[n];
+      cb.onchange = function(){ scene.world.events[n] = cb.checked ? 1 : 0; };
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(' event' + n));
+      evBox.appendChild(lab);
+    });
+  }
+  document.getElementById('btnReloadEv').onclick = loadMap;
+  function loadMap(){
+    var n = sel.value;
+    if (!scene.load(n)) { log('✗ 地图不存在 ' + n); return; }
+    scene.player.ant = asel.value;
+    scene.player.state = '站立';
+    renderEvPanel();
+    log('载入 ' + n + '  ' + scene.m.cols + '×' + scene.m.rows + ' 格  '
+        + '无脚本元素 ' + scene.world.plainObjects.length
+        + '  脚本元素 ' + scene.world.elements.length
+        + '  地图级指令 ' + scene.m.script.length);
+  }
   loadMap();
   scene.start();
 
