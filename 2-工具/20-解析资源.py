@@ -209,6 +209,65 @@ def main():
         "dir": "08-npc/npc_定义.json", "files": len(npcdefs),
         "status": "来自 39 个数字命名 str"}
 
+    # ============================================================ 标题/杂项 (corp/logo)
+    # jar 里 ant/bin/map/str/mid 主目录之外的资源：
+    #   corp/logo.ant + logo.png + logo.mid ＝ 标题画面（h.java：黑底 LOGO 动画 + 音乐，播完进游戏）
+    #   logo/sp.png ＝ 启动 splash（Startup.java）；icon.png ＝ 图标
+    #   dcn.bin ＝ 短信计费配置（bb.java，非游戏内容，存档备查）
+    print("== 标题/杂项 (corp/logo) ==")
+    try:
+        lp = os.path.join(TREE, "corp", "logo.ant")
+        a = F_ant.load(lp)
+        a["file"] = "corp/logo.ant"
+        # ★ sheet 0 就是 logo.png 本身（h.java 直接加载 /corp/logo.png 做图源），不归属任何 BIN
+        a["bin"] = "logo"
+        a["binCount"] = 1
+        a["sha256"] = sha(open(lp, "rb").read())
+        write_json("01-ant/logo.json", a)
+        ldir = os.path.join(WEB_SPRITES, "logo")
+        os.makedirs(ldir, exist_ok=True)
+        with open(os.path.join(TREE, "corp", "logo.png"), "rb") as f:
+            png = f.read()
+        with open(os.path.join(ldir, "000.png"), "wb") as f:
+            f.write(png)
+        write_json("03-bin/logo.json",
+                   {"count": 1, "entries": [{"index": 0, "entry": "logo.png",
+                                             "kind": "png", "resolved": "logo.png",
+                                             "png": "5-复刻引擎/web/data/sprites/logo/000.png",
+                                             "sha256": sha(png)}]})
+        import shutil
+        webmid = os.path.join(ROOT, "5-复刻引擎", "web", "mid")
+        os.makedirs(webmid, exist_ok=True)
+        shutil.copy(os.path.join(TREE, "corp", "logo.mid"),
+                    os.path.join(webmid, "logo.mid"))
+        imgdir = os.path.join(ROOT, "5-复刻引擎", "web", "data", "img")
+        os.makedirs(imgdir, exist_ok=True)
+        shutil.copy(os.path.join(TREE, "logo", "sp.png"), os.path.join(imgdir, "sp.png"))
+        with open(os.path.join(TREE, "icon.png"), "rb") as f:
+            icon = f.read()
+        with open(os.path.join(imgdir, "icon.png"), "wb") as f:
+            f.write(icon)
+        report["ok"] += 1
+        print("   logo.ant(%d 状态) + logo.png + logo.mid + sp.png + icon.png" % len(a["states"]))
+    except Exception as ex:
+        report["fail"] += 1
+        report["errors"].append("corp/logo: %s: %s" % (type(ex).__name__, ex))
+    try:
+        dcn = open(os.path.join(TREE, "dcn.bin"), "rb").read().decode("gbk", errors="replace")
+        sms = {}
+        for line in dcn.splitlines():
+            line = line.strip()
+            if line and ":" in line:
+                k, v = line.split(":", 1)
+                sms[k.strip()] = v.strip()
+        write_json("09-其他/dcn_sms.json",
+                   {"note": "短信计费配置（bb.java，非游戏内容；复刻版商城为免费激活）",
+                    "entries": sms})
+        print("   dcn.bin 短信配置 %d 项 → 09-其他/dcn_sms.json" % len(sms))
+    except Exception as ex:
+        report["fail"] += 1
+        report["errors"].append("dcn.bin: %s: %s" % (type(ex).__name__, ex))
+
     # ============================================================ bin→web 索引
     write_json("../5-复刻引擎/web/data/bin_index.json",
                {k: v["count"] for k, v in bin_index.items()})

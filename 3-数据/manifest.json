@@ -1,8 +1,8 @@
 {
   "byte_exact": {
     "ant": {
-      "ok": 75,
-      "total": 75
+      "ok": 76,
+      "total": 76
     },
     "map": {
       "ok": 69,
@@ -21,7 +21,7 @@
     {
       "level": "OK",
       "group": "ant",
-      "msg": "字节精确 75/75"
+      "msg": "字节精确 76/76"
     },
     {
       "level": "OK",
@@ -41,7 +41,7 @@
     {
       "level": "OK",
       "group": "产物",
-      "msg": "01-ant: 75 个 JSON"
+      "msg": "01-ant: 76 个 JSON"
     },
     {
       "level": "OK",
@@ -101,7 +101,7 @@
     {
       "level": "OK",
       "group": "引用",
-      "msg": "ANT: 75 个文件, sheet/layer 全部在界内"
+      "msg": "ANT: 76 个文件, sheet/layer 全部在界内"
     },
     {
       "level": "OK",
@@ -121,7 +121,7 @@
     {
       "level": "OK",
       "group": "引用",
-      "msg": "精灵图: 461/461 张 PNG"
+      "msg": "精灵图: 462/462 张 PNG"
     },
     {
       "level": "OK",
@@ -146,7 +146,7 @@
     {
       "level": "OK",
       "group": "逻辑",
-      "msg": "ANT 脚本实证 125 行 / 18 种指令 100% 被覆盖"
+      "msg": "ANT 脚本实证 126 行 / 19 种指令 100% 被覆盖"
     },
     {
       "level": "OK",
@@ -183,8 +183,8 @@
     {
       "layer": "资源",
       "item": "ANT 动画",
-      "done": 75,
-      "total": 75,
+      "done": 76,
+      "total": 76,
       "pct": 100.0,
       "note": "字节级"
     },
@@ -223,8 +223,8 @@
     {
       "layer": "资源",
       "item": "精灵图 PNG",
-      "done": 461,
-      "total": 461,
+      "done": 462,
+      "total": 462,
       "pct": 100.0,
       "note": "索引已修正"
     },
@@ -367,10 +367,10 @@
     {
       "layer": "逻辑",
       "item": "ANT 脚本覆盖",
-      "done": 18,
-      "total": 18,
+      "done": 19,
+      "total": 19,
       "pct": 100.0,
-      "note": "125 行脚本"
+      "note": "126 行脚本"
     }
   ],
   "logic_files": [

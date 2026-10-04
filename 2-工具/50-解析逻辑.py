@@ -835,6 +835,9 @@ def collect_ant_scripts() -> dict:
     # 并入源码自动提取的 RPG 指令表（e.java），使 game.flicker 等指令被识别为已覆盖
     auto = OPS.extract_rpg_ops(os.path.join(ROOT, SRC))["namespaces"]
     known |= {(ns, o["cmd"]) for ns, v in auto.items() for o in v["ops"]}
+    # ★ 标题画面的 music.play() 由 h.java 特殊处理（tag=="music.play();" → ah.d() 开始播 logo.mid），
+    #   不走 ax 技能解释器，单列为已覆盖
+    known |= {("music", "play")}
 
     rows = []
     unknown = []

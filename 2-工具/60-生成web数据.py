@@ -75,6 +75,17 @@ def gen_bin():
                 urls.append(url)
             total += 1
         bins[name] = ents
+    # ★ 标题图：03-bin/logo.json（corp/logo.png，非 BIN 包，单 sheet 直引）
+    logo = jload("03-bin", "logo.json") or {}
+    for e in (logo.get("entries") or []):
+        png = e.get("png") or ""
+        rel = png.split("sprites/")[-1] if "sprites/" in png else ""
+        url = "data/sprites/" + rel if rel else None
+        bins.setdefault("logo", []).append({"i": e["index"], "e": e.get("entry"),
+                                             "k": e.get("kind"), "r": e.get("resolved"), "u": url})
+        if url:
+            urls.append(url)
+        total += 1
     out = {
         "count": total,
         "bins": bins,

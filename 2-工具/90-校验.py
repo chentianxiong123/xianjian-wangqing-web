@@ -48,7 +48,10 @@ def jload(rel):
 # ============================================================ 1. 字节级
 def check_bytes():
     n = {}
-    n["ant"] = check_one("ant", glob.glob(os.path.join(TREE, "ant", "*.ant")), FA.load)
+    # ★ 标题 logo.ant 同样字节级校验（corp 目录）
+    ant_files = glob.glob(os.path.join(TREE, "ant", "*.ant")) + \
+        glob.glob(os.path.join(TREE, "corp", "*.ant"))
+    n["ant"] = check_one("ant", ant_files, FA.load)
     n["map"] = check_one("map", glob.glob(os.path.join(TREE, "map", "*.map")), FM.load)
     n["bin"] = check_one("bin", glob.glob(os.path.join(TREE, "bin", "*.bin")), FB.load_bin)
     n["str"] = check_one("str", glob.glob(os.path.join(TREE, "str", "*.str")),
@@ -106,6 +109,10 @@ def check_refs():
         add(ERR, "引用", "缺 03-bin/index.json")
         return
     counts = {k: v["count"] for k, v in binidx.items()}
+    # ★ 标题图 logo.png 不是 BIN 包（h.java 直引 /corp/logo.png），用边车清单校验
+    logo = jload("03-bin/logo.json")
+    if logo:
+        counts["logo"] = logo["count"]
 
     # ANT 完整性
     ants = {}
@@ -198,10 +205,12 @@ def check_refs():
     else:
         add(OK, "引用", "NPC: 对话文件全部存在")
 
-    # 精灵图 PNG
+    # 精灵图 PNG（+标题 logo.png 边车清单）
     npng = len(glob.glob(os.path.join(ROOT, "5-复刻引擎", "web", "data",
                                       "sprites", "*", "*.png")))
     need = sum(v["count"] for v in binidx.values())
+    logo_sidecar = jload("03-bin/logo.json") or {}
+    need += logo_sidecar.get("count", 0)
     if npng == need:
         add(OK, "引用", "精灵图: %d/%d 张 PNG" % (npng, need))
     else:
@@ -449,7 +458,8 @@ def coverage(nl=None):
         cov.append({"layer": layer, "item": item, "done": done,
                     "total": total, "pct": round(pct, 1), "note": note})
 
-    nant = len(glob.glob(os.path.join(TREE, "ant", "*.ant")))
+    nant = len(glob.glob(os.path.join(TREE, "ant", "*.ant"))) + \
+        len(glob.glob(os.path.join(TREE, "corp", "*.ant")))
     row("资源", "ANT 动画", len(glob.glob(os.path.join(DATA, "01-ant", "*.json"))),
         nant, "字节级")
     nmap = len(glob.glob(os.path.join(TREE, "map", "*.map")))

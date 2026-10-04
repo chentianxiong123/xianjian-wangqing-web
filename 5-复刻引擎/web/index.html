@@ -262,9 +262,9 @@
   };
   saveInfo();
 
-  // ★ 开机：读 config_game 进初始图（ms_syt_1），不是调试用的 cs_ljb_1
-  scene.boot();
-  sel.value = scene.mapName;
+  // ★ 开机：先标题画面（corp/logo），播完/按键后进初始图（ms_syt_1）
+  scene.startTitle();
+  sel.value = 'ms_syt_1';
   scene.start();
 
   // 全库预载：浏览器对同域并发连接数有限，一次发 461 个请求会互相排队

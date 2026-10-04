@@ -2,8 +2,8 @@
  "kind": "evidence",
  "name": "ANT 动画脚本实证统计",
  "note": "对 3-数据/01-ant/*.json 的每个 state.seq[].tag 逐行统计，用于验证从源码逆向出的指令表是否覆盖了游戏实际用到的全部指令",
- "filesScanned": 75,
- "scriptLinesTotal": 125,
+ "filesScanned": 76,
+ "scriptLinesTotal": 126,
  "filesWithScripts": {
   "fight_1.json": 1,
   "fight_10.json": 2,
@@ -20,10 +20,11 @@
   "fight_skill.json": 93,
   "fight_zx.json": 1,
   "jiujianxian.json": 1,
+  "logo.json": 1,
   "npc_33.json": 1,
   "npc_34.json": 2
  },
- "distinct": 18,
+ "distinct": 19,
  "commands": [
   {
    "ns": "attacker",
@@ -208,6 +209,14 @@
   {
    "ns": "player",
    "cmd": "addAll",
+   "hasArgs": false,
+   "count": 1,
+   "argsSamples": [],
+   "coveredBySource": true
+  },
+  {
+   "ns": "music",
+   "cmd": "play",
    "hasArgs": false,
    "count": 1,
    "argsSamples": [],

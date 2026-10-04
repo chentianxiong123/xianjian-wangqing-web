@@ -738,6 +738,8 @@
       this.battleView.render(dt || 16);
       return;
     }
+    // 标题画面
+    if (this.title) { this.drawTitle(dt || 16); return; }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.cv.width, this.cv.height);
     if (!m) { this.hud('未加载地图'); return; }
@@ -1034,6 +1036,8 @@
                   w: 'up', s: 'down', a: 'left', d: 'right', Enter: 'ok', ' ': 'ok', Escape: 'cancel' };
     global.addEventListener('keydown', function (e) {
       if (e.key === 'g' || e.key === 'G') { self.showGrid = !self.showGrid; return; }
+      // 标题画面：任意键跳过进游戏
+      if (self.title) { e.preventDefault(); self.finishTitle(); return; }
       // 战斗中走战斗输入
       if (self.inBattle && self.battleView) {
         e.preventDefault();
@@ -1358,6 +1362,97 @@
     this.load(map0);
     this.audioMapBgm();
     this.log('开机：' + map0 + '（' + (this.world.mapTitle || '') + '）');
+    return true;
+  };
+
+  // ---------------------------------------------------------- 标题画面
+  /**
+   * 标题（h.java）：黑底 → LOGO 动画（corp/logo.ant）→ 播完进游戏。
+   * music.play tag 处播 logo.mid（1 遍）；播完自动进 boot，任意键跳过。
+   * sp.png 开场 splash 约 1.2s（Startup.java 引用，具体时长未知，取近似值）。
+   */
+  Scene.prototype.startTitle = function () {
+    this.title = { phase: 'splash', acc: 0, musicOn: false, logoAcc: 0 };
+    this.spImg = null;
+    var self = this;
+    var im = new Image();
+    im.onload = function () { self.spImg = im; };
+    im.src = 'data/img/sp.png';
+    return true;
+  };
+
+  Scene.prototype.finishTitle = function () {
+    if (!this.title) return false;
+    this.title = null;
+    this.audioStop();
+    this.boot();
+    return true;
+  };
+
+  /** LOGO 当前帧包围盒（居中用） */
+  Scene.prototype.logoBox = function () {
+    var A = XJ.data.ant.ants['logo'];
+    if (!A) return null;
+    var st = XJ.state('logo', 'LOGO');
+    if (!st) return null;
+    var total = XJ.stateDuration(st);
+    var at = Math.min(Math.max(this.title.logoAcc || 0, 0), total - 1), acc = 0, fi = 0;
+    for (var i = 0; i < st.q.length; i++) {
+      var d = st.q[i][3] || 0;
+      if (at < acc + d) { fi = i; break; }
+      acc += d; fi = i;
+    }
+    var seq = st.q[fi], part = A.layers[seq[0]] || [];
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    part.forEach(function (q) {
+      var c = A.clips[q[0]];
+      if (!c) return;
+      var ft = XJ.FLAG_TABLE[q[3]] || XJ.FLAG_TABLE[0];
+      var w = ft.swap ? c[4] : c[3], h = ft.swap ? c[3] : c[4];
+      var x = q[1] + seq[1], y = q[2] + seq[2];
+      if (x < x0) x0 = x; if (y < y0) y0 = y;
+      if (x + w > x1) x1 = x + w; if (y + h > y1) y1 = y + h;
+    });
+    if (x1 < x0) return null;
+    return { x0: x0, y0: y0, w: x1 - x0, h: y1 - y0, frame: fi };
+  };
+
+  Scene.prototype.drawTitle = function (dt) {
+    var ctx = this.ctx, W = this.cv.width, H = this.cv.height, t = this.title;
+    // ★ 用帧 dt 累计（后台切走时 rAF 停，墙钟会跳变导致标题被跳过）
+    t.acc += dt || 16;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    if (t.phase === 'splash') {
+      if (this.spImg && this.spImg.naturalWidth) {
+        var sw = this.spImg.naturalWidth, sh = this.spImg.naturalHeight;
+        ctx.drawImage(this.spImg, (W - sw) / 2, (H - sh) / 2);
+      }
+      if (t.acc > 1200) { t.phase = 'logo'; t.logoAcc = 0; }
+      ctx.restore();
+      return true;
+    }
+    // LOGO 动画（播完自动进游戏）
+    var A = XJ.data.ant.ants['logo'];
+    var st = A && XJ.state('logo', 'LOGO');
+    if (!st) { this.finishTitle(); ctx.restore(); return true; }
+    t.logoAcc += dt || 16;
+    var box = this.logoBox();
+    var ox = box ? (W - box.w) / 2 - box.x0 : W / 2;
+    var oy = box ? (H - box.h) / 2 - box.y0 : H / 2;
+    var r = XJ.drawState(ctx, 'logo', st, ox, oy, t.logoAcc, false);
+    // music.play tag 帧播音乐（h.java: g() 检查 tag=="music.play();"）
+    if (!t.musicOn) {
+      var tags = XJ.stateScripts('logo', st, (box && box.frame) || 0);
+      if (tags.some(function (s) { return /music\.play/.test(s); })) {
+        t.musicOn = true;
+        this.audioPlay('logo', 1);
+      }
+    }
+    ctx.restore();
+    if (r.done) this.finishTitle();
     return true;
   };
 
