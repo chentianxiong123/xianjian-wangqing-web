@@ -1,544 +1,159 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>仙剑奇侠传-忘情篇 Web 复刻</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>仙剑奇侠传-忘情篇</title>
 <style>
-  html,body{margin:0;height:100%;background:#000;color:#eee;font-family:"Microsoft YaHei",sans-serif;overflow:hidden}
-  #wrap{display:flex;flex-direction:column;align-items:center;height:100%}
-  #bar{width:100%;background:#222;padding:6px 12px;font-size:13px;display:flex;gap:16px;align-items:center;border-bottom:1px solid #444}
-  #bar select,#bar button{background:#06c;color:#fff;border:0;padding:4px 8px;font-size:12px;border-radius:3px;cursor:pointer}
-  #bar select{padding:4px}
-  #bar .info{color:#9cf}
-  #stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;width:100%}
-  canvas{image-rendering:pixelated;image-rendering:-moz-crisp-edges;background:#000;display:block;box-shadow:0 0 40px #0008}
-  #dlg{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:80%;max-width:600px;background:rgba(0,0,30,.92);border:2px solid #888;border-radius:8px;padding:12px 16px;color:#ffe;font-size:14px;line-height:1.6;display:none;box-shadow:0 4px 20px #000}
-  #dlg .name{color:#fc6;font-weight:bold;margin-bottom:4px}
-  #dlg .text{min-height:48px}
-  #dlg .hint{text-align:right;color:#888;font-size:11px;margin-top:4px}
-  #help{position:absolute;top:8px;right:12px;background:rgba(0,0,0,.6);color:#aaa;padding:8px 12px;font-size:11px;border-radius:4px;line-height:1.5}
-  kbd{background:#222;border:1px solid #555;padding:1px 5px;border-radius:3px;color:#fff}
-  /* UI 面板容器 */
-  #xj-overlay{position:absolute;inset:0;pointer-events:none;z-index:50}
-  .xj-panel{position:absolute;inset:0;z-index:100;pointer-events:auto;display:flex;align-items:center;justify-content:center}
-  .xj-panel.hidden{display:none}
-  .xj-panel-box{background:rgba(10,10,30,.95);border:2px solid #68a;border-radius:10px;padding:16px;color:#ffe;font-size:14px;max-width:90%;max-height:90%;overflow:auto;box-shadow:0 8px 40px #000c}
-  .xj-panel-box h3{margin:0 0 12px;color:#fc6;border-bottom:1px solid #468;padding-bottom:6px}
-  .xj-panel-box .close-btn{position:absolute;top:8px;right:12px;background:#933;color:#fff;border:0;width:24px;height:24px;border-radius:12px;cursor:pointer;font-size:14px}
-  .xj-item-row{display:flex;justify-content:space-between;padding:4px 8px;border-bottom:1px solid #234;cursor:pointer}
-  .xj-item-row:hover{background:#246}
-  .xj-item-row.disabled{color:#666;cursor:not-allowed}
-  .xj-item-row .price{color:#fc6}
-  .xj-tab-bar{display:flex;gap:2px;margin-bottom:12px}
-  .xj-tab{padding:6px 14px;background:#234;color:#aab;border:1px solid #345;border-radius:4px 4px 0 0;cursor:pointer;font-size:12px}
-  .xj-tab.active{background:#06c;color:#fff}
-  .xj-status-grid{display:grid;grid-template-columns:auto auto;gap:4px 16px;font-size:13px}
-  .xj-status-grid .label{color:#9af}
-  .xj-status-grid .value{color:#ffe}
-  #xj-money{position:absolute;top:8px;left:12px;background:rgba(0,0,0,.7);color:#fc6;padding:4px 10px;font-size:13px;border-radius:4px;z-index:60;font-weight:bold}
+  html,body{margin:0;padding:0;background:#0b0b12;color:#c8c8d0;
+    font:13px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  #wrap{display:flex;gap:14px;padding:14px;align-items:flex-start;flex-wrap:wrap}
+  canvas{background:#000;border:1px solid #2a2a38;image-rendering:pixelated;
+    display:block;touch-action:none}
+  #side{width:270px;font-size:12px}
+  #side h2{font-size:13px;margin:14px 0 6px;color:#8cf;border-bottom:1px solid #2a2a38;
+    padding-bottom:3px}
+  #side h2:first-child{margin-top:0}
+  select,button{background:#1a1a26;color:#c8c8d0;border:1px solid #34344a;
+    padding:4px 7px;font:inherit;cursor:pointer;width:100%;margin-bottom:4px}
+  select:hover,button:hover{background:#25253a}
+  table{border-collapse:collapse;width:100%;font:11px/1.5 monospace}
+  td,th{border-bottom:1px solid #1e1e2a;padding:2px 4px;text-align:left}
+  th{color:#7a7a90;font-weight:normal}
+  #log{height:150px;overflow:auto;background:#0e0e16;border:1px solid #2a2a38;
+    padding:5px;font:10px/1.45 monospace;white-space:pre-wrap}
+  .k{color:#7cf}.v{color:#9c9}
 </style>
 </head>
 <body>
 <div id="wrap">
-  <div id="bar">
-    <b>仙剑奇侠传-忘情篇</b>
-    <span class="info" id="mapName">加载中…</span>
+  <canvas id="cv" width="480" height="272"></canvas>
+  <div id="side">
+    <h2>选地图</h2>
     <select id="mapSel"></select>
-    <span class="info" id="coord">player: (0,0)</span>
-    <span class="info" id="fps">--</span>
-  </div>
-  <div id="stage">
-    <canvas id="cv" width="240" height="320"></canvas>
-    <div id="help">
-      <kbd>↑↓←→</kbd>/<kbd>WASD</kbd> 移动<br>
-      <kbd>Space</kbd>/<kbd>Enter</kbd> 对话/交互<br>
-      <kbd>M</kbd> 切换地图菜单<br>
-      <kbd>Esc</kbd> 菜单 <kbd>I</kbd> 背包 <kbd>B</kbd> 状态<br>
-      <kbd>Tab</kbd> 任务 <kbd>Y</kbd> 合成<br>
-      <kbd>G</kbd> 显示NPC ID
-    </div>
-    <div id="dlg">
-      <div class="name" id="dlgName"></div>
-      <div class="text" id="dlgText"></div>
-      <div class="hint">空格继续 / Esc 关闭</div>
-    </div>
-    <div id="xj-money">¥ 300</div>
-    <div id="xj-overlay">
-      <div id="xj-panel-battle" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.hidePanel()">×</button><h3>战斗</h3><div id="battle-content">Agent-S3 实现中…</div></div></div>
-      <div id="xj-panel-shop" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.closeShop()">×</button><h3>商店</h3><div id="shop-content">Agent-S4 实现中…</div></div></div>
-      <div id="xj-panel-craft" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.closeCraft()">×</button><h3>合成</h3><div id="craft-content">Agent-S5 实现中…</div></div></div>
-      <div id="xj-panel-menu" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.closeMenu()">×</button><h3>菜单</h3><div id="menu-content">Agent-S7 实现中…</div></div></div>
-      <div id="xj-panel-quest" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.hidePanel()">×</button><h3>任务</h3><div id="quest-content">Agent-S6 实现中…</div></div></div>
-    </div>
+    <button id="btnReload">重新载入</button>
+
+    <h2>角色</h2>
+    <select id="antSel"></select>
+    <button id="btnState">切换状态</button>
+
+    <h2>操作</h2>
+    <table>
+      <tr><th>方向键 / WASD</th><td>移动</td></tr>
+      <tr><th>G</th><td>显示网格</td></tr>
+    </table>
+
+    <h2>运行时</h2>
+    <table id="stat"></table>
+
+    <h2>日志</h2>
+    <div id="log"></div>
   </div>
 </div>
-<script src="data/bin_index.js"></script>
-<script src="data/maps.js"></script>
-<script src="data/npc_config.js"></script>
-<script src="data/talk_scripts.js"></script>
-<script src="data/npc_sprite_map.js"></script>
-<!-- 批次1 数据层（agent 完成后自动生效） -->
-<script src="data/shops.js?v=1"></script>
-<script src="data/items.js"></script>
-<script src="data/skills.js"></script>
-<script src="data/enemies.js"></script>
-<script src="data/recipes.js"></script>
-<script src="data/tasks.js"></script>
-<script src="data/chars.js"></script>
-<script src="data/fight_cfg.js"></script>
-<script src="data/game_cfg.js"></script>
-<script src="data/ants.js"></script>
-<!-- 系统层 -->
-<script src="src/state.js?v=1"></script>
-<script src="src/save.js"></script>
-<script src="src/audio.js"></script>
-<script src="src/inventory.js"></script>
-<script src="src/quest.js"></script>
-<script src="src/shop.js"></script>
-<script src="src/craft.js"></script>
-<script src="src/ant_parser.js"></script>
-<script src="src/battle.js"></script>
-<script src="src/menu.js"></script>
+
+<!-- 数据：由 2-工具/60-生成web数据.py 从 3-数据/ 生成，请勿手改 -->
+<script src="data/xj_bin.js"></script>
+<script src="data/xj_ant.js"></script>
+<script src="data/xj_maps.js"></script>
+<script src="data/xj_npc.js"></script>
+<script src="data/xj_config.js"></script>
+<script src="data/xj_logic.js"></script>
+<script src="data/xj_scripts.js"></script>
+<!-- 引擎 -->
+<script src="src/xj.js"></script>
+<script src="src/xj_view.js"></script>
+
 <script>
-"use strict";
-// ============================================================
-//  仙剑奇侠传-忘情篇 Web 复刻引擎
-//  - 数据: window.MAPS (69 张地图, 真实解析)
-//  - 图集: data/tiles/<bin>/<idx>.png (311 张 PNG)
-//  - 渲染: Canvas 2D, 240x320 视口 (J2ME 原生分辨率)
-// ============================================================
+(function(){
+  'use strict';
+  var logEl = document.getElementById('log');
+  function log(s){ logEl.textContent = s + '\n' + logEl.textContent;
+    while(logEl.textContent.length > 4000) logEl.textContent =
+      logEl.textContent.slice(logEl.textContent.indexOf('\n')+1); }
 
-const TILE_BIN_LIST = ['cs.bin','ms.bin','sn.bin','yw.bin','chengshi.bin','renwu.bin','ui.bin','mishi.bin','shinei.bin','yewai.bin','portrait.bin','menu.bin','fight.bin','fight_beijing.bin','fight_skill.bin','fight_ui.bin','share.bin','chonglou.bin'];
+  var scene = new XJScene(document.getElementById('cv'));
+  window.scene = scene;
 
-// ---- 资源缓存 ----
-const tileImgCache = {};  // bin -> [Image]
-const pendingLoads = [];
+  // ---- 地图下拉 ----
+  var names = Object.keys(XJ.data.maps.maps).sort();
+  var sel = document.getElementById('mapSel');
+  names.forEach(function(n){
+    var o = document.createElement('option'); o.value = o.textContent = n; sel.appendChild(o);
+  });
+  sel.value = 'cs_ljb_1';
 
-function loadTileBin(binName){
-  if (tileImgCache[binName]) return Promise.resolve(tileImgCache[binName]);
-  const n = (window.BIN_INDEX && window.BIN_INDEX[binName]) || 0;
-  const arr = new Array(n);
-  const ps = [];
-  for (let i = 0; i < n; i++){
-    const dir = binName.replace('.bin','');
-    // 尝试两种命名格式: 000.png / sprite_0.png
-    const url = `data/tiles/${dir}/${String(i).padStart(3,'0')}.png`;
-    const url2 = `data/tiles/${dir}/sprite_${i}.png`;
-    const p = new Promise(res=>{
-      const img = new Image();
-      img.onload = ()=>{arr[i]=img; res()};
-      img.onerror = ()=>{
-        // fallback: 尝试 sprite_N.png
-        const img2 = new Image();
-        img2.onload = ()=>{arr[i]=img2; res()};
-        img2.onerror = ()=>{arr[i]=null; res()};
-        img2.src = url2;
-      };
-      img.src = url;
-    });
-    ps.push(p);
+  // ---- ANT 下拉（作为主角立绘）----
+  var ants = Object.keys(XJ.data.ant.ants).sort();
+  var asel = document.getElementById('antSel');
+  ants.forEach(function(n){
+    var o = document.createElement('option'); o.value = o.textContent = n; asel.appendChild(o);
+  });
+  // 注意：不存在 renwu.ant，角色地图精灵由游戏内逻辑决定；
+  // 这里先用 npc_1 做渲染验证
+  asel.value = 'npc_1';
+
+  var STATES = ['站立','走路','攻击','闪避','死亡'];
+  var si = 0;
+  document.getElementById('btnState').onclick = function(){
+    si = (si + 1) % STATES.length;
+    scene.player.state = STATES[si];
+    log('主角状态 → ' + STATES[si]);
+  };
+  asel.onchange = function(){ scene.player.ant = asel.value; log('主角 ANT → ' + asel.value); };
+
+  function loadMap(){
+    var n = sel.value;
+    if (!scene.load(n)) { log('✗ 地图不存在 ' + n); return; }
+    scene.player.ant = asel.value;
+    scene.player.state = '站立';
+    // 预载该地图用到的 BIN
+    var bins = [scene.m.tileBin, scene.m.elementAnt &&
+                (XJ.data.ant.ants[scene.m.elementAnt]||{}).bin].filter(Boolean);
+    var bins2 = (scene.m.elementAnts||[]).map(function(a){
+      return XJ.data.ant.ants[a] && XJ.data.ant.ants[a].bin; }).filter(Boolean);
+    bins = bins.concat(bins2).filter(function(v,i,a){return a.indexOf(v)===i;});
+    var left = bins.length;
+    bins.forEach(function(b){ XJ.preloadBin(b, function(){ if(--left===0) log('精灵图预载完成'); }); });
+    log('载入 ' + n + '  ' + scene.m.cols + '×' + scene.m.rows + ' 格  '
+        + '元素 ' + scene.m.layers.reduce(function(s,L){return s+L.o.length;},0)
+        + '  脚本 ' + scene.m.script.length + ' 条  BIN=' + bins.join(','));
   }
-  const P = Promise.all(ps).then(()=>{tileImgCache[binName]=arr; return arr});
-  tileImgCache[binName] = P;
-  return P;
-}
+  sel.onchange = loadMap;
+  document.getElementById('btnReload').onclick = loadMap;
 
-// ---- 游戏状态（桥接到统一的全局 XJ_STATE） ----
-const cv = document.getElementById('cv');
-const ctx = cv.getContext('2d');
-ctx.imageSmoothingEnabled = false;
-const state = window.XJ_STATE;   // ← 统一状态对象
-state._last = performance.now();
-state.camera.x = 0; state.camera.y = 0;
-state.player.x = 320; state.player.y = 240; state.player.dir = 'down'; state.player.speed = 2;
+  // ---- 运行时统计 ----
+  setInterval(function(){
+    var s = scene.stats, m = scene.m;
+    document.getElementById('stat').innerHTML =
+      '<tr><th>地图</th><td>' + (scene.mapName||'-') + '</td></tr>' +
+      '<tr><th>尺寸</th><td>' + (m?m.cols+'×'+m.rows+' 格':' -') + '</td></tr>' +
+      '<tr><th>地砖 BIN</th><td>' + (m?m.tileBin:'-') + '</td></tr>' +
+      '<tr><th>元素 ANT</th><td>' + (m?m.elementAnt:'-') + '</td></tr>' +
+      '<tr><th>本帧地砖</th><td>' + s.tiles + '</td></tr>' +
+      '<tr><th>本帧元素</th><td>' + s.objs + '</td></tr>' +
+      '<tr><th>缺资源</th><td>' + s.miss + '</td></tr>' +
+      '<tr><th>精灵缓存</th><td>' + Object.keys(XJ.imgCache).length + ' 包</td></tr>' +
+      '<tr><th>加载失败</th><td>' + Object.keys(XJ.imgFailed).length + '</td></tr>';
+  }, 500);
 
-// ---- 地图切换 ----
-async function loadMap(id){
-  const m = window.MAPS[id];
-  if (!m){ console.error('地图不存在', id); return; }
-  state.mapId = id;
-  state.map = m;
-  // 加载 tile 图集
-  state.tileBin = await loadTileBin(m.tileBin);
-  // 执行脚本里的 world.setName / setPosition / setDirection
-  runMapScript(m);
-  document.getElementById('mapName').textContent = `${m.setName} (${m.W}×${m.H}, tile=${m.tileW}×${m.tileH}, bin=${m.tileBin})`;
-  // 应用脚本里的玩家初始位置
-  const pm = m._scriptState;
-  if (pm.playerX !== undefined) state.player.x = pm.playerX;
-  if (pm.playerY !== undefined) state.player.y = pm.playerY;
-  if (pm.playerDir) state.player.dir = pm.playerDir;
-  // 居中相机
-  centerCamera();
-}
+  loadMap();
+  scene.start();
 
-function runMapScript(m){
-  // 简化的脚本执行: 提取初始状态
-  const s = m.script || '';
-  const st = {playerX: undefined, playerY: undefined, playerDir: null, name: m.setName};
-  // player.setPosition(X,Y)[!eventMarked(N)]
-  const pm = s.match(/player\.setPosition\((\d+),(\d+)\)/);
-  if (pm){ st.playerX = +pm[1]; st.playerY = +pm[2]; }
-  const dm = s.match(/player\.setDirection\((\w+)\)/);
-  if (dm){ st.playerDir = dm[1]; }
-  m._scriptState = st;
-}
-
-function centerCamera(){
-  const m = state.map;
-  const vw = cv.width, vh = cv.height;
-  let cx = state.player.x - vw/2;
-  let cy = state.player.y - vh/2;
-  cx = Math.max(0, Math.min(cx, m.W*m.tileW - vw));
-  cy = Math.max(0, Math.min(cy, m.H*m.tileH - vh));
-  state.camera.x = Math.round(cx);
-  state.camera.y = Math.round(cy);
-}
-
-// ---- 渲染 ----
-function render(){
-  const m = state.map;
-  if (!m || !state.tileBin){ return; }
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0,0,cv.width,cv.height);
-
-  const tw = m.tileW, th = m.tileH;
-  const cx = state.camera.x, cy = state.camera.y;
-  // 只画视口内的 tile
-  const col0 = Math.floor(cx / tw);
-  const row0 = Math.floor(cy / th);
-  const col1 = Math.ceil((cx + cv.width) / tw);
-  const row1 = Math.ceil((cy + cv.height) / th);
-
-  // 多层叠加: 地砖 → 元素 → 遮挡(如果有tile)
-  for (let li = 0; li < m.layers.length; li++){
-    const layer = m.layers[li];
-    if (!layer.has_tile || !layer.tile) continue;
-    const tb = state.tileBin;
-    for (let j = row0; j < row1; j++){
-      if (j < 0 || j >= m.H) continue;
-      const row = layer.tile[j];
-      for (let i = col0; i < col1; i++){
-        if (i < 0 || i >= m.W) continue;
-        const idx = row[i];
-        if (idx < 0) continue;            // -1 = 无 tile
-        const img = tb[idx];
-        if (img){
-          ctx.drawImage(img, i*tw - cx, j*th - cy, tw, th);
-        }
-      }
+  // 全库预载：浏览器对同域并发连接数有限，一次发 461 个请求会互相排队
+  var t0 = Date.now();
+  var pl = XJ.preloadAll(12, function(done, total, fin){
+    if (done % 60 === 0 || fin) {
+      var a = XJ.allStats();
+      log('精灵图 ' + done + '/' + total + '  ok=' + a.ok + ' pending=' + a.pending
+          + ' idle=' + a.idle + ' missing=' + a.missing
+          + '  用时 ' + ((Date.now()-t0)/1000).toFixed(1) + 's');
     }
-  }
-
-  // NPC (用 renwu.bin 当立绘占位 — 后续按真实映射修正)
-  drawNpcs();
-
-  // 玩家
-  drawPlayer();
-
-  // 调试网格
-  if (state.keys['g'] || state.keys['G']){
-    ctx.strokeStyle = 'rgba(255,255,0,.15)';
-    ctx.lineWidth = 1;
-    for (let i = col0; i <= col1; i++){
-      ctx.beginPath(); ctx.moveTo(i*tw-cx+.5, 0); ctx.lineTo(i*tw-cx+.5, cv.height); ctx.stroke();
-    }
-    for (let j = row0; j <= row1; j++){
-      ctx.beginPath(); ctx.moveTo(0, j*th-cy+.5); ctx.lineTo(cv.width, j*th-cy+.5); ctx.stroke();
-    }
-  }
-}
-
-function drawNpcs(){
-  const m = state.map;
-  const cx = state.camera.x, cy = state.camera.y;
-  const layer = m.layers[0];
-  if (!layer || !layer.npcs) return;
-  const renwu = tileImgCache['renwu.bin'] || [];
-  const npcSpriteMap = (window.NPC_SPRITE_MAP && window.NPC_SPRITE_MAP.npcToRenwu) || {};
-  const sheet = renwu[0]; // renwu.bin sprite 0 = 181x44 合并精灵图
-  for (const n of layer.npcs){
-    const sx = n.x - cx, sy = n.y - cy;
-    if (sx < -64 || sx > cv.width+64 || sy < -64 || sy > cv.height+64) continue;
-    const frame = window.XJ_GET_NPC_FRAMES && window.XJ_GET_NPC_FRAMES(n.id);
-    if (sheet && sheet.naturalWidth > 0 && frame){
-      // 有 ANT 裁剪数据：从合并精灵图中裁剪
-      ctx.drawImage(sheet, frame.srcX, frame.srcY, frame.w, frame.h,
-        sx - frame.w/2, sy - frame.h, frame.w, frame.h);
-    } else if (sheet && sheet.naturalWidth > 0){
-      // fallback：无 ANT 数据，按 npcToRenwu 映射找到独立立绘
-      const idx = npcSpriteMap[String(n.id)];
-      const img = (typeof idx === 'number' && renwu[idx]) ? renwu[idx] : null;
-      if (img && img.naturalWidth > 0){
-        ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight,
-          sx - img.naturalWidth/2, sy - img.naturalHeight, img.naturalWidth, img.naturalHeight);
-      } else {
-        // 最终兜底：画小方块
-        ctx.fillStyle = '#ff0';
-        ctx.fillRect(sx-4, sy-8, 8, 16);
-      }
-    } else {
-      ctx.fillStyle = '#ff0';
-      ctx.fillRect(sx-4, sy-8, 8, 16);
-    }
-    if (state.keys['g'] || state.keys['G']){
-      ctx.fillStyle = '#fff';
-      ctx.font = '8px monospace';
-      ctx.fillText('#'+n.id, sx-8, sy+10);
-    }
-  }
-}
-
-function drawPlayer(){
-  const cx = state.camera.x, cy = state.camera.y;
-  const px = state.player.x - cx, py = state.player.y - cy;
-  const chonglou = tileImgCache['chonglou.bin'] || [];
-  const img = chonglou[0];
-  if (img && img.naturalWidth > 0){
-    // 80x91 立绘缩放到约 1/3 以适配 240x320 视口
-    const drawW = 27, drawH = 30;
-    ctx.drawImage(img, 0, 0, 80, 91, px - drawW/2, py - drawH, drawW, drawH);
-  } else {
-    ctx.fillStyle = '#f44';
-    ctx.fillRect(px-6, py-12, 12, 12);
-  }
-  // 方向指示
-  ctx.fillStyle = '#ff0';
-  const dirs = {up:[0,-8], down:[0,8], left:[-8,0], right:[8,0]};
-  const d = dirs[state.player.dir] || [0,0];
-  ctx.fillRect(px + d[0]/2 - 1, py + d[1]/2 - 1, 2, 2);
-}
-
-// ---- 移动 / 碰撞 ----
-function tryMove(dx, dy){
-  const m = state.map;
-  if (!m) return;
-  const nx = state.player.x + dx;
-  const ny = state.player.y + dy;
-  // 地图边界
-  const mapW = m.W * m.tileW, mapH = m.H * m.tileH;
-  if (nx < 4 || nx > mapW - 4 || ny < 4 || ny > mapH - 4) return;
-  // 方向
-  if (dx < 0) state.player.dir = 'left';
-  else if (dx > 0) state.player.dir = 'right';
-  else if (dy < 0) state.player.dir = 'up';
-  else if (dy > 0) state.player.dir = 'down';
-  state.player.x = nx;
-  state.player.y = ny;
-  centerCamera();
-  checkTransitions();
-  checkNpcTouch();
-}
-
-function checkTransitions(){
-  const m = state.map;
-  // transitions 格式: [targetMap, tileBin, animBin, spriteBin, x, y, dir]
-  for (const t of (m.transitions||[])){
-    const tx = +t[4], ty = +t[5];
-    const dx = state.player.x - tx, dy = state.player.y - ty;
-    if (dx*dx + dy*dy < 12*12){
-      const targetId = t[0].replace('.map','');
-      if (window.MAPS[targetId]){
-        loadMap(targetId);
-        return;
-      }
-    }
-  }
-}
-
-function checkNpcTouch(){
-  if (state.dialog) return;
-  const m = state.map;
-  const layer = m.layers[0];
-  if (!layer || !layer.npcs) return;
-  for (const n of layer.npcs){
-    const dx = state.player.x - n.x, dy = state.player.y - n.y;
-    if (dx*dx + dy*dy < 14*14){
-      startNpcDialog(n.id);
-      return;
-    }
-  }
-}
-
-// ---- 真实对话引擎 (talk_*.str → 命令执行) ----
-function startNpcDialog(npcId){
-  // npcId 来自 map layer[0].npcs[].id
-  // 用 NPC_CONFIG 找到配置 (key 是字符串)
-  const cfg = window.NPC_CONFIG[String(npcId)];
-  if (!cfg){ showDialog('未知NPC','#'+npcId+''); return; }
-  const talkFile = cfg.talk_file;
-  const blocks = window.TALK_SCRIPTS[talkFile];
-  if (!blocks || !blocks.length){ showDialog(cfg.name,'（暂无对话）'); return; }
-  // 解析第一个 block 的所有 segments，检查条件 (eventMarked)
-  const block = blocks[0];
-  // 简单顺序执行: 找第一个无条件或条件满足的 segment
-  let segIdx = 0;
-  for (let i=0; i<block.length; i++){
-    if (!block[i].cond || checkEventCond(block[i].cond)) { segIdx=i; break; }
-  }
-  const seg = block[segIdx];
-  state.dialog = { cfg, talkFile, block, segIdx, dlgIdx: 0 };
-  showDialog(cfg.name, seg.dialogues);
-}
-
-function checkEventCond(cond){
-  // cond 格式: "!eventMarked(9),eventMarked(8)" 或 null
-  // 简单: 所有都要满足 (AND)；! 表示未标记
-  const marks = {};  // 从 localStorage 或 state
-  for (const c of cond.split(',')){
-    const m = c.trim().match(/(\!?)(?:eventMarked?|eventMark)\((\d+)\)/);
-    if (!m) continue;
-    const neg = m[1] === '!';
-    const id = m[2];
-    const set = localStorage.getItem('xj_event_'+id) === '1';
-    if (neg && set) return false;
-    if (!neg && !set) return false;
-  }
-  return true;
-}
-
-function advanceDialog(){
-  if (!state.dialog) return;
-  const d = state.dialog;
-  if (d.dlgIdx < d.seg.dialogues.length - 1){
-    d.dlgIdx++;
-    dlgTextEl && (dlgTextEl.textContent = d.seg.dialogues[d.dlgIdx].text);
-    return;
-  }
-  const block = d.block;
-  let nextIdx = d.segIdx + 1;
-  for (; nextIdx < block.length; nextIdx++){
-    if (!block[nextIdx].cond || checkEventCond(block[nextIdx].cond)) break;
-  }
-  if (nextIdx < block.length){
-    d.segIdx = nextIdx;
-    d.dlgIdx = 0;
-    const seg = block[nextIdx];
-    dlgNameEl && (dlgNameEl.textContent = seg.dialogues[0]?.speaker || d.cfg.name);
-    dlgTextEl && (dlgTextEl.textContent = seg.dialogues[0]?.text || '...');
-    return;
-  }
-  applyDialogEffects(d.seg);
-  dlgEl && (dlgEl.style.display = 'none');
-  state.dialog = null;
-}
-
-function applyDialogEffects(seg){
-  for (const id of seg.marks || []) localStorage.setItem('xj_event_'+id,'1');
-  for (const id of seg.unmarks || []) localStorage.removeItem('xj_event_'+id);
-  if (seg.trades?.length){
-    const items = seg.trades[0].split('|');
-    showDialog('物品列表', items.map(i=>'• '+i));
-  }
-}
-
-function showDialog(name, dialogues){
-  if (typeof dialogues === 'string') dialogues = [{speaker:name, text:dialogues}];
-  state.dialog = { cfg:{name}, block:null, segIdx:-1, dlgIdx:0, dialogues };
-  dlgNameEl && (dlgNameEl.textContent = dialogues[0]?.speaker || name);
-  dlgTextEl && (dlgTextEl.textContent = dialogues[0]?.text || '');
-  dlgEl && (dlgEl.style.display = 'block');
-}
-
-function closeDialog(){
-  state.dialog = null;
-  dlgEl && (dlgEl.style.display = 'none');
-}
-
-// ---- 输入 ----
-
-window.addEventListener('keydown', e=>{
-  state.keys[e.key.toLowerCase()] = true;
-  // 面板打开时，除 Esc 外不响应移动
-  const panelOpen = (state.runtime && state.runtime.ui !== 'map');
-  if (e.key === 'Escape'){
-    if (state.dialog){ closeDialog(); }
-    else if (window.XJ && panelOpen){ XJ.hidePanel(); }
-    else if (window.XJ){ XJ.openMenu(); }
-    return;
-  }
-  if (e.key === ' ' || e.key === 'Enter'){
-    e.preventDefault();
-    if (state.dialog){ advanceDialog(); return; }
-    if (panelOpen) return;
-    checkNpcTouch(); return;
-  }
-  // 系统快捷键
-  if (window.XJ && !panelOpen){
-    const k = e.key.toLowerCase();
-    if (k === 'i'){ XJ.openMenu('bag'); return; }
-    if (k === 'b'){ XJ.openMenu('status'); return; }
-    if (e.key === 'Tab'){ e.preventDefault(); XJ.openMenu('quest'); return; }
-    if (k === 'y'){ XJ.openCraft(); return; }
-    if (k === 'f9' || (e.ctrlKey && k === 's')){ e.preventDefault(); XJ.save(0); return; }
-    if (e.ctrlKey && k === 'l'){ e.preventDefault(); XJ.load(0); return; }
-  }
-  if (panelOpen) return;
-  // 移动键
-  const m = state.map;
-  if (!m || state.dialog) return;
-  if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') tryMove(0, -state.player.speed);
-  if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') tryMove(0, state.player.speed);
-  if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') tryMove(-state.player.speed, 0);
-  if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') tryMove(state.player.speed, 0);
-});
-window.addEventListener('keyup', e=>{ state.keys[e.key.toLowerCase()] = false; });
-
-// 连续移动 (按住)
-setInterval(()=>{
-  if (state.dialog) return;
-  if (state.runtime && state.runtime.ui !== 'map') return;
-  const s = state.player.speed;
-  if (state.keys['arrowup'] || state.keys['w']) tryMove(0, -s);
-  else if (state.keys['arrowdown'] || state.keys['s']) tryMove(0, s);
-  else if (state.keys['arrowleft'] || state.keys['a']) tryMove(-s, 0);
-  else if (state.keys['arrowright'] || state.keys['d']) tryMove(s, 0);
-}, 33);
-
-// ---- UI: 地图选择器 ----
-const sel = document.getElementById('mapSel');
-for (const id of Object.keys(window.MAPS).sort()){
-  const m = window.MAPS[id];
-  const opt = document.createElement('option');
-  opt.value = id;
-  opt.textContent = `${id} — ${m.setName}`;
-  sel.appendChild(opt);
-}
-sel.value = state.mapId;
-sel.addEventListener('change', ()=>loadMap(sel.value));
-
-// NPC_NAMES 已从 NPC_CONFIG 动态读取，无需硬编码
-
-// ---- 主循环 ----
-function loop(){
-  render();
-  // FPS
-  state._frames++;
-  const now = performance.now();
-  if (now - state._last > 500){
-    state.fps = Math.round(state._frames * 1000 / (now - state._last));
-    state._frames = 0; state._last = now;
-    document.getElementById('fps').textContent = state.fps + ' fps';
-    document.getElementById('coord').textContent = `player: (${state.player.x|0},${state.player.y|0}) dir=${state.player.dir}`;
-    const moneyEl = document.getElementById('xj-money');
-    if (moneyEl) moneyEl.textContent = '¥ ' + state.money;
-  }
-  requestAnimationFrame(loop);
-}
-
-// 对话框 DOM 引用（在 DOM ready 后赋值）
-let dlgEl = document.getElementById('dlg');
-let dlgNameEl = document.getElementById('dlgName');
-let dlgTextEl = document.getElementById('dlgText');
-
-// ---- 启动 ----
-(async ()=>{
-  // 预加载 cs.bin + renwu.bin + chonglou.bin
-  await loadTileBin('cs.bin');
-  await loadTileBin('renwu.bin');
-  await loadTileBin('chonglou.bin');
-  await loadMap(state.mapId);
-  loop();
+    if (fin) log('精灵图全部处理完毕，missing=' + a_missing());
+  });
+  function a_missing(){ return XJ.allStats().missing; }
+  log('就绪：' + names.length + ' 张地图 / ' + ants.length + ' 个 ANT / '
+      + XJ.data.bin.count + ' 张精灵图');
+  log('战斗行动阈值 W=' + XJ.C().W + '（读自 07-逻辑）');
 })();
 </script>
 </body>

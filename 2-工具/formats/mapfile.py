@@ -33,7 +33,10 @@ def parse(data, where="<map>"):
         name = r.utf()
         tiles = None
         if r.u8():
-            tiles = [[r.u16() for _ in range(cols)] for _ in range(rows)]
+            # w.java:73 用 DataInputStream.readShort()，是【有符号】16 位。
+            # 因此 0xFFFF 读出来是 -1，即「本格无地砖」，不能当 65535 去查 BIN。
+            # 全 69 张图实测有 44457/125160 (35.5%) 的格为 -1。
+            tiles = [[r.i16() for _ in range(cols)] for _ in range(rows)]
         objects = [{"anim": r.u16(), "x": r.i32(), "y": r.i32(),
                     "script": (r.utf() if r.u8() else None)}
                    for _ in range(r.u16())]

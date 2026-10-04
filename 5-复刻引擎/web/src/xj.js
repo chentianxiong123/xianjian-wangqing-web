@@ -90,6 +90,80 @@
     return im;
   }
 
+  /**
+   * 精灵图四态：
+   *   'idle'     尚未请求加载
+   *   'pending'  请求了但还没解码完
+   *   'ok'       已就绪
+   *   'missing'  索引越界 / 无 URL / onerror（真的没有）
+   * 渲染统计必须区分 pending 与 missing，否则首屏会把「还没加载完」
+   * 误报成「资源缺失」。
+   */
+  function spriteState(bin, idx) {
+    var ents = binEntries(bin);
+    if (!ents || idx < 0 || idx >= ents.length || !ents[idx].u) return 'missing';
+    if (imgFailed[bin + ':' + idx]) return 'missing';
+    var arr = imgCache[bin];
+    if (!arr || arr[idx] === undefined || arr[idx] === null) return 'idle';
+    var im = arr[idx];
+    if (im.complete && im.naturalWidth) return 'ok';
+    return 'pending';
+  }
+
+  /** 统计整个包的状态分布 */
+  function binStats(bin) {
+    var ents = binEntries(bin) || [], r = { ok: 0, pending: 0, idle: 0, missing: 0 };
+    for (var i = 0; i < ents.length; i++) r[spriteState(bin, i)]++;
+    return r;
+  }
+
+  /** 全库状态汇总 */
+  function allStats() {
+    var r = { ok: 0, pending: 0, idle: 0, missing: 0, bins: 0, total: 0 };
+    for (var b of Object.keys(D.bin.bins)) {
+      r.bins++;
+      var s = binStats(b);
+      r.ok += s.ok; r.pending += s.pending; r.idle += s.idle; r.missing += s.missing;
+      r.total += s.ok + s.pending + s.idle + s.missing;
+    }
+    return r;
+  }
+
+  /**
+   * 并发受限地预载整个库（浏览器对同域并发连接数有限，
+   * 一次发 461 个请求会互相排队甚至被丢弃）。
+   */
+  function preloadAll(concurrency, onProgress) {
+    var jobs = [];
+    for (var b of Object.keys(D.bin.bins)) {
+      var ents = binEntries(b) || [];
+      for (var i = 0; i < ents.length; i++) jobs.push([b, i]);
+    }
+    var idx = 0, done = 0, total = jobs.length;
+    var limit = concurrency || 12;
+    function next() {
+      if (idx >= jobs.length) { onProgress && onProgress(done, total, true); return; }
+      var j = jobs[idx++];
+      var st = spriteState(j[0], j[1]);
+      if (st === 'ok' || st === 'missing') { done++; next(); return; }
+      sprite(j[0], j[1]);
+      var arr = imgCache[j[0]];
+      var im = arr[j[1]];
+      if (!im) { done++; next(); return; }
+      var settled = function () {
+        if (im.__xjDone) return;
+        im.__xjDone = true;
+        done++;
+        onProgress && onProgress(done, total, false);
+        next();
+      };
+      im.addEventListener('load', settled, { once: true });
+      im.addEventListener('error', settled, { once: true });
+    }
+    for (var k = 0; k < limit; k++) next();
+    return { total: total, done: function () { return done; } };
+  }
+
   /** 预载整个包 */
   function preloadBin(bin, done) {
     var ents = binEntries(bin) || [];
@@ -133,7 +207,12 @@
       ctx.restore();
       return;
     }
-    if (!ft.t) { ctx.drawImage(im, sx, sy, w, h, dx, dy, dw, dh); return; }
+    if (!ft.t) {
+      // 1:1 时走无缩放路径，避免任何重采样
+      if (dw === w && dh === h) ctx.drawImage(im, sx, sy, w, h, dx, dy, w, h);
+      else ctx.drawImage(im, sx, sy, w, h, dx, dy, dw, dh);
+      return;
+    }
 
     var tf = transformToCanvas(ft.t);
     ctx.save();
@@ -312,6 +391,10 @@
     FLAG_TABLE: FLAG_TABLE,
     transformToCanvas: transformToCanvas,
     sprite: sprite,
+    spriteState: spriteState,
+    preloadAll: preloadAll,
+    binStats: binStats,
+    allStats: allStats,
     preloadBin: preloadBin,
     binEntries: binEntries,
     drawClip: drawClip,
