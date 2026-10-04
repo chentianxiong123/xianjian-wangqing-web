@@ -136,7 +136,7 @@
     {
       "level": "OK",
       "group": "逻辑",
-      "msg": "RPG 指令表 114 条 / 15 命名空间 与源码自动提取一致"
+      "msg": "RPG 指令表 123 条 / 16 命名空间 与源码自动提取一致"
     },
     {
       "level": "OK",
@@ -335,10 +335,10 @@
     {
       "layer": "逻辑",
       "item": "RPG 指令集",
-      "done": 114,
-      "total": 114,
+      "done": 123,
+      "total": 123,
       "pct": 100.0,
-      "note": "15 个命名空间"
+      "note": "16 个命名空间"
     },
     {
       "layer": "逻辑",
@@ -391,8 +391,8 @@
   "logic_summary": {
     "exprCases": 16,
     "exprErrCases": 9,
-    "rpgOps": 114,
-    "rpgNs": 15,
+    "rpgOps": 123,
+    "rpgNs": 16,
     "battleOps": 48,
     "battleOpsTotal": 48
   },

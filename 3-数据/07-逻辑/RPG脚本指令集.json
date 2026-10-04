@@ -378,6 +378,21 @@
    ],
    "count": 13
   },
+  "fee": {
+   "ops": [
+    {
+     "cmd": "ybdx",
+     "lines": [
+      2498
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2498
+     }
+    }
+   ],
+   "count": 1
+  },
   "game": {
    "ops": [
     {
@@ -461,6 +476,16 @@
      }
     },
     {
+     "cmd": "gray",
+     "lines": [
+      3009
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3009
+     }
+    },
+    {
      "cmd": "fight",
      "lines": [
       3011
@@ -491,6 +516,16 @@
      }
     },
     {
+     "cmd": "black",
+     "lines": [
+      3026
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3026
+     }
+    },
+    {
      "cmd": "showNpc",
      "lines": [
       3034
@@ -508,6 +543,16 @@
      "src": {
       "class": "4-文档/反编译源码/e.java",
       "line": 3036
+     }
+    },
+    {
+     "cmd": "clear",
+     "lines": [
+      3038
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3038
      }
     },
     {
@@ -529,9 +574,19 @@
       "class": "4-文档/反编译源码/e.java",
       "line": 3044
      }
+    },
+    {
+     "cmd": "verse",
+     "lines": [
+      3046
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 3046
+     }
     }
    ],
-   "count": 15
+   "count": 19
   },
   "guide": {
    "ops": [
@@ -727,6 +782,17 @@
      }
     },
     {
+     "cmd": "reverse",
+     "lines": [
+      2718,
+      2756
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2718
+     }
+    },
+    {
      "cmd": "moveTo",
      "lines": [
       2726
@@ -734,6 +800,16 @@
      "src": {
       "class": "4-文档/反编译源码/e.java",
       "line": 2726
+     }
+    },
+    {
+     "cmd": "in",
+     "lines": [
+      2760
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2760
      }
     },
     {
@@ -777,7 +853,7 @@
      }
     }
    ],
-   "count": 17
+   "count": 19
   },
   "partner": {
    "ops": [
@@ -800,9 +876,29 @@
       "class": "4-文档/反编译源码/e.java",
       "line": 2793
      }
+    },
+    {
+     "cmd": "in",
+     "lines": [
+      2800
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2800
+     }
+    },
+    {
+     "cmd": "out",
+     "lines": [
+      2814
+     ],
+     "src": {
+      "class": "4-文档/反编译源码/e.java",
+      "line": 2814
+     }
     }
    ],
-   "count": 2
+   "count": 4
   },
   "player": {
    "ops": [
@@ -1472,7 +1568,7 @@
    }
   }
  ],
- "totalOps": 114,
+ "totalOps": 123,
  "namespaceSemantics": {
   "script": "脚本控制：批处理队列、跨文件跳转",
   "element": "地图元素实例化：NPC / 怪物 / 落石 / 鸟 / 鱼 / 浪 / 蝴蝶 / 毒 / 宝箱 / 鸡 / 云",

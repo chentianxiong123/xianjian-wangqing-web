@@ -14,11 +14,21 @@ import os
 import re
 import collections
 
-# 形如 .equals("x") 但 x 是「取值」而非「指令名」的 token
+# 形如 .equals("x") 但 x 是「取值」而非「指令名」的 token。
+#
+# ★ 只收录真正的【参数取值】。曾误把 in / out / clear / reverse / gray /
+#   black / ybdx / verse 当成取值过滤掉，导致自动提取的指令表漏掉了
+#   npc.in、partner.in、partner.out、game.clear 四条真指令 ——
+#   已在 e.java:2760 / 2800 / 2814 / 3038 逐条确认它们是独立指令分支。
 VALUE_TOKENS = {
-    "true", "false", "in", "out", "left", "right", "up", "down", "fire",
-    "gray", "black", "ybdx", "verse", "type_right", "stand", "walk", "fly",
-    "reverse", "clear", "none", "null", "yes", "no", "0", "1",
+    # 布尔/空值
+    "true", "false", "yes", "no", "none", "null",
+    # setState / setType / setFlyEnabled 的取值
+    "type_right", "stand", "walk", "fly",
+    # setDirection 与 game.waitForKey 的键位取值
+    "left", "right", "up", "down", "fire",
+    # 数字字面量比较
+    "0", "1",
 }
 
 CMD_RE = re.compile(r'\.equals\("([^"]*)"\)')

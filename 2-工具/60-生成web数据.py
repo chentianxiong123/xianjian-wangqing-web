@@ -128,7 +128,7 @@ def rle(row):
 
 def gen_maps():
     maps = {}
-    nobj = nscript = nempty = 0
+    nobj = nscript = nempty = nobjscript = 0
     for p in sorted(glob.glob(os.path.join(DATA, "02-map", "*.json"))):
         d = json.load(open(p, encoding="utf-8"))
         name = os.path.basename(p)[:-5]
@@ -142,11 +142,13 @@ def gen_maps():
                 "tw": d["tileW"], "th": d["tileH"],
                 "cols": d["cols"], "rows": d["rows"],
                 "t": [rle(r) for r in tiles] if tiles else None,
-                "o": [[ob["anim"], ob["x"], ob["y"], ob.get("script")] for ob in (L.get("objects") or [])],
+                "o": [[ob["anim"], ob["x"], ob["y"], ob.get("scriptAst")]
+                      for ob in (L.get("objects") or [])],
                 "r": L.get("regions") or [],
                 "g": L.get("triggers") or [],
             })
             nobj += len(L.get("objects") or [])
+            nobjscript += sum(1 for ob in (L.get("objects") or []) if ob.get("scriptAst"))
         ast = d.get("scriptAst") or []
         nscript += len(ast)
         maps[name] = {
@@ -161,11 +163,14 @@ def gen_maps():
             "script": ast,
         }
     out = {"count": len(maps), "maps": maps, "emptyTileLayers": nempty,
+           "objectScripts": nobjscript,
            "note": "层 t 为逐行 RLE([值,次数,值,次数…])，t=null 表示该层无地砖网格；"
-                   "o=[anim,x,y,script]；script 为已解析的指令 AST（含类型化参数与条件）"}
+                   "o=[anim,x,y,scriptAst] —— 对象级脚本已解析为 AST，"
+                   "element.addToNpc 等 NPC 定义就在其中；"
+                   "script 为地图级脚本 AST（含类型化参数与条件）"}
     return emit("xj_maps.js", "XJ_MAPS", out,
-                "地图 %d 张 / 元素对象 %d / 脚本指令 %d / 无网格层 %d"
-                % (len(maps), nobj, nscript, nempty))
+                "地图 %d 张 / 元素对象 %d / 带脚本对象 %d / 地图级指令 %d / 无网格层 %d"
+                % (len(maps), nobj, nobjscript, nscript, nempty))
 
 
 # --------------------------------------------------------------- NPC

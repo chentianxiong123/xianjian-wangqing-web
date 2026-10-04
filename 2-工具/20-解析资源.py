@@ -130,10 +130,23 @@ def main():
             m["scriptAst"] = F_script.parse(m["script"])
             m["exits"] = []
             texts = [m["script"]]
+            # 对象 / 区域 / 触发器 自带的脚本同样要解析成 AST。
+            # ★ element.addToNpc 等 NPC 定义就在对象级脚本里
+            #   （实测 69 张地图共 257 处），只解析地图级脚本会整段丢失。
             for l in m["layers"]:
-                texts += [o["script"] for o in l["objects"] if o["script"]]
-                texts += [rg["script"] for rg in l["regions"] if rg["script"]]
-                texts += [t["script"] for t in l["triggers"] if t["script"]]
+                for o in l["objects"]:
+                    if o["script"]:
+                        o["scriptAst"] = F_script.parse(o["script"])
+                    if o["script"]:
+                        texts.append(o["script"])
+                for rg in l["regions"]:
+                    if rg.get("script"):
+                        rg["scriptAst"] = F_script.parse(rg["script"])
+                        texts.append(rg["script"])
+                for t in l["triggers"]:
+                    if t.get("script"):
+                        t["scriptAst"] = F_script.parse(t["script"])
+                        texts.append(t["script"])
             for t in texts:
                 for ch in F_script.find_changes(t):
                     ch["from"] = name
