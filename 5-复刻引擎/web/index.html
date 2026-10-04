@@ -1,3 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仙剑奇侠传 - 忘情篇 Web复刻版</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+canvas { display: block; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
 /**
  * 仙剑奇侠传 - 忘情篇 Web复刻版
  * 纯前端实现，单HTML文件，零外部依赖
@@ -879,3 +894,7 @@ document.addEventListener('DOMContentLoaded', () => {
   requestAnimationFrame(render);
 });
 document.addEventListener('keydown', handleKey);
+
+</script>
+</body>
+</html>
