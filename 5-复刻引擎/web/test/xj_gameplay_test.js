@@ -262,5 +262,67 @@ head('Boss战开场（H2.str）');
   ok(/可恶|偷袭/.test(r3.dialogs[0].text), '首句是被偷袭：' + String(r3.dialogs[0].text).slice(0, 16));
 }
 
+// ============================================================ 11 开场顺序（防乱跳）
+head('开机开场：81 段暂停、7 拍文本、顺序与 jar 一致');
+{
+  // ms_syt_1 开机脚本分 81 段播完（每段一 break/wait），文本 7 拍，末尾切 yw_syc。
+  // 顺序即 jar 字节顺序；任一错位/丢失即红。
+  const w = new W();
+  w.build('ms_syt_1', 100, 100);
+  const seq = [];
+  let n = 0;
+  while (n++ < 500) {
+    const d = w.drainDeferred();
+    for (const it of (d.intents || [])) {
+      if (it.type === 'dlgText') seq.push('D:' + String(it.text).slice(0, 12));
+      else if (it.type === 'subtitle' && it.text) seq.push('S:' + String(it.text).slice(0, 12));
+    }
+    if (!w.pausedBuild) break;
+    w.continueBuild();
+  }
+  ok(n === 81, '开场分 81 段（暂停点全在）');
+  // ★ 第 7 拍是 jar 原文 game.black(null)（e.java:3026 无空判断，原版真机同样显示"null"）——如实复刻，不"修正"
+  const want = ['S:不老不死', 'D:/紫萱/：这就是', 'D:/紫萱/：苍生为重', 'D:/紫萱/：青儿', 'D:/紫萱/：重楼', 'S:重楼耗尽魔力', 'S:null'];
+  ok(seq.length === want.length && seq.every((s, i) => s.indexOf(want[i]) === 0),
+    '文本顺序与 jar 一致（含原版 black(null)）：' + seq.join(' → '));
+  ok(w.pendingChange && w.pendingChange.map === 'yw_syc', '末尾切往 yw_syc');
+}
+
+// ============================================================ 12 主线标记图（防主线断裂）
+head('事件标记：生产/消费闭合，孤儿标记锁死');
+{
+  // 全量 AST 扫 markEvent/markFee（生产）与 eventMarked（消费）。
+  // 孤儿（只消费不生产）= 原版废弃内容：47-50/411/412 门控 ms_ylk_3/5 的 NPC 出场，
+  // jar 里无任何生产者——原版里这些 NPC 同样永不出现，如实复刻。
+  const maps = window.XJ_MAPS.maps;
+  const prod = {}, cons = {};
+  function scan(nodes) {
+    for (const c of (nodes || [])) {
+      const raw = (c.raw || '') + ' ' + JSON.stringify(c.cond || '');
+      let m;
+      const re1 = /(markEvent|markFee)\((\d+)\)/g;
+      while ((m = re1.exec(raw))) { const k = parseInt(m[2], 10); prod[k] = (prod[k] || 0) + 1; }
+      const re2 = /eventMarked\((\d+)\)/g;
+      while ((m = re2.exec(raw))) { const k = parseInt(m[1], 10); cons[k] = (cons[k] || 0) + 1; }
+    }
+  }
+  for (const mn of Object.keys(maps)) {
+    const m = maps[mn];
+    scan(m.script);
+    for (const L of m.layers) {
+      for (const o of (L.o || [])) scan(o[3]);
+      for (const r of (L.r || [])) scan(r.scriptAst);
+    }
+  }
+  const S = window.XJ_SCRIPTS;
+  for (const bk of Object.keys(S.talk || {})) for (const b of (S.talk[bk].blocks || [])) scan(b.nodes);
+  for (const bk of Object.keys(S['其他'] || {})) for (const b of ((S['其他'][bk] || {}).blocks || [])) scan(b.nodes);
+  const all = [...new Set([...Object.keys(prod), ...Object.keys(cons)])].map(Number);
+  ok(all.length >= 125 && all.length <= 140, '标记总数 ' + all.length + '（130 左右，漂移即查）');
+  const orphans = all.filter(k => !prod[k]).sort((a, b) => a - b);
+  ok(JSON.stringify(orphans) === JSON.stringify([47, 48, 49, 50, 411, 412]),
+    '孤儿标记 = 47/48/49/50/411/412（原版废弃，多一个少一个都红）', orphans.join(','));
+}
+
 console.log('\n通过 ' + pass + ' / 失败 ' + fail);
 if (fail) { console.log('失败项：' + failures.join(' | ')); process.exit(1); }

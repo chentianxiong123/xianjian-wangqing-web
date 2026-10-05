@@ -295,6 +295,17 @@ head('trigger 矩形 = 碰撞盒');
   const el10 = wN.makeElement('npc', { raw_args: ['10', 'npc_10.ant'] }, [0, 100, 100]);
   ok((el3.moveUD || el3.moveLR) && !el10.moveUD && !el10.moveLR,
     '紫萱(3)可游荡、妖怪(10)双false不动（与 def 一致）');
+  // warp 图 BFS：开机能走到全部 69 图（结构可达；剧情门控另由条件保证）
+  const seen = { ms_syt_1: 1 };
+  const queue = ['ms_syt_1'];
+  while (queue.length) {
+    const mm = window.XJ_MAPS.maps[queue.pop()];
+    for (const e of (mm.exits || [])) {
+      const t = String(e.to).replace('.map', '');
+      if (window.XJ_MAPS.maps[t] && !seen[t]) { seen[t] = 1; queue.push(t); }
+    }
+  }
+  ok(Object.keys(seen).length === 69, 'warp 从开机可达全部 69 图');
 }
 
 // ============================================================
