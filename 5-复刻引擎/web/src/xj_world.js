@@ -786,6 +786,9 @@
       }
       if (c.obj === 'dialogBox' && c.cmd === 'setText') {
         var da = (c.args || [])[0] || {};
+        // ★ 触发区脚本的 setText 走这条快路（不进解释器 effects），台词追踪必须也在这打点，
+        //   否则覆盖率核算会把触发区里的对白全算成"没播出"（量测漏 ≠ 没播出）
+        XJTrace(this, 'setText', da.value != null ? da.value : String((c.raw_args || [])[0]));
         var dlg = { speaker: da.speaker || null, text: deNull(da.value != null ? da.value : String((c.raw_args || [])[0])) };
         r.dialogs.push(dlg);
         r.dialog = dlg;   // 兼容：保留最后一段
