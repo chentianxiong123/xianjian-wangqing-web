@@ -100,6 +100,23 @@ head('roles：scalars/formulas 在用，顶层平行数组是死数据');
     'roleCfg/instruction raw wrapper 无人读（用 roles 派生）');
 }
 
+// ============================================================ 5 硬编码与逻辑表一致
+head('战斗常量：C() 与逻辑表一致（改一处另一处红）');
+{
+  for (const f of ['xj.js']) {
+    (0, eval)(fs.readFileSync(path.join(WEB, 'src', f), 'utf8'));
+  }
+  const C = window.XJ.C();
+  const T = LOGIC.combat;
+  ok(C.W === T.turnGauge.constants.W.value, 'W=' + C.W + '（表 ' + T.turnGauge.constants.W.value + '）');
+  ok(C.MORPH_GAS === T.morph.costPerTurn.value, 'MORPH_GAS=' + C.MORPH_GAS);
+  ok(C.CRIT_DEN === 200 && /200/.test(T.crit.expr), 'CRIT_DEN=200（表 ' + T.crit.expr.slice(0, 24) + '…）');
+  ok(C.EVADE_DEN === 100 && /100/.test(T.evade.expr), 'EVADE_DEN=100');
+  ok(C.ROLL_MIN === 9 && C.ROLL_MAX === 11, '伤害浮动 rand(9,11)/10');
+  ok(C.LEVEL_CAP === 45, 'LEVEL_CAP=45');
+  ok(!!C.DAMAGE, '伤害公式原文来自逻辑表（非手写）');
+}
+
 // ============================================================
 console.log('\n通过 ' + pass + ' / 失败 ' + fail);
 if (fail) { console.log('失败项：' + failures.join(' | ')); process.exit(1); }
