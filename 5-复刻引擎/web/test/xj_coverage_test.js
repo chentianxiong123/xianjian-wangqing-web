@@ -2,7 +2,7 @@
  *   用法：node 5-复刻引擎/web/test/xj_coverage_test.js
  *
  * 锁死《4-文档/数据字段总表.md》的分类：
- *   gameCfg 44 scalars = 在用 10 + 死键 34（精确 grep 零命中，见总表 §3）；
+ *   gameCfg 44 scalars = 在用 14 + 死键 30（精确 grep 零命中，见总表 §3）；
  *   logic.combat 键 = 在用 6 + 文档表；
  *   NPC def 字段 = 在用 3 + 待考/缺口/管线。
  * 管线新增/改名任一字段，这里变红 —— 先去总表定级，再改测试。

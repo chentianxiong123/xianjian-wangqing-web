@@ -815,8 +815,29 @@
       // 跟随者画个小标记
       XJ.drawState(ctx, antName, st, x, y, t + ((e.x * 31 + e.y * 17) % 1000), true);
       n++;
+      if (e.kind === 'npc') this.drawNpcName(e, x, y);
     }
     this.stats.elements = n;
+  };
+
+  /**
+   * NPC 名牌（bl.a：玩家踩进对话区矩形、不看朝向，才画白字；
+   * y - nameHeight，底中对齐 33）。
+   */
+  Scene.prototype.drawNpcName = function (e, x, y) {
+    var T = global.XJTalk;
+    if (!T || !T.npcDef || !T.inDialogRegion) return;
+    var def = T.npcDef(e.id);
+    if (!def || !def.name) return;
+    if (!T.inDialogRegion(this.px, this.py, e.x, e.y, null, def)) return;
+    var ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(def.name, x + 8, y - (def.nameHeight || 20));
+    ctx.restore();
   };
 
   // ---------------------------------------------------------- 角色
