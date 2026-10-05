@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>仙剑奇侠传-忘情篇</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#000;color:#d8d0c0;overflow:hidden;
+    font:14px/1.7 "Kaiti SC","KaiTi","STKaiti","Microsoft YaHei",serif}
+  #stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  #cvwrap{position:relative;line-height:0}
+  canvas{background:#000;image-rendering:pixelated;image-rendering:crisp-edges;
+    width:min(94vw, calc((100vh - 70px) * 0.75));height:auto;aspect-ratio:3/4;
+    border:1px solid #3a3226;box-shadow:0 0 60px #000, 0 0 24px rgba(160,120,40,.12)}
+  #hint{font-size:12px;color:#6e675a;letter-spacing:1px;line-height:1.4;text-align:center}
+  #hint b{color:#a89a7c;font-weight:normal}
+  /* 主菜单：盖在画布上的 DOM 层（标题播完出现） */
+  #menu{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.55);line-height:1.7;z-index:5}
+  #menu .gametitle{font-size:26px;color:#e8c96a;letter-spacing:8px;margin-bottom:4px;
+    text-shadow:0 0 18px rgba(232,201,106,.5)}
+  #menu .subtitle{font-size:12px;color:#8a7f68;letter-spacing:6px;margin-bottom:22px}
+  #menu .item{font-size:17px;letter-spacing:6px;padding:5px 26px;cursor:pointer;color:#cfc4a8;
+    border:1px solid transparent;min-width:210px;text-align:center}
+  #menu .item.sel{color:#ffe9a8;border-color:#6a5a34;background:rgba(120,90,30,.18)}
+  #menu .item .dim{color:#5a5344;font-size:12px;letter-spacing:1px}
+  #menu .panel{max-width:82%;max-height:62%;overflow:auto;background:#0d0b08;border:1px solid #4a3f2a;
+    padding:12px 16px;font-size:13px;color:#cfc4a8;white-space:pre-wrap;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="cvwrap">
+    <canvas id="cv" width="240" height="320"></canvas>
+    <div id="menu"></div>
+  </div>
+  <div id="hint"><b>方向键 / WASD / 2468</b> 移动　<b>回车 / 空格</b> 确定　<b>Q</b> 菜单(左软键)　<b>Esc</b> 取消</div>
+</div>
+
+<!-- 数据：由 2-工具/60-生成web数据.py 从 3-数据/ 生成，请勿手改 -->
+<script src="data/xj_bin.js"></script>
+<script src="data/xj_ant.js"></script>
+<script src="data/xj_maps.js"></script>
+<script src="data/xj_npc.js"></script>
+<script src="data/xj_config.js"></script>
+<script src="data/xj_logic.js"></script>
+<script src="data/xj_scripts.js"></script>
+<!-- 引擎 -->
+<script src="src/xj.js"></script>
+<script src="src/xj_script.js"></script>
+<script src="src/xj_party.js"></script>
+<script src="src/xj_world.js"></script>
+<script src="src/xj_talk.js"></script>
+<script src="src/xj_battle.js"></script>
+<script src="src/xj_view.js"></script>
+<script src="src/xj_shop.js"></script>
+<script src="src/xj_menu.js"></script>
+<script src="src/xj_audio.js"></script>
+<script src="src/xj_save.js"></script>
+<script src="src/xj_battleview.js"></script>
+
+<script>
+/* game.html —— 真实游戏页（非调试宿主）。
+ * 流程 = 原版 Startup→ag→h→b 链：
+ *   splash/sp.png → LOGO(corp/logo.ant+mid) → 主菜单（menu.ant 六项原文：
+ *   新的开始/回忆/设置/游戏帮助/关于/离开，system/b.java:94-99）
+ *   → 新的开始 = new e(null) 进 ms_syt_1；回忆 = 3 槽读档（b.java l=2，m%3）。
+ */
+(function(){
+  'use strict';
+  var scene = new XJScene(document.getElementById('cv'));
+  window.scene = scene;
+  var menuEl = document.getElementById('menu');
+  var page = 'main';   // main | recall | setting | help | about | quit
+  var sel = 0;
+
+  function cfg(k, fb){
+    try {
+      var s = XJ.data.config.gameCfg.scalars || {};
+      if (s[k]) return String(s[k]);
+    } catch (e) {}
+    return fb;
+  }
+  var MAIN = ['新的开始', '回忆', '设置', '游戏帮助', '关于', '离开'];
+
+  function show(html){ menuEl.style.display = 'flex'; menuEl.innerHTML = html; bindClicks(); }
+  function hide(){ menuEl.style.display = 'none'; menuEl.innerHTML = ''; }
+  function head(){
+    return '<div class="gametitle">仙剑奇侠传</div><div class="subtitle">忘 情 篇</div>';
+  }
+  function render(){
+    if (page === 'main') {
+      show(head() + MAIN.map(function (t, i) {
+        return '<div class="item' + (i === sel ? ' sel' : '') + '" data-i="' + i + '">' + t + '</div>';
+      }).join(''));
+    } else if (page === 'recall') {
+      var rows = XJSave.slots().map(function (i) {
+        var inf = XJSave.info(i);
+        var label = inf ? ('有 · ' + inf.map + ' · 金' + inf.gold + ' · ' + inf.when)
+                        : '<span class="dim">（空）</span>';
+        return '<div class="item' + (i === sel ? ' sel' : '') + '" data-i="' + i + '">回忆 ' + (i + 1) + '　' + label + '</div>';
+      }).join('');
+      show(head() + rows + '<div class="item' + (sel === 3 ? ' sel' : '') + '" data-i="3">返回</div>');
+    } else if (page === 'setting') {
+      var m = XJAudio.muted ? '关' : '开';
+      show(head()
+        + '<div class="item' + (sel === 0 ? ' sel' : '') + '" data-i="0">声音：' + m + '</div>'
+        + '<div class="item' + (sel === 1 ? ' sel' : '') + '" data-i="1">返回</div>');
+    } else if (page === 'help') {
+      show(head() + '<div class="panel">' + escHtml(cfg('帮助', '暂无')) + '</div>'
+        + '<div class="item sel" data-i="0">返回</div>');
+    } else if (page === 'about') {
+      show(head() + '<div class="panel">' + escHtml(cfg('关于', '暂无')) + '</div>'
+        + '<div class="item sel" data-i="0">返回</div>');
+    } else if (page === 'quit') {
+      show(head() + '<div class="panel">原版“离开”即退出游戏。\n请直接关闭本页面。</div>'
+        + '<div class="item sel" data-i="0">返回</div>');
+    }
+  }
+  function escHtml(s){
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function bindClicks(){
+    var items = menuEl.querySelectorAll('.item');
+    for (var k = 0; k < items.length; k++) {
+      (function (el) {
+        el.onclick = function () { sel = +el.getAttribute('data-i'); choose(); };
+        el.onmousemove = function () {
+          var i = +el.getAttribute('data-i');
+          if (i !== sel) { sel = i; render(); }
+        };
+      })(items[k]);
+    }
+  }
+  function back(){ page = 'main'; sel = 0; render(); }
+
+  function choose(){
+    if (page === 'main') {
+      if (sel === 0) {            // 新的开始 → new e(null)
+        hide(); scene.inputLocked = false;
+        scene.newGame();
+      } else if (sel === 1) { page = 'recall'; sel = 0; render(); }
+      else if (sel === 2) { page = 'setting'; sel = 0; render(); }
+      else if (sel === 3) { page = 'help'; sel = 0; render(); }
+      else if (sel === 4) { page = 'about'; sel = 0; render(); }
+      else { page = 'quit'; sel = 0; render(); }
+    } else if (page === 'recall') {
+      if (sel === 3) { back(); return; }
+      var d = XJSave.load(XJSave.slots()[sel]);
+      // ★ 原版：空槽不可选（b.java: l=2 d.a[m]==null 即 break）
+      if (d && XJSave.apply(d, scene.world, scene)) { hide(); scene.inputLocked = false; }
+    } else if (page === 'setting') {
+      if (sel === 0) { XJAudio.toggle(); render(); }
+      else back();
+    } else { back(); }
+  }
+
+  // 菜单开着时画布输入锁死（引擎 inputLocked），按键走这里
+  window.addEventListener('keydown', function (e) {
+    if (menuEl.style.display !== 'flex') return;
+    var max = page === 'main' ? MAIN.length
+      : page === 'recall' ? 4
+      : page === 'setting' ? 2 : 1;
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === '8') {
+      sel = (sel + max - 1) % max; render(); e.preventDefault();
+    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === '2') {
+      sel = (sel + 1) % max; render(); e.preventDefault();
+    } else if (e.key === 'Enter' || e.key === ' ') { choose(); e.preventDefault(); }
+    else if (e.key === 'Escape') { back(); e.preventDefault(); }
+  });
+
+  // ★ 标题播完 → 主菜单（原版 h 收尾进 b 主菜单屏）
+  scene.onTitleDone = function () {
+    scene.inputLocked = true;
+    page = 'main'; sel = 0; render();
+  };
+  scene.startTitle();
+  scene.start();
+  // 静默预载精灵图（index.html 的调试日志不要）
+  XJ.preloadAll(12, function () {});
+})();
+</script>
+</body>
+</html>

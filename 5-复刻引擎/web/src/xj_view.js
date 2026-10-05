@@ -1259,13 +1259,19 @@
   // ---------------------------------------------------------- 输入
   Scene.prototype.bindKeys = function () {
     var self = this;
+    // ★ newGame 重跑构造器时会再调一次：守卫防重复绑定（否则一次按键走两次）
+    if (this._keysBound) return;
+    this._keysBound = true;
     var KEY = {
       ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-      w: 'up', s: 'down', a: 'left', d: 'right'
+      w: 'up', s: 'down', a: 'left', d: 'right',
+      8: 'up', 2: 'down', 4: 'left', 6: 'right'   // ★ 数字键 2468 移动（config 帮助原文）
     };
     var K2E = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
                   w: 'up', s: 'down', a: 'left', d: 'right', Enter: 'ok', ' ': 'ok', Escape: 'cancel' };
     global.addEventListener('keydown', function (e) {
+      // ★ 游戏页 DOM 菜单（标题主菜单）开着时，画布输入全锁，按键走宿主菜单
+      if (self.inputLocked) { e.preventDefault(); return; }
       if (e.key === 'g' || e.key === 'G') { self.showGrid = !self.showGrid; return; }
       // 标题画面：任意键跳过进游戏
       if (self.title) { e.preventDefault(); self.finishTitle(); return; }
@@ -1329,8 +1335,8 @@
         self.interact();
         return;
       }
-      // M 开菜单（game.showMenu 对应）
-      if (e.key === 'm' || e.key === 'M') { e.preventDefault(); self.openMenu(); return; }
+      // M / Q 开菜单（game.showMenu 对应；Q = 左软键，原版左软键呼出菜单）
+      if (e.key === 'm' || e.key === 'M' || e.key === 'q' || e.key === 'Q') { e.preventDefault(); self.openMenu(); return; }
       // 商店里的方向键
       if (self.shop && self.shop.active) {
         var SM = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
@@ -1615,6 +1621,22 @@
     if (!this.title) return false;
     this.title = null;
     this.audioStop();
+    // ★ 游戏页钩子：标题播完先出主菜单（新的开始/回忆/设置/帮助/关于/离开，
+    //   system/b.java:94-99 六项原文），宿主未设钩子时保持旧行为直接 boot。
+    if (this.onTitleDone) { this.onTitleDone(); return true; }
+    this.boot();
+    return true;
+  };
+
+  /**
+   * 新的开始（system/b.java 主菜单第0项 → new e(null)）：
+   * 重跑构造器清掉全部状态（事件/背包/队伍/任务/演出队列…），再 boot 进初始图。
+   */
+  Scene.prototype.newGame = function () {
+    // ★ 构造器重跑会清 _keysBound，但 window 上的旧监听还指着本对象：不再绑，直接复用。
+    var bound = this._keysBound;
+    Scene.call(this, this.cv);
+    this._keysBound = bound;
     this.boot();
     return true;
   };
