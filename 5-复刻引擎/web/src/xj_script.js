@@ -261,6 +261,16 @@
     return data;
   };
 
+  /** 条件是否成立（不执行指令，供 runAll 在 break/wait 处先行判断用） */
+  Interp.prototype.condPass = function (cmd) {
+    if (!cmd || cmd.cond == null) return true;
+    var parts = (Array.isArray(cmd.cond) ? cmd.cond : [cmd.cond]);
+    for (var i = 0; i < parts.length; i++) {
+      if (!testConds(this.w, parts[i])) return false;
+    }
+    return true;
+  };
+
   /** 执行一条已解析的 AST 指令；返回是否真的执行了 */
   Interp.prototype.step = function (cmd) {
     if (!cmd) return false;
@@ -509,18 +519,46 @@
 
   /** 跑完一整份地图脚本 AST；返回统计
    * ★ 遇到 world.change 即停（原版立即切图，后续脚本不再执行，e.java:2573）。
+   * ★ script.break / script.wait（条件成立时）暂停执行（e.java:990 跳出分派循环，
+   *   break 等按键、wait 等毫秒），断点存 this.paused={nodes,pc,waitMs}，
+   *   宿主用 runAll(nodes, onStep, paused.pc) 继续。
    * ★ onStep(cmd, ran) 钩子：宿主可每条落子（World 用它做即时状态提交，
    *   否则 markEvent 等写操作对后续批次不可见）。
    *   break 条件按指令本身判断（不依赖 effects 队列是否已被宿主取走）。 */
-  Interp.prototype.runAll = function (ast, onStep) {
-    for (var i = 0; i < (ast || []).length; i++) {
+  Interp.prototype.runAll = function (ast, onStep, from) {
+    if (from == null) this.paused = null;
+    var pausedNow = false;
+    for (var i = (from | 0); i < (ast || []).length; i++) {
       var cmd = ast[i];
+      if (cmd && cmd.obj === 'script' && (cmd.cmd === 'break' || cmd.cmd === 'wait')) {
+        if (!this.condPass(cmd)) continue;
+        var ms = 0;
+        if (cmd.cmd === 'wait') {
+          try { ms = this.w.expr((cmd.raw_args || cmd.args || [])[0]) | 0; } catch (e) { ms = 0; }
+        }
+        this.paused = { nodes: ast, pc: i + 1, waitMs: ms };
+        pausedNow = true;
+        if (onStep) onStep(cmd, false);
+        break;
+      }
       var ran = this.step(cmd);
       if (ran) this.stats.exec++;
       if (onStep) onStep(cmd, ran);
       if (ran && cmd && cmd.obj === 'world' && cmd.cmd === 'change') break;
     }
+    if (!pausedNow) this.paused = null;
     return this.stats;
+  };
+
+  /** 把暂停点全部跑完（测试/校验用：忽略 wait 毫秒，瞬间跑完；浏览器里由回车/计时逐步恢复） */
+  Interp.prototype.drainPauses = function (onStep) {
+    var n = 0;
+    while (this.paused && n++ < 100000) {
+      var p = this.paused;
+      this.paused = null;
+      this.runAll(p.nodes, onStep, p.pc);
+    }
+    return n;
   };
 
   global.XJScript = {

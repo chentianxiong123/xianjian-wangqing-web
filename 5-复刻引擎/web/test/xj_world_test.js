@@ -36,7 +36,7 @@ head('元素装配：cs_ss_d（Boss1 完整过场）');
   //   进 cs_ss_d → boss1 开战 → 战后对话 → markEvent(4) → 切 yw_yl_3。
   //   对象脚本里 remove[!ev3]/remove[ev4] 让剧情演员进图即离场（净 NPC 恒为 0）。
   const w0 = new W();
-  w0.build('cs_ss_d', 300, 400);
+  w0.buildFull('cs_ss_d', 300, 400);
   const k0 = {}; w0.elements.forEach(e => { k0[e.kind] = (k0[e.kind] || 0) + 1; });
   ok(!k0.npc, '事件全 0 时 NPC 进图即离场：' + JSON.stringify(k0));
   ok(w0.pendingChange && w0.pendingChange.map === 'yw_yl_3',
@@ -49,7 +49,7 @@ head('元素装配：cs_ss_d（Boss1 完整过场）');
 
   const w = new W();
   w.events[3] = 1;
-  w.build('cs_ss_d', 300, 400);
+  w.buildFull('cs_ss_d', 300, 400);
   ok(w.elements.length > 0, '装配出元素 ' + w.elements.length + ' 个'
     + '（带脚本 ' + w.stats.scripted + ' / 无脚本 ' + w.stats.plain + '）');
   ok(w.plainObjects.length > 0, '无脚本元素层对象 ' + w.plainObjects.length + ' 个（用地图 elementAnt）');
@@ -124,7 +124,7 @@ head('element.remove() 与条件分支');
   const obj = (L.o || []).find(o => o[3] && o[3].some(c => c.obj === 'element' && c.cmd === 'remove'));
   ok(!!obj, '找到一个带 element.remove() 的对象：anim=' + (obj && obj[0]));
   const w = new W();
-  w.build('cs_ss_d', 300, 400);
+  w.buildFull('cs_ss_d', 300, 400);
   const ast = obj[3];
   const adds = ast.filter(c => c.cmd === 'addToNpc').length;
   const removes = ast.filter(c => c.cmd === 'element' || c.cmd === 'remove').length;
@@ -138,20 +138,20 @@ head('element.remove() 与条件分支');
   const L = m.layers[1];
   const obj = (L.o || []).find(o => o[3] && o[3].filter(c => c.cmd === 'remove').length === 2);
   const w = new W();
-  w.build('cs_ss_d', 300, 400);
+  w.buildFull('cs_ss_d', 300, 400);
   ok(!!w.elements, '全事件为 0 时该对象被移除（!eventMarked(3) 成立 → 抵消 addToNpc）');
   // 反过来：把 event3 设为 1、event4 不设 → 该对象应保留
   const w2 = new W();
   w2.events[3] = 1;                 // eventMarked(3)=1 → !eventMarked(3) 不成立
                                   // event4 仍为 0 → eventMarked(4) 不成立 → 两条 remove 都不执行
-  const n2 = (function () { w2.build('cs_ss_d', 300, 400); return w2.elements.length; })();
+  const n2 = (function () { w2.buildFull('cs_ss_d', 300, 400); return w2.elements.length; })();
   const n1 = w.elements.length;
   ok(n2 > n1, '设 event3=1 后该对象被保留：元素数 ' + n1 + ' → ' + n2
     + '（npc 出现）');
   // event4=1 时应被移除
   const w3 = new W();
   w3.events[4] = 1;
-  w3.build('cs_ss_d', 300, 400);
+  w3.buildFull('cs_ss_d', 300, 400);
   ok(w3.elements.length < n2, '设 event4=1 后该对象被移除：元素数 ' + n2 + ' → ' + w3.elements.length);
   void obj;
 }
@@ -161,7 +161,7 @@ head('全局状态与副作用');
 {
   const w = new W();
   w.gold = 100;
-  w.build('cs_ss_d', 300, 400);
+  w.buildFull('cs_ss_d', 300, 400);
   // ★ 效果即时提交：状态当时写完，UI 意图进 deferred，队列无残留
   ok(w.interp.effects.length === 0, '装配后解释器队列无残留（即时提交）');
   const fx = w.drainDeferred();
@@ -198,7 +198,7 @@ head('全地图装配');
     try {
       const w = new W();
       w.events[3] = 1;            // 让 NPC 类元素留存后再统计
-      w.build(n, 100, 100);
+      w.buildFull(n, 100, 100);
       totEl += w.elements.length; totPlain += w.plainObjects.length; totScripted += w.stats.scripted;
     } catch (e) {
       errs.push(n + ': ' + e.message);
@@ -212,7 +212,7 @@ head('全地图装配');
   let missing = new Set();
   for (const n of all) {
     w.events[3] = 1;
-    w.build(n, 10, 10);
+    w.buildFull(n, 10, 10);
     for (const e of w.elements) if (e.ant && !window.XJ.data.ant.ants[e.ant]) missing.add(e.ant);
   }
   ok(missing.size === 0, '所有元素引用的 ANT 均存在', [...missing].slice(0, 5).join(','));
@@ -230,9 +230,65 @@ head('出口');
   }
   ok(badMap.length === 0, '全部 ' + tot + ' 个出口的目标地图都存在', badMap.slice(0, 5).join(','));
   const w = new W();
-  w.build('cs_ljb_1', 320, 240);
+  w.buildFull('cs_ljb_1', 320, 240);
   const ex = w.nearestExit(320, 240, 'right');
   ok(!!ex, 'cs_ljb_1 最近出口 → ' + (ex && (ex.to + ' @' + ex.x + ',' + ex.y)));
+}
+
+// ============================================================ 暂停语义（e.java:990）
+head('script.break/wait 暂停与恢复');
+{
+  // 合成小脚本：对话 → break → 对话 → wait → 对话
+  const w = new W();
+  const nodes = [
+    { obj: 'dialogBox', cmd: 'setText', args: [{ speaker: '甲', value: '第一句' }], raw_args: ['第一句'], cond: null },
+    { obj: 'script', cmd: 'break', raw_args: [], cond: null },
+    { obj: 'dialogBox', cmd: 'setText', args: [{ speaker: '乙', value: '第二句' }], raw_args: ['第二句'], cond: null },
+    { obj: 'script', cmd: 'wait', raw_args: ['1500'], cond: null },
+    { obj: 'dialogBox', cmd: 'setText', args: [{ speaker: '丙', value: '第三句' }], raw_args: ['第三句'], cond: null },
+  ];
+  const r1 = w.execAst(nodes);
+  ok(r1.dialogs.length === 1 && !!r1.paused, '第一段只出 1 段对话就暂停（不再一帧跑完）');
+  const r2 = w.execAst(r1.paused.nodes, r1.paused.pc);
+  ok(r2.dialogs.length === 1 && !!r2.paused && r2.paused.waitMs === 1500,
+    '第二段出第 2 句，停在 wait(1500)');
+  const r3 = w.execAst(r2.paused.nodes, r2.paused.pc);
+  ok(r3.dialogs.length === 1 && !r3.paused && r3.dialog.text === '第三句', '恢复后出第 3 句并跑完');
+  // 条件不成立的 break 直接跳过、不暂停
+  const w4 = new W();
+  const r4 = w4.execAst([
+    { obj: 'script', cmd: 'break', raw_args: [], cond: { terms: [{ raw: 'eventMarked(999)' }] } },
+    { obj: 'dialogBox', cmd: 'setText', args: [{ speaker: null, value: 'X' }], raw_args: ['X'], cond: null },
+  ]);
+  ok(!r4.paused && r4.dialogs.length === 1, '条件不成立的 break 被跳过');
+  // runExecFull 一次跑完
+  const w5 = new W();
+  const r5 = w5.runExecFull(nodes);
+  ok(!r5.paused && r5.dialogs.length === 3, 'runExecFull 合并 3 段对话');
+}
+
+// ============================================================ 碰撞盒（ay.java:507）
+head('trigger 矩形 = 碰撞盒');
+{
+  const w = new W();
+  w.buildFull('ms_syt_1', 100, 100);
+  ok((w.solids || []).length === 80, 'ms_syt_1 碰撞盒 80 个（与 jar 解析一致）');
+  ok(!!w.solidAt(10, 10), '上边框 (10,10) 是墙');
+  ok(!w.solidAt(400, 300), '地图中部 (400,300) 可走');
+  // 全图普查：3526 个 trigger，0 个带脚本
+  let tot = 0, withScript = 0;
+  for (const mn of Object.keys(window.XJ_MAPS.maps)) {
+    const ww = new W();
+    ww.buildFull(mn, 10, 10);
+    for (const s of (ww.solids || [])) { tot++; if (s.ast) withScript++; }
+  }
+  ok(tot === 3526 && withScript === 0, '全 69 图碰撞盒 ' + tot + ' 个，带脚本 ' + withScript + ' 个');
+  // 开机图装配后停在第一个 break（开场分步播，不再一帧跑完）
+  const wb = new W();
+  wb.build('ms_syt_1', 100, 100);
+  ok(!!wb.pausedBuild, 'ms_syt_1 build 后有暂停点（开场要按键推进）');
+  wb.drainBuildPauses();
+  ok(!wb.pausedBuild, 'drainBuildPauses 跑完');
 }
 
 // ============================================================

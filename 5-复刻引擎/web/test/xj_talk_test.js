@@ -92,7 +92,7 @@ head('对话区域判定');
 head('对话执行：蜀山弟子(talk_14)');
 {
   const w = new W();
-  w.build('cs_ss_by', 300, 300);
+  w.buildFull('cs_ss_by', 300, 300);
   // 手工放一个 NPC 14
   w.elements.push({ kind: 'npc', id: 14, ant: 'npc_14', anim: 0, x: 300, y: 300,
                     state: '站立', dir: 'down', velocity: 0, ai: true,
@@ -260,7 +260,7 @@ head('对话中的条件与副作用');
 head('facingNpc');
 {
   const w = new W();
-  w.build('cs_ss_by', 300, 300);
+  w.buildFull('cs_ss_by', 300, 300);
   // 放两个 NPC，一个有对话一个没有
   w.elements.push({ kind: 'npc', id: 14, ant: 'npc_14', anim: 0, x: 300, y: 300,
                     state: '站立', dir: 'down', ai: true, showFace: true, t: 0 });

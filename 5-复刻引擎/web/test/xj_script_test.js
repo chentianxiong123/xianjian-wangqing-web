@@ -159,12 +159,14 @@ let totalSteps = 0, objSteps = 0;
 const nsCount = {};
 for (const [mn, m] of Object.entries(window.XJ_MAPS.maps)) {
   interp.runAll(m.script);
+  interp.drainPauses();   // ★ break/wait 暂停点全部跑完（e.java:990），否则统计只到第一个断点
   totalSteps += m.script.length;
   for (const c of m.script) nsCount[c.obj] = (nsCount[c.obj] || 0) + 1;
   // 对象级脚本：element.addToNpc 等 NPC 定义都在这里
   for (const L of m.layers) for (const o of (L.o || [])) {
     if (!o[3]) continue;
     interp.runAll(o[3]);
+    interp.drainPauses();
     objSteps += o[3].length;
     for (const c of o[3]) nsCount[c.obj] = (nsCount[c.obj] || 0) + 1;
   }

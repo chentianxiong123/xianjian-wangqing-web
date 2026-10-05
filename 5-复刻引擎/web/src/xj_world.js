@@ -144,11 +144,16 @@
     }
     this.stats.elements = this.elements.length;
 
+    // ★ 先装碰撞盒/触发区，再跑地图级脚本（脚本暂停恢复后世界已是完整的）
+    this.loadZones(mapName);
+
     // ② 地图级脚本。world.change 在这里是【立即切图】（e.java:2573 super.a(true)），
     //    不是等玩家触发 —— 第一条生效，后面的脚本不再执行。记录下来交给宿主处理。
     // ★ warp 进图（脚本切图/触发区切图）不再连锁切图：跳过 change 行，
     //   否则互指的两张图（ms_syt_1↔yw_syc）会无限乒乓。其余指令（midi/字幕/道具）照常跑。
+    // ★ script.break/wait 处暂停（e.java:990），断点存 pausedBuild，宿主回车/计时恢复。
     this.pendingChange = null;
+    this.pausedBuild = null;
     var script = m.script;
     if (opts.skipChange) {
       script = (m.script || []).filter(function (c) { return !(c.obj === 'world' && c.cmd === 'change'); });
@@ -156,10 +161,27 @@
     var selfBuild = this;
     this.interp.runAll(script, function (cmd, ran) { selfBuild._stepHook(cmd, ran); });
     // ★ pendingChange 已由 _stepHook 在首条 change 处捕获（先记后落子）
+    if (this.interp.paused) {
+      this.pausedBuild = { script: script, pc: this.interp.paused.pc, waitMs: this.interp.paused.waitMs };
+    }
 
-    this.loadZones(mapName);
     void self;
     return this;
+  };
+
+  /** 继续之前暂停的地图脚本（宿主回车/计时恢复时调）；返回 {paused} 或 null */
+  World.prototype.continueBuild = function () {
+    var pb = this.pausedBuild;
+    if (!pb) return null;
+    this.pausedBuild = null;
+    var self = this;
+    this.interp.runAll(pb.script, function (cmd, ran) { self._stepHook(cmd, ran); }, pb.pc);
+    this.flushState();
+    if (this.interp.paused) {
+      this.pausedBuild = { script: pb.script, pc: this.interp.paused.pc, waitMs: this.interp.paused.waitMs };
+      return { paused: this.pausedBuild };
+    }
+    return { done: true };
   };
 
   /**
@@ -553,13 +575,17 @@
   // ------------------------------------------------------------ 触发区
   /**
    * 收集地图的 region / trigger 矩形。
-   * 272 个 region 里带 world.change 的就是地图出口；
-   * 3526 个 trigger 多为剧情/对话触发。
+   * ★ regions（i 列表，必有脚本）：带 world.change 的就是地图出口；
+   * ★ triggers（j 列表）：【全部是碰撞盒】——全 69 图 3526 个 trigger，
+   *   没有一个带脚本（ay.java:507 碰撞查询只看矩形重叠、不看脚本；
+   *   有脚本的才额外跑事件 ay.java:361/406）。之前这里把无脚本 trigger
+   *   全丢了 + 移动时根本不查 → 穿墙的根因。
    */
   World.prototype.loadZones = function (mapName) {
     var m = XJ.map(mapName);
     var self = this;
     this.zones = [];
+    this.solids = [];
     if (!m) return this;
     for (var li = 0; li < m.layers.length; li++) {
       var L = m.layers[li];
@@ -567,6 +593,10 @@
         self_zone(r, 'region', li, i);
       });
       (L.g || []).forEach(function (t, i) {
+        self.solids.push({
+          x: t.x, y: t.y, w: t.w, h: t.h,
+          ast: (t.scriptAst && t.scriptAst.length) ? t.scriptAst : null
+        });
         self_zone(t, 'trigger', li, i);
       });
     }
@@ -591,6 +621,16 @@
     return x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h;
   };
 
+  /** 点是否撞上碰撞盒（trigger 矩形，ay.java:507 纯矩形重叠判定） */
+  World.prototype.solidAt = function (x, y) {
+    var ss = this.solids || [];
+    for (var i = 0; i < ss.length; i++) {
+      var s = ss[i];
+      if (x >= s.x && x < s.x + s.w && y >= s.y && y < s.y + s.h) return s;
+    }
+    return null;
+  };
+
   /** 找出玩家位置命中的所有未触发过的触发区 */
   World.prototype.zonesAt = function (x, y) {
     var out = [];
@@ -608,7 +648,7 @@
    * 语义：world.change 立即切图 abort 后续（e.java:2573）；
    *   openScriptList 只门控本批（跳到 closeScriptList 继续）。
    */
-  World.prototype.execAst = function (ast) {
+  World.prototype.execAst = function (ast, from) {
     var r = { change: null, moveTo: null, dialog: null, dialogs: [] };
     var self = this, did = false;
     function condOk(c) {
@@ -620,9 +660,22 @@
       return true;
     }
     ast = ast || [];
-    var i = 0;
+    var i = (from | 0);
     while (i < ast.length) {
       var c = ast[i];
+      // ★ script.break / script.wait（条件成立时）暂停执行（e.java:990），
+      //   断点存 r.paused={nodes,pc,waitMs}，宿主用 execAst(nodes, pc) 继续。
+      //   之前这里直接无视 break，整段过场一帧跑完——剧情"乱跳"的根因。
+      if (c.obj === 'script' && (c.cmd === 'break' || c.cmd === 'wait')) {
+        if (!condOk(c)) { i++; continue; }
+        var ms = 0;
+        if (c.cmd === 'wait') {
+          try { ms = this.E((c.raw_args || [])[0]) | 0; } catch (e) { ms = 0; }
+        }
+        r.paused = { nodes: ast, pc: i + 1, waitMs: ms };
+        did = true;
+        break;
+      }
       // ★ 门控批：跳到配对的 closeScriptList，继续往后
       if (c.obj === 'script' && c.cmd === 'openScriptList' && !condOk(c)) {
         r.gated = true;
@@ -720,6 +773,74 @@
     if (b.cond && !XS.testConds(this, b.cond)) return { skipped: true };
     return this.execAst(b.nodes || []);
   };
+
+  /** 把地图脚本的暂停点全部跑完（测试/校验用；浏览器里由回车/计时逐步恢复） */
+  World.prototype.drainBuildPauses = function () {
+    var n = 0;
+    while (this.pausedBuild && n++ < 100000) { this.continueBuild(); }
+    return n;
+  };
+
+  /** build + 跑完所有暂停点（测试用全量语义；游戏里逐步恢复） */
+  World.prototype.buildFull = function (mapName, px, py, opts) {
+    this.build(mapName, px, py, opts);
+    this.drainBuildPauses();
+    this.flushState();
+    return this;
+  };
+
+  /** execAst 跑到完（测试用；返回合并后的 r） */
+  World.prototype.runExecFull = function (ast) {
+    var r = this.execAst(ast), n = 0;
+    while (r && r.paused && n++ < 100000) {
+      var p = r.paused;
+      mergeExec(r, this.execAst(p.nodes, p.pc));
+    }
+    return r;
+  };
+
+  /** runScriptEntry 跑到完（测试用；浏览器里分段、回车恢复） */
+  World.prototype.runScriptEntryFull = function (file, entry) {
+    var base = String(file || '').replace(/\.str$/i, '');
+    var S = (XJ.data.scripts || {});
+    var book = (S.talk && S.talk[base]) || (S['其他'] && S['其他'][base]) || null;
+    if (!book) return null;
+    var blocks = book.blocks || [];
+    var want = parseInt(entry, 10);
+    var b = null;
+    for (var i = 0; i < blocks.length; i++) {
+      if (parseInt(blocks[i].entry, 10) === want) { b = blocks[i]; break; }
+    }
+    if (!b) return null;
+    if (b.cond && !XS.testConds(this, b.cond)) return { skipped: true };
+    return this.runExecFull(b.nodes || []);
+  };
+
+  /** fireZone 跑到完（测试用；浏览器里分段、回车恢复） */
+  World.prototype.fireZoneFull = function (z) {
+    var r = this.fireZone(z), n = 0;
+    while (r && r.paused && n++ < 100000) {
+      var p = r.paused;
+      mergeExec(r, this.execAst(p.nodes, p.pc));
+      this.flushState();
+      if (r.did) z.fired = true;
+    }
+    return r;
+  };
+
+  /** 把后一段 execAst 结果合并进前一段（对话累积、change/moveTo/gated 保留） */
+  function mergeExec(r, r2) {
+    if (!r2) return r;
+    r.dialogs = (r.dialogs || []).concat(r2.dialogs || []);
+    if (r2.dialog) r.dialog = r2.dialog;
+    if (r2.change) r.change = r2.change;
+    if (r2.moveTo) r.moveTo = r2.moveTo;
+    if (r2.gated) r.gated = true;
+    if (r2.skipped) r.skipped = true;
+    r.did = r.did || r2.did;
+    r.paused = r2.paused || null;
+    return r;
+  }
 
   /** 重置触发区（切图后调用） */
   World.prototype.resetZones = function () { (this.zones || []).forEach(function (z) { z.fired = false; }); };

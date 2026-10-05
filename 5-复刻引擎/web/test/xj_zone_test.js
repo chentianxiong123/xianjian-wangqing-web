@@ -38,7 +38,7 @@ head('触发区载入');
     let r = 0, g = 0;
     MAPS[n].layers.forEach(L => { r += (L.r || []).length; g += (L.g || []).length; });
     nReg += r; nTrg += g;
-    const w = new W(); w.build(n, 10, 10);
+    const w = new W(); w.buildFull(n, 10, 10);
     nZone += w.zones.length;
     nExitZone += w.zones.filter(z => z.isExit).length;
   }
@@ -61,7 +61,7 @@ head('触发区载入');
   for (const n of Object.keys(MAPS)) nExit += (MAPS[n].exits || []).length;
   ok(nExit === 220, '地图 exits 共 ' + nExit + ' 个（含地图二进制里的边界出口）');
   // cs_ljb_1 的右侧出口应由某个 region 触发
-  const w = new W(); w.build('cs_ljb_1', 10, 10);
+  const w = new W(); w.buildFull('cs_ljb_1', 10, 10);
   const exitZones = w.zones.filter(z => z.isExit);
   ok(exitZones.length >= 2, 'cs_ljb_1 有 ' + exitZones.length + ' 个 world.change 触发区');
   const m = MAPS.cs_ljb_1;
@@ -78,10 +78,10 @@ head('触发区载入');
 // ============================================================ 2
 head('world.change 参数解析');
 {
-  const w = new W(); w.build('cs_ljb_1', 10, 10);
+  const w = new W(); w.buildFull('cs_ljb_1', 10, 10);
   const z = w.zones.find(zz => zz.isExit);
   // 把玩家放到该区内再触发
-  const r = w.fireZone(z);
+  const r = w.fireZoneFull(z);
   ok(r.change !== null, '触发后产生 change 指令');
   if (r.change) {
     const c = r.change;
@@ -100,10 +100,10 @@ head('world.change 参数解析');
 }
 {
   // moveTo(-1, y) —— -1 保持当前
-  const w = new W(); w.build('cs_ljb_1', 111, 222);
+  const w = new W(); w.buildFull('cs_ljb_1', 111, 222);
   const z = w.zones.find(zz => zz.isExit);
   const before = { x: w.playerX, y: w.playerY };
-  const r = w.fireZone(z);
+  const r = w.fireZoneFull(z);
   ok(r.moveTo !== null, '触发区里含 player.moveTo');
   if (r.moveTo) {
     ok(r.moveTo.x === null || r.moveTo.x === -1 || r.moveTo.x >= 0,
@@ -117,7 +117,7 @@ head('world.change 参数解析');
 // ============================================================ 3
 head('区内判定与一次性触发');
 {
-  const w = new W(); w.build('cs_ljb_1', 10, 10);
+  const w = new W(); w.buildFull('cs_ljb_1', 10, 10);
   const z = w.zones[0];
   const inx = z.x + Math.floor(z.w / 2), iny = z.y + Math.floor(z.h / 2);
   ok(w.inZone(z, inx, iny), '矩形 (' + z.x + ',' + z.y + ' ' + z.w + '×' + z.h + ') 内的点判定为真');
@@ -128,7 +128,7 @@ head('区内判定与一次性触发');
   // 未触发前能查到，触发后查不到
   const hits = w.zonesAt(inx, iny);
   ok(hits.indexOf(z) >= 0, 'zonesAt 能查到未触发的区');
-  w.fireZone(z);
+  w.fireZoneFull(z);
   const hits2 = w.zonesAt(inx, iny);
   ok(hits2.indexOf(z) < 0, '触发后同一位置不再重复触发（fired 标记生效）');
   w.resetZones();
@@ -136,7 +136,7 @@ head('区内判定与一次性触发');
 }
 {
   // ★ 被条件门控的区不能标记为已触发，否则事件达成后玩家再也进不去
-  const w = new W(); w.build('cs_ljb_1', 10, 10);
+  const w = new W(); w.buildFull('cs_ljb_1', 10, 10);
   const z = w.zones.find(zz => {
     const o = zz.ast.find(c => c.cmd === 'openScriptList' && c.cond);
     return o && (o.cond.terms || []).some(t => t.fn === 'eventMarked' && !t.neg);
@@ -144,7 +144,7 @@ head('区内判定与一次性触发');
   ok(!!z, '找到被 eventMarked 型条件门控的区：rect ' + (z ? [z.x, z.y, z.w, z.h].join(',') : ''));
   if (z) {
     const inx = z.x + 1, iny = z.y + 1;
-    const r1 = w.fireZone(z);
+    const r1 = w.fireZoneFull(z);
     ok(r1.gated === true && !z.fired,
       '条件未满足时被门控，且【不】标记已触发');
     ok(w.zonesAt(inx, iny).indexOf(z) >= 0, '门控后仍留在待触发列表里');
@@ -152,7 +152,7 @@ head('区内判定与一次性触发');
     (z.ast.find(c => c.cmd === 'openScriptList' && c.cond).cond.terms || []).forEach(t => {
       if (t.fn === 'eventMarked' && t.args[0].type === 'int') w.events[t.args[0].value] = t.neg ? 0 : 1;
     });
-    const r2 = w.fireZone(z);
+    const r2 = w.fireZoneFull(z);
     ok(!r2.gated && z.fired,
       '条件满足后同一区可正常触发（gated=' + r2.gated + ' fired=' + z.fired + '）');
   }
@@ -164,7 +164,7 @@ head('剧情触发区里的对话');
   // 找一个 setText 的触发区
   let found = null, zw = null;
   for (const n of Object.keys(MAPS)) {
-    const w = new W(); w.build(n, 10, 10);
+    const w = new W(); w.buildFull(n, 10, 10);
     for (const z of w.zones) {
       if (z.ast.some(c => c.cmd === 'setText')) { found = n; zw = z; break; }
     }
@@ -172,7 +172,7 @@ head('剧情触发区里的对话');
   }
   ok(found !== null, '找到含 dialogBox.setText 的剧情触发区：地图 ' + found);
   if (found) {
-    const w = new W(); w.build(found, 10, 10);
+    const w = new W(); w.buildFull(found, 10, 10);
     const z = w.zones.find(zz => zz.ast.some(c => c.cmd === 'setText'));
     // 该区的 openScriptList 条件必须先满足才会弹框（实测条件就挂在 openScriptList 上）
     const open = z.ast.find(c => c.cmd === 'openScriptList' && c.cond);
@@ -180,7 +180,7 @@ head('剧情触发区里的对话');
       if (t.fn === 'eventMarked' && t.args[0].type === 'int')
         w.events[t.args[0].value] = t.neg ? 0 : 1;
     });
-    const r = w.fireZone(z);
+    const r = w.fireZoneFull(z);
     ok(r.dialog !== null, '触发后产生对话框：'
       + (r.dialog ? (r.dialog.speaker || '') + '：' + String(r.dialog.text).slice(0, 26) + '…' : ''));
   }
@@ -190,12 +190,12 @@ head('剧情触发区里的对话');
   // ★ 条件挂在 script.openScriptList 上（实测 94 处），不成立则整批都不执行
   let tested = 0, gated = 0, ungated = 0;
   for (const n of Object.keys(MAPS)) {
-    const w = new W(); w.build(n, 10, 10);
+    const w = new W(); w.buildFull(n, 10, 10);
     for (const z of w.zones) {
       const open = z.ast.find(c => c.cmd === 'openScriptList' && c.cond);
       if (!open) continue;
       tested++;
-      const r = w.fireZone(z);
+      const r = w.fireZoneFull(z);
       if (r.gated && !r.dialog) gated++; else ungated++;
       if (tested >= 40) break;
     }
@@ -210,13 +210,13 @@ head('剧情触发区里的对话');
   //   批前面的逐条条件分支（如 !eventMarked(22) 的 moveTo/change）照常执行。
   let leaked = 0;
   for (const n of Object.keys(MAPS)) {
-    const w = new W(); w.build(n, 10, 10);
+    const w = new W(); w.buildFull(n, 10, 10);
     for (const z of w.zones) {
       const open = z.ast.find(c => c.cmd === 'openScriptList' && c.cond);
       if (!open) continue;
       const hasPos = (open.cond.terms || []).some(t => t.fn === 'eventMarked' && !t.neg);
       if (!hasPos) continue;
-      const r = w.fireZone(z);
+      const r = w.fireZoneFull(z);
       // 门控批内的 setText 不得变成对话框：区里所有 setText 都在门控批内且被拦时，dialog 必须为空
       const texts = z.ast.filter(c => c.cmd === 'setText');
       const openIdx = z.ast.indexOf(open);
@@ -232,7 +232,7 @@ head('剧情触发区里的对话');
     // 反证：把条件事件按原样置位后，同一区应正常执行
     let n2 = 0, hit2 = 0;
     for (const n of Object.keys(MAPS)) {
-      const w = new W(); w.build(n, 10, 10);
+      const w = new W(); w.buildFull(n, 10, 10);
       for (const z of w.zones) {
         const open = z.ast.find(c => c.cmd === 'openScriptList' && c.cond);
         if (!open) continue;
@@ -241,7 +241,7 @@ head('剧情触发区里的对话');
             w.events[t.args[0].value] = t.neg ? 0 : 1;
         });
         n2++;
-        const r = w.fireZone(z);
+        const r = w.fireZoneFull(z);
         if (!r.gated && (r.dialog || r.change || r.moveTo)) hit2++;
         if (n2 >= 40) break;
       }
@@ -257,11 +257,11 @@ head('全地图触发区一致性');
 {
   let bad = [], tot = 0, fired = 0, changes = 0, dlg = 0;
   for (const n of Object.keys(MAPS)) {
-    const w = new W(); w.build(n, 10, 10);
+    const w = new W(); w.buildFull(n, 10, 10);
     tot += w.zones.length;
     for (const z of w.zones) {
       try {
-        const r = w.fireZone(z);
+        const r = w.fireZoneFull(z);
         fired++;
         if (r.change) changes++;
         if (r.dialog) dlg++;
@@ -280,7 +280,7 @@ head('全地图触发区一致性');
   // 每个 world.change 的目标地图都必须存在
   let miss = [], nAll = 0;
   for (const n of Object.keys(MAPS)) {
-    const w = new W(); w.build(n, 10, 10);
+    const w = new W(); w.buildFull(n, 10, 10);
     const list = w.zones.map(z => z.ast.find(a => a.obj === 'world' && a.cmd === 'change'))
       .filter(Boolean).concat(w.pendingChange ? [w.pendingChange] : []);
     for (const c of list) {

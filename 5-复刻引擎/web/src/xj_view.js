@@ -37,6 +37,7 @@
     // ---- 过场/演出状态（game.black/flicker/vibrate/waitForKey…）----
     this.cut = null;        // {text, mode} 字幕（black/verse），回车关闭
     this.cutQueue = [];     // 待显示的字幕队列
+    this.pausedRunner = null; // ★ script.break/wait 暂停的脚本（e.java:990），回车/计时恢复
     this.waitKeys = null;   // {keys:[...], msg} 等待按键
     this.flicker = null;    // {until, color}
     this.shakeUntil = 0;    // 震屏截止时间
@@ -57,6 +58,8 @@
     if (!m) return false;
     this.mapName = mapName;
     this.m = m;
+    // ★ 进新图 = 新的脚本上下文，旧的暂停点作废（原版切图打断 runner）
+    this.pausedRunner = null;
     this.px = px != null ? px : Math.floor(m.cols * m.tw / 2);
     this.py = py != null ? py : Math.floor(m.rows * m.th / 2);
     // ★ 装配世界：跑地图级脚本 + 逐个对象脚本，真正把 NPC/怪物/宝箱等建出来
@@ -65,17 +68,28 @@
     this.checkZones();
     // ★ 地图级脚本的副作用在这里落子（midi/剧情战斗/菜单/字幕/道具…）
     this.drainWorldFx();
+    // ★ 地图脚本跑到 break/wait 暂停了：等回车/计时恢复（e.java:990）
+    if (this.world.pausedBuild) this.trackPause({ paused: this.world.pausedBuild }, 'build');
     // ★ 先开战、后切图（原版 fight 是模态的，后续行战后才跑）：
     //   若落子排了战斗，pendingChange 暂存到战后执行
+    var w = this._followPendingChange();
+    if (w != null) return w;
+    return true;
+  };
+
+  /** 跟进地图脚本留下的 pendingChange（开战则暂存战后，否则直接 warp）；无事返回 null */
+  Scene.prototype._followPendingChange = function () {
     if (this.pendingBattle && this.world.pendingChange) {
       var pc = this.world.pendingChange;
       this.world.pendingChange = null;
       this.pendingBattle.afterGoto = [pc.map, pc.x, pc.y, pc.dir, false];
       this.log('战后切图 → ' + pc.map + ' @' + pc.x + ',' + pc.y);
+      return true;
     } else if (this.world.pendingChange && (this._warpDepth || 0) < 4) {
       var c = this.world.pendingChange;
+      this.world.pendingChange = null;
       this._warpDepth = (this._warpDepth || 0) + 1;
-      this._warpGuard = mapName + '>' + c.map;
+      this._warpGuard = this.mapName + '>' + c.map;
       if (this._warpGuard !== this._lastWarp) {
         this._lastWarp = this._warpGuard;
         this.log('剧情切图 → ' + c.map + ' @' + c.x + ',' + c.y);
@@ -84,8 +98,81 @@
         return okWarp;
       }
       this._warpDepth--;
+      return true;
     }
+    return null;
+  };
+
+  /**
+   * 暂停点登记（script.break 等按键 / script.wait 等毫秒，e.java:990）。
+   * kind: 'exec'（触发区/条目脚本）或 'build'（地图脚本）。
+   * preBattle: 来自战前 H2 开场——开战排队中也允许恢复；否则排队中不恢复，
+   *   战后由 endBattle 自动恢复（原版战后脚本自动继续）。
+   */
+  Scene.prototype.trackPause = function (r, kind, preBattle) {
+    if (!r || !r.paused) return r;
+    var self = this, p = r.paused;
+    if (kind === 'build') {
+      this.pausedRunner = { preBattle: false, waitMs: p.waitMs, resume: function () {
+        var rr = self.world.continueBuild();
+        self.drainWorldFx();
+        self._followPendingChange();
+        if (rr && rr.paused) self.trackPause({ paused: rr.paused }, 'build');
+        return rr;
+      } };
+    } else {
+      this.pausedRunner = { preBattle: !!preBattle, waitMs: p.waitMs, resume: function () {
+        var r2 = self.world.execAst(p.nodes, p.pc);
+        self.playExecTail(r2, { moveTo: true, dialog: true });
+        return r2;
+      } };
+    }
+    if (p.waitMs) {
+      var token = this.pausedRunner;
+      setTimeout(function () {
+        if (self.pausedRunner === token) self.resumeRunner();
+      }, Math.min(Math.max(p.waitMs, 0), 30000));
+    }
+    return r;
+  };
+
+  /** 恢复暂停的脚本（回车/计时/战后调用）。战斗中不恢复。 */
+  Scene.prototype.resumeRunner = function () {
+    var pr = this.pausedRunner;
+    if (!pr) return false;
+    if (this.inBattle) return false;
+    // ★ 开战排队中：只有战前 H2 的暂停能恢复（把它播完才能开战）；
+    //   战后脚本暂停等 endBattle 自动恢复
+    if (this.pendingBattle && !pr.preBattle) return false;
+    this.pausedRunner = null;
+    pr.resume();
     return true;
+  };
+
+  /**
+   * 条目/触发区脚本的通用收尾：落子 → 对话进队列 → 切图 → 登记暂停点。
+   * opts.moveTo/dialog：是否处理 player.moveTo 传送与 dialogBox（触发区/分支要，H2 开场不要）。
+   */
+  Scene.prototype.playExecTail = function (r, opts) {
+    if (!r || r.skipped) return r;
+    opts = opts || {};
+    if (opts.moveTo && r.moveTo) {
+      if (r.moveTo.x != null) this.px = r.moveTo.x;
+      if (r.moveTo.y != null) this.py = r.moveTo.y;
+    }
+    if (opts.dialog && r.dialog) {
+      this.dialogBox = { text: r.dialog.text, speaker: r.dialog.speaker, type: null, visible: true };
+    }
+    if (this.world.playerDir) { this.player.dir = this.world.playerDir; }
+    this.drainWorldFx();
+    var self = this;
+    (r.dialogs || []).forEach(function (dd) {
+      self.cutQueue.push({ mode: 'dlg', text: dd.text, speaker: dd.speaker });
+    });
+    self.nextCut();
+    if (r.change) this.goto(r.change.map, r.change.x, r.change.y, r.change.dir, false);
+    this.trackPause(r, 'exec', !!opts.preBattle);
+    return r;
   };
 
   /** 取出 World 解释器攒的效果 → 状态落子 + 意图执行 */
@@ -224,17 +311,10 @@
   Scene.prototype.queueBattle = function (key, script) {
     if (script != null && script >= 0) {
       var r = this.world.runScriptEntry('H2.str', script);
-      if (r && !r.skipped) {
-        this.drainWorldFx();
-        var self = this;
-        (r.dialogs || []).forEach(function (dd) {
-          self.cutQueue.push({ mode: 'dlg', text: dd.text, speaker: dd.speaker });
-        });
-        self.nextCut();
-        if (r.change) this.goto(r.change.map, r.change.x, r.change.y, r.change.dir, false);
-      }
+      // ★ preBattle：开战排队中也允许回车播完它（播完+对白清空才开战）
+      this.playExecTail(r, { preBattle: true });
     }
-    // ★ 开场播完（过场清空）才真正开战
+    // ★ 开场播完（过场清空+无暂停点）才真正开战
     this.pendingBattle = { key: key };
   };
   Scene.prototype.startBattle = function (key, playerLevel) {
@@ -361,33 +441,23 @@
       this.log('逃跑成功');
     }
     // ★ 执行战后切图（有则；胜负逃都执行——原版后续行照跑）
+    var _warped = false;
     if (this._afterGoto) {
       var ag = this._afterGoto;
       this._afterGoto = null;
-      this.goto(ag[0], ag[1], ag[2], ag[3], ag[4]);
+      _warped = !!this.goto(ag[0], ag[1], ag[2], ag[3], ag[4]);
     }
+    // ★ 战后脚本自动继续（原版 fight 返回后 runner 继续跑；新图 warp 则等玩家按键）
+    if (this.pausedRunner && !_warped) this.resumeRunner();
     // 切回地图 BGM
     this.audioMapBgm();
   };
 
   Scene.prototype.fireZone = function (z) {
     var r = this.world.fireZone(z);
-    // player.moveTo(-1, y) —— -1 保持不变
-    if (r.moveTo) {
-      if (r.moveTo.x != null) this.px = r.moveTo.x;
-      if (r.moveTo.y != null) this.py = r.moveTo.y;
-    }
-    if (r.dialog) {
-      this.dialogBox = { text: r.dialog.text, speaker: r.dialog.speaker, type: null, visible: true };
-    }
-    if (this.world.playerDir) { this.player.dir = this.world.playerDir; }
-    // ★ 触发区里其余指令（game.fight/midi/道具/字幕…）在这里落子
-    this.drainWorldFx();
-    if (r.change) {
-      var c = r.change;
-      if (this.goto(c.map, c.x, c.y, c.dir, false)) return true;
-    }
-    return false;
+    // player.moveTo(-1, y) —— -1 保持不变（execAst 内处理）
+    this.playExecTail(r, { moveTo: true, dialog: true });
+    return !!(r && r.change);
   };
 
   /** 检查玩家当前位置的触发区 */
@@ -452,6 +522,7 @@
   Scene.prototype.tryMove = function (dir) {
     if (!this.m) return false;
     if (this.cut || this.cutQueue.length || this.waitKeys || this.menu || this.branch) return false;
+    if (this.pausedRunner) return false;
     var d = DIRS[dir];
     if (!d) return false;
     this.player.dir = dir;
@@ -460,6 +531,15 @@
     var ny = this.py + d[1] * step;
     if (nx < 0 || ny < 0 || nx >= this.mapPxW() || ny >= this.mapPxH()) return false;
     if (this.hitElement(nx, ny)) return false;
+    // ★ 碰撞盒（MAP trigger 矩形，ay.java:507）：撞墙停；带脚本的撞了还跑脚本
+    var s = this.world.solidAt ? this.world.solidAt(nx, ny) : null;
+    if (s) {
+      if (s.ast && s.ast.length) {
+        var r2 = this.world.execAst(s.ast);
+        this.playExecTail(r2, { moveTo: true, dialog: true });
+      }
+      return false;
+    }
     this.px = nx; this.py = ny;
     this.player.state = this.world.fly ? '飞行' : '走路';
     this.pushTrail(nx, ny);
@@ -929,8 +1009,9 @@
 
   /** 每帧逻辑：剧情移动队列 / 跟随者 / 明怪 / 落石 */
   Scene.prototype.update = function (dt) {
-    // 待开战斗：过场（字幕/对话/分支/菜单/商店/等待按键）清空后开战
+    // 待开战斗：过场（字幕/对话/分支/菜单/商店/等待按键/脚本暂停点）清空后开战
     if (this.pendingBattle && !this.inBattle && !this.cut && !this.cutQueue.length &&
+        !this.pausedRunner &&
         !(this.talk && this.talk.active) && !this.menu && !(this.shop && this.shop.active) && !this.branch) {
       var pb = this.pendingBattle;
       this.pendingBattle = null;
@@ -979,14 +1060,7 @@
         var cd = this.world.countdown;
         this.world.countdown = null;
         var rr = this.world.runScriptEntry(cd.file, cd.line);
-        if (rr && !rr.skipped) {
-          this.drainWorldFx();
-          (rr.dialogs || []).forEach(function (dd) {
-            self.cutQueue.push({ mode: 'dlg', text: dd.text, speaker: dd.speaker });
-          });
-          self.nextCut();
-          if (rr.change) this.goto(rr.change.map, rr.change.x, rr.change.y, rr.change.dir, false);
-        }
+        this.playExecTail(rr);
       }
     }
     // NPC 自带 moveTo 队列
@@ -1176,7 +1250,12 @@
     // 商店开着时交给商店
     if (this.shop && this.shop.active) return false;
     // 过场优先
-    if (this.cut) { this.cut = null; this.nextCut(); return true; }
+    if (this.cut) {
+      this.cut = null; this.nextCut();
+      // ★ 字幕播完且脚本停在 break 上：同一次按键继续往下演（原版一次按键即继续）
+      if (!this.cut && !this.cutQueue.length) this.resumeRunner();
+      return true;
+    }
     if (this.waitKeys) {
       if (!this.waitKeys.until || performance.now() >= this.waitKeys.until) this.waitKeys = null;
       return true;
@@ -1202,6 +1281,12 @@
       return true;
     }
     if (!this.talk) {
+      // ★ 没有字幕但脚本停在 break 上（纯演出段落）：回车继续往下演
+      if (this.pausedRunner && !this.cut && !this.cutQueue.length &&
+          !this.waitKeys && !this.branch && !this.menu && !this.inBattle) {
+        this.resumeRunner();
+        return true;
+      }
       var npc = T.facingNpc.call({ world: this.world }, this.px, this.py, this.player.dir);
       if (npc) {
         var d = new T.Dialog(this.world, npc.id);
@@ -1291,19 +1376,7 @@
     // ★ 跨文件跳转：执行目标条目（全部对话进过场队列）
     if (op.file) {
       var r = this.world.runScriptEntry(op.file, op.line);
-      if (r && !r.skipped) {
-        this.drainWorldFx();
-        (r.dialogs || []).forEach(function (dd) {
-          self.cutQueue.push({ mode: 'dlg', text: dd.text, speaker: dd.speaker });
-        });
-        self.nextCut();
-        if (r.change) this.goto(r.change.map, r.change.x, r.change.y, r.change.dir, false);
-        if (r.moveTo) {
-          if (r.moveTo.x != null) this.px = r.moveTo.x;
-          if (r.moveTo.y != null) this.py = r.moveTo.y;
-        }
-        if (r.dialog) this.dialogBox = { text: r.dialog.text, speaker: r.dialog.speaker, type: null, visible: true };
-      }
+      this.playExecTail(r, { moveTo: true, dialog: true });
       // 跳转后原对话终结（原版切到别的文件继续）
       if (this.talk) { this.talk.active = false; this.talk = null; }
     } else if (this.talk && this.talk.active) {

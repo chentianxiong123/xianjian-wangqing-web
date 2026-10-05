@@ -34,7 +34,7 @@ SeqRand.prototype.nextInt = function () { this.s = (this.s * 1103515245 + 12345)
 head('地图脚本落子');
 {
   const w = new W();
-  w.build('ms_syt_1');
+  w.buildFull('ms_syt_1');
   const fx = w.drainDeferred();
   ok(w.mapTitle === '锁妖塔六层', '地图中文名：' + w.mapTitle);
   const bgm = (fx.intents || []).filter(i => i.type === 'bgm');
@@ -59,7 +59,7 @@ head('队友与宝箱事件');
   ok(w.members.indexOf('liyiru') < 0 && w.followers[0] === undefined, 'partner.out(0)：离队+取消跟随');
   // 宝箱事件标记 → 开箱状态
   w.events[781] = 1;
-  w.build('ms_syt_1');
+  w.buildFull('ms_syt_1');
   const box = (w.elements || []).filter(e => e.kind === 'box' && e.id === 781)[0];
   ok(box && box.opened === true, '事件781已标记 → 宝箱显示开启');
 }
@@ -68,7 +68,7 @@ head('队友与宝箱事件');
 head('剧情战斗意图');
 {
   const w = new W();
-  w.build('cs_ss_d');
+  w.buildFull('cs_ss_d');
   const fx = w.drainDeferred();
   const fights = (fx.intents || []).filter(i => i.type === 'fight');
   ok(fights.length >= 1 && fights[0].key === 'boss1', 'cs_ss_d 进图即战 boss1：' + JSON.stringify(fights.map(f => f.key)));
@@ -128,10 +128,10 @@ head('切图不连锁');
   // ms_syt_1(174)→yw_syc，yw_syc(197)→ms_syt_1：直接连锁会无限乒乓。
   // warp 进图跳过 change 行，第一条生效一次即停。
   const w = new W();
-  w.build('ms_syt_1', 0, 0);
+  w.buildFull('ms_syt_1', 0, 0);
   ok(w.pendingChange && w.pendingChange.map === 'yw_syc', 'ms_syt_1 首条 change 生效：' + (w.pendingChange && w.pendingChange.map));
   const w2 = new W();
-  w2.build('yw_syc', 0, 0, { skipChange: true });
+  w2.buildFull('yw_syc', 0, 0, { skipChange: true });
   ok(!w2.pendingChange, 'warp 进 yw_syc 不再连锁切回');
   ok(w2.mapTitle === '渔村', '渔村标题：' + w2.mapTitle);
 }
@@ -141,7 +141,7 @@ head('外部脚本行（branch/倒计时）');
 {
   // xuanze.str 条目 8：短对话批（给月瑶/给紫萱的后续之一）
   const w = new W();
-  const r = w.runScriptEntry('xuanze.str', 8);
+  const r = w.runScriptEntryFull('xuanze.str', 8);
   ok(r && r.dialog && r.dialog.text, 'xuanze.str:8 执行出对话框：' + (r && r.dialog && String(r.dialog.text).slice(0, 18)));
   ok(r && r.dialogs && r.dialogs.length >= 1, '多段对话全部收集：' + (r && r.dialogs.length) + ' 段');
   const fx = w.drainDeferred();
@@ -152,7 +152,7 @@ head('外部脚本行（branch/倒计时）');
   ok(w.runScriptEntry('不存在.str', 0) === null, '不存在的文件返回 null');
   // cs_sz_2 地图级 countdownTimer.setMillis(60000,xuanze.str,0)
   const w2 = new W();
-  w2.build('cs_sz_2', 0, 0);
+  w2.buildFull('cs_sz_2', 0, 0);
   const fx2 = w2.drainDeferred();
   const cd = (fx2.intents || []).filter(i => i.type === 'countdown')[0];
   ok(cd && cd.ms === 60000 && cd.file === 'xuanze.str' && cd.line === 0,
@@ -161,7 +161,7 @@ head('外部脚本行（branch/倒计时）');
   // 注：数据里 3 处 map 级 npc.in 的目标 NPC 都不存在，原版同样空操作；
   // 这里用合成效果验证语义本身。
   const w3 = new W();
-  w3.build('yw_wl_2', 0, 0);
+  w3.buildFull('yw_wl_2', 0, 0);
   w3.drainDeferred();
   ok(w3.findElement(31) !== null, 'yw_wl_2 有 NPC31');
   w3.applyStateEffects([{ kind: 'npc.in', data: { raw: ['31', '4'] } }]);
@@ -252,12 +252,12 @@ head('Boss战开场（H2.str）');
 {
   // H2.str 有 7 条目：条目0=boss1开场+新手教程，条目3=第一次战斗教程
   const w = new W();
-  const r = w.runScriptEntry('H2.str', 0);
+  const r = w.runScriptEntryFull('H2.str', 0);
   ok(r && r.dialogs && r.dialogs.length > 5, 'H2:0 开场对话 ' + (r && r.dialogs.length) + ' 段');
   ok(r.dialogs[0].speaker === '邪剑仙', '首句是邪剑仙：' + String(r.dialogs[0].text).slice(0, 18));
   ok(w.events[1] === 1, '开场 markEvent(1) 即时落子（后续批次可见）');
   const w3 = new W();
-  const r3 = w3.runScriptEntry('H2.str', 3);
+  const r3 = w3.runScriptEntryFull('H2.str', 3);
   ok(r3 && r3.dialogs && r3.dialogs.length > 3, 'H2:3 战斗教程 ' + (r3 && r3.dialogs.length) + ' 段');
   ok(/可恶|偷袭/.test(r3.dialogs[0].text), '首句是被偷袭：' + String(r3.dialogs[0].text).slice(0, 16));
 }
