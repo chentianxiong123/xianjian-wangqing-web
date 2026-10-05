@@ -120,6 +120,19 @@ head('遇敌组建');
   ok(e && e.exp > 0 && e.gold > 0, '经验 ' + (e && e.exp) + ' 金钱 ' + (e && e.gold));
 }
 {
+  // ★ 10 个 boss/特殊键全部能组建（上下打通：不再只有 boss1 被实测）
+  const rnd2 = (typeof rnd !== 'undefined') ? rnd : null;
+  let bad = [];
+  for (const k of ['boss1', 'boss2', 'boss3', 'boss4', 'boss5', 'boss6', 'boss7', 'liyao', 'linglong', 'egui']) {
+    try {
+      const ee = B.encounter(k, 60, rnd2, null);
+      if (!ee || !ee.monsters.length) bad.push(k + ' 组建空');
+      else if (!ee.bgAnt || !ee.bgm) bad.push(k + ' 无背景/BGM');
+    } catch (err) { bad.push(k + ' 抛错: ' + err.message); }
+  }
+  ok(bad.length === 0, '10 boss 全组建成功（背景/BGM 齐全）', bad.join(' | '));
+}
+{
   // 等级缩放：±1 且夹区间
   let allOk = true, samples = [];
   for (const key of ['十里坡东', '雾林', '遗址']) {
