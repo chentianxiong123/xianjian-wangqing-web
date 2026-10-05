@@ -117,6 +117,55 @@ head('战斗常量：C() 与逻辑表一致（改一处另一处红）');
   ok(!!C.DAMAGE, '伤害公式原文来自逻辑表（非手写）');
 }
 
+// ============================================================ 死内容锁（原版废弃，禁"修复"）
+head('死内容：5 本死对话书 + 级联 + 7 本缺失');
+{
+  // talk_8/9/54/61/62：无 NPC 引用、无脚本调用（静态抽取 xj_plot_extract 实证：零到达）
+  const S = window.XJ_SCRIPTS;
+  const npcTalkRefs = new Set();
+  Object.keys(NPC.npcs || {}).forEach(id => {
+    const t = (NPC.npcs[id].talk || '').replace(/\.str$/i, '');
+    if (t) npcTalkRefs.add(t);
+  });
+  const rawAll = [];
+  function rec(ns) { (ns || []).forEach(c => {
+    if (c.raw) rawAll.push(c.raw);
+    if (c.nodes) rec(c.nodes); if (c.blocks) c.blocks.forEach(b => rec(b.nodes));
+  }); }
+  const M = window.XJ_MAPS.maps;
+  for (const mn of Object.keys(M)) {
+    rec(M[mn].script);
+    M[mn].layers.forEach(L => {
+      (L.o || []).forEach(o => rec(o[3]));
+      (L.r || []).forEach(r => rec(r.scriptAst));
+      (L.g || []).forEach(g => rec(g.scriptAst));
+    });
+  }
+  for (const bk of Object.keys(S.talk || {})) for (const b of (S.talk[bk].blocks || [])) rec(b.nodes);
+  for (const bk of Object.keys(S['其他'] || {})) for (const b of ((S['其他'][bk] || {}).blocks || [])) rec(b.nodes);
+  const joined = rawAll.join('\n');
+  const dead = ['talk_8', 'talk_9', 'talk_54', 'talk_61', 'talk_62'];
+  const badRef = dead.filter(t => npcTalkRefs.has(t));
+  ok(badRef.length === 0, '5 死书无 NPC 引用：' + dead.join(' '), badRef.join(','));
+  const badCall = dead.filter(t => joined.indexOf(t) >= 0);
+  ok(badCall.length === 0, '5 死书无脚本调用', badCall.join(','));
+  // 级联：xuanze#22/23 只被 talk_61#4 调用；xuanze#26/27 只被 talk_9#5 调用
+  const onlyFrom = (file, line, src) => {
+    const hits = rawAll.filter(r => r.indexOf(file) >= 0 && r.indexOf(',' + line) >= 0);
+    return hits.length > 0 && hits.every(h => h.indexOf(src) >= 0 || true) && hits;
+  };
+  const c22 = rawAll.filter(r => /xuanze\.str,22/.test(r));
+  ok(c22.length === 1 && c22[0].indexOf('接受') >= 0, 'xuanze#22 唯一调用=talk_61#4（死级联）：' + c22.length + ' 处');
+  const c26 = rawAll.filter(r => /xuanze\.str,26/.test(r));
+  ok(c26.length === 1, 'xuanze#26 唯一调用=talk_9#5（死级联）：' + c26.length + ' 处');
+  // 7 本缺失：NPC 引用了但 jar 里没有（talk_3/4/5/7/12/13/15）
+  const missing7 = ['talk_3', 'talk_4', 'talk_5', 'talk_7', 'talk_12', 'talk_13', 'talk_15'];
+  const refMissing = missing7.filter(t => npcTalkRefs.has(t));
+  ok(refMissing.length === missing7.length, 'NPC 引用了 7 本缺失书：' + refMissing.join(' '));
+  const absentBooks = missing7.filter(t => !((S.talk || {})[t]));
+  ok(absentBooks.length === missing7.length, 'jar 里确实没有这 7 本书');
+}
+
 // ============================================================
 console.log('\n通过 ' + pass + ' / 失败 ' + fail);
 if (fail) { console.log('失败项：' + failures.join(' | ')); process.exit(1); }

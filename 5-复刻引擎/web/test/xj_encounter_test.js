@@ -252,6 +252,36 @@ head('H2.str（战斗脚本）');
   ok(fightKeys.every(a => a.length === 4), 'game.fight 均为 4 个参数（key + 3 个回合数）');
 }
 
+// ============================================================ 可达性：组建≠可打
+head('boss 可达性（boss6 死配置锁死）');
+{
+  // 全量 AST 扫 game.fight(key)：9 个键有调用点，boss6 零调用（enemy.str entry23 配了但原版永远打不到）。
+  // 组建测试（§上）只证明 encounter() 不抛错；本节证明谁真能上场。禁"修复"boss6。
+  const callers = {};
+  const rec = ns => (ns || []).forEach(c => {
+    const raw = c.raw || '';
+    const m = raw.match(/game\.fight\(\s*(boss\d|liyao|linglong|egui)/);
+    if (m) callers[m[1]] = (callers[m[1]] || 0) + 1;
+    if (c.nodes) rec(c.nodes);
+    if (c.blocks) c.blocks.forEach(b => rec(b.nodes));
+  });
+  for (const m of Object.values(XJ.data.maps.maps)) {
+    rec(m.script);
+    m.layers.forEach(L => {
+      (L.o || []).forEach(o => rec(o[3]));
+      (L.r || []).forEach(r => rec(r.scriptAst));
+      (L.g || []).forEach(g => rec(g.scriptAst));
+    });
+  }
+  const T2 = XJ.data.scripts || {};
+  for (const bk of Object.keys(T2.talk || {})) for (const b of (T2.talk[bk].blocks || [])) rec(b.nodes);
+  for (const bk of Object.keys(T2['其他'] || {})) for (const b of ((T2['其他'][bk] || {}).blocks || [])) rec(b.nodes);
+  const expect = ['boss1', 'boss2', 'boss3', 'boss4', 'boss5', 'boss7', 'liyao', 'linglong', 'egui'];
+  const missing = expect.filter(k => !callers[k]);
+  ok(missing.length === 0, '9 键各有调用点：' + expect.map(k => k + '×' + (callers[k] || 0)).join(' '), missing.join(','));
+  ok(!callers['boss6'], 'boss6 零调用（死配置，原版打不到）', 'boss6×' + (callers['boss6'] || 0));
+}
+
 // ============================================================
 console.log('\n' + '='.repeat(50));
 console.log('  通过 ' + pass + ' / 失败 ' + fail);

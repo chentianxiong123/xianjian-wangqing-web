@@ -483,6 +483,8 @@
         }
         case 'player.task': {
           var tn = String(S(0));
+          // ★ e.java:2646：空表先垫"无"再追加（与 xj_talk 对话路径一致）
+          if (!self.tasks.length) self.tasks.push('无');
           if (self.tasks.indexOf(tn) < 0) self.tasks.push(tn);
           messages.push('接受任务：' + tn);
           break;

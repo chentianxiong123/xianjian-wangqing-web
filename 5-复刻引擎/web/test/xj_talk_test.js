@@ -234,6 +234,23 @@ head('对话中的条件与副作用');
     '王大虎对话接到的任务是名字「十里坡除妖」：' + JSON.stringify(w.tasks));
 }
 {
+  // ★ 任务语义逐行锁 e.java:2646（对话路径曾经与地图路径不一致，NPC任务会被吞）
+  const w = { tasks: [], expr: () => 0 };
+  const d = new T.Dialog(w, 1);
+  d.exec('player', 'firstTask', { raw_args: ['A'] });
+  ok(JSON.stringify(w.tasks) === '["A"]', 'firstTask空表追加：' + JSON.stringify(w.tasks));
+  d.exec('player', 'firstTask', { raw_args: ['B'] });
+  ok(JSON.stringify(w.tasks) === '["B"]', 'firstTask非空替换第0项（不是丢弃）：' + JSON.stringify(w.tasks));
+  d.exec('player', 'task', { raw_args: ['C'] });
+  ok(JSON.stringify(w.tasks) === '["B","C"]', 'task非空追加：' + JSON.stringify(w.tasks));
+  w.tasks = [];
+  d.exec('player', 'task', { raw_args: ['D'] });
+  ok(JSON.stringify(w.tasks) === '["无","D"]', 'task空表先垫"无"再追加（原版怪癖）：' + JSON.stringify(w.tasks));
+  w.tasks = [];
+  d.exec('player', 'removeTask', { raw_args: ['X'] });
+  ok(w.tasks.length === 0, 'removeTask空表无操作');
+}
+{
   // 商店：trade 产生 trade 状态
   let found = null;
   const withTalk = Object.keys(window.XJ_NPC.npcs).filter(k => hasDialog(k));

@@ -216,11 +216,20 @@
         if (cmd === 'addItem') { w.addItem(S(0), a.length > 1 ? E(1) : 1); return null; }
         if (cmd === 'removeItem') { w.removeItem(S(0), a.length > 1 ? E(1) : 1); return null; }
         // ★ 任务参数是【名字】不是数字（如 十里坡除妖），存原始字符串
-        if (cmd === 'task') { w.tasks.push(S(0)); return null; }
+        // ★ 语义逐行对照 e.java:2646：task 空表时先垫"无"再追加；firstTask 非空时替换第0项
+        if (cmd === 'task') {
+          if (w.tasks.length) w.tasks.push(S(0));
+          else { w.tasks.push('无'); w.tasks.push(S(0)); }
+          return null;
+        }
         if (cmd === 'removeTask') {
           var i = w.tasks.indexOf(S(0)); if (i >= 0) w.tasks.splice(i, 1); return null;
         }
-        if (cmd === 'firstTask') { if (!w.tasks.length) w.tasks.push(S(0)); return null; }
+        if (cmd === 'firstTask') {
+          if (w.tasks.length) w.tasks[0] = S(0);
+          else w.tasks.push(S(0));
+          return null;
+        }
         if (cmd === 'showFace') { w.playerFace = true; return null; }
         if (cmd === 'hideFace') { w.playerFace = false; return null; }
         return null;
