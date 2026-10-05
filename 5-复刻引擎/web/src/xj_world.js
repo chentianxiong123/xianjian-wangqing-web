@@ -13,6 +13,24 @@
   'use strict';
   var XJ = global.XJ, XS = global.XJScript;
 
+  /**
+   * ★ 台词追踪钩子（用户要求："剧情里面说了什么话都吐出来"）：
+   *   XJ_TRACE=1 时每一句上屏文字都往 stderr 打一行 `XJTEXT|类型|地图|原文`。
+   *   浏览器里设 window.XJ_TRACE=1 同样生效（配合 onText 回调）。
+   *   默认关（零开销）；通关率核算靠它统计"原版 1190 条里播出多少条"。
+   */
+  function XJTrace(world, kind, text) {
+    if (text == null || text === '') return;
+    var line = 'XJTEXT|' + kind + '|' + ((world && world.mapName) || '-') + '|' + String(text).replace(/[\r\n]+/g, ' ');
+    if (global.XJ_TRACE) {
+      try {
+        if (typeof global.XJ_TRACE === 'function') global.XJ_TRACE(line);
+        else if (global.console && global.console.error) global.console.error(line);
+      } catch (e) {}
+    }
+    if (world && world._onText) { try { world._onText(kind, String(text), world.mapName); } catch (e) {} }
+  }
+
   // ------------------------------------------------------------ 世界状态
   function World(opts) {
     opts = opts || {};
@@ -408,8 +426,8 @@
         case 'game.fight': intents.push({ type: 'fight', key: d.key, script: d.t1 }); break;
         case 'game.showMenu': intents.push({ type: 'menu' }); break;
         case 'game.showFee': intents.push({ type: 'fee' }); break;
-        case 'game.black': intents.push({ type: 'subtitle', mode: 'black', text: deNull(d.text) }); break;
-        case 'game.verse': intents.push({ type: 'subtitle', mode: 'verse', text: deNull(d.text) }); break;
+        case 'game.black': XJTrace(self, 'black', d.text); intents.push({ type: 'subtitle', mode: 'black', text: deNull(d.text) }); break;
+        case 'game.verse': XJTrace(self, 'verse', d.text); intents.push({ type: 'subtitle', mode: 'verse', text: deNull(d.text) }); break;
         case 'game.flicker': intents.push({ type: 'flicker', ms: d.ms, color: d.color }); break;
         case 'game.vibrate': intents.push({ type: 'shake', ms: 400 }); break;
         case 'game.dropRock': intents.push({ type: 'dropRock', a: d }); break;
@@ -422,7 +440,7 @@
         case 'game.showPlayer': self.showPlayer = true; break;
         case 'game.showMonster': self.showMonster = true; break;
         case 'game.hideMonster': self.showMonster = false; break;
-        case 'dialog.setText': intents.push({ type: 'dlgText', text: deNull(d.text) }); break;
+        case 'dialog.setText': XJTrace(self, 'setText', d.text); intents.push({ type: 'dlgText', text: deNull(d.text) }); break;
         case 'dialog.setType': intents.push({ type: 'dlgType', t: d.type }); break;
         case 'dialog.show': intents.push({ type: 'dlgShow' }); break;
         case 'dialog.hide': intents.push({ type: 'dlgHide' }); break;
@@ -431,8 +449,8 @@
         case 'dialog.hidePortrait': intents.push({ type: 'dlgPortrait', who: null }); break;
         case 'guide.setText': intents.push({ type: 'guide', text: d.text }); break;
         case 'guide.setTarget': intents.push({ type: 'guideTarget', t: d.t }); break;
-        case 'system.showInfo': messages.push(String(d.text || '')); break;
-        case 'system.showAsideInfo': messages.push('[旁白] ' + (d.a || []).join(' ')); break;
+        case 'system.showInfo': XJTrace(self, 'showInfo', d.text); messages.push(String(d.text || '')); break;
+        case 'system.showAsideInfo': XJTrace(self, 'aside', (d.a || []).join(' ')); messages.push('[旁白] ' + (d.a || []).join(' ')); break;
         case 'system.trade': intents.push({ type: 'shop', items: d.items || [] }); break;
         case 'system.markFee': self.fees[E(d.n)] = true; break;
         case 'system.unmarkFee': self.fees[E(d.n)] = false; break;

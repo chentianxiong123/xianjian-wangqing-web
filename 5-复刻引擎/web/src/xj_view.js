@@ -1432,6 +1432,14 @@
       return true;
     }
     if (!this.talk) {
+      // ★ 悬空对话框：只有 dialogBox 有内容、而 talk/cut/队列/暂停点都没有
+      //   （exec 脚本 setText 后没有配 hideDialog/hidePortrait 的批次，回车无人清）
+      //   —— 原版任何对话框都能被确定键关掉，这里同样：回车即关，否则画面永久卡住一句话。
+      if (this.dialogBox && !this.cut && !this.cutQueue.length && !this.pausedRunner) {
+        this.dialogBox = null;
+        this.dialog = null;
+        return true;
+      }
       // ★ 没有字幕但脚本停在 break 上（纯演出段落）：回车继续往下演
       if (this.pausedRunner && !this.cut && !this.cutQueue.length &&
           !this.waitKeys && !this.branch && !this.menu && !this.inBattle) {
