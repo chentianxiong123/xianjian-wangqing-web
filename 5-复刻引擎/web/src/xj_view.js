@@ -526,7 +526,19 @@
     var d = DIRS[dir];
     if (!d) return false;
     this.player.dir = dir;
-    var step = this.world.fly ? 32 : this.m.tw;
+    // ★ 飞行速度读主角 roles 标量（重楼 12；无党时保底 32）
+    var flyStep = 32;
+    try {
+      var _P = global.XJParty;
+      var _hs = _P ? _P.heroes(this.world) : {};
+      var _h = _hs.chonglou || _hs[Object.keys(_hs)[0]];
+      if (_h) {
+        var _rc = _P.roleCfg ? _P.roleCfg(_h.role) : null;
+        var _fv = _rc ? parseInt((_rc.scalars || {})['飞行速度'], 10) : NaN;
+        if (!isNaN(_fv) && _fv > 0) flyStep = _fv;
+      }
+    } catch (e) { /* 保底 32 */ }
+    var step = this.world.fly ? flyStep : this.m.tw;
     var nx = this.px + d[0] * step;
     var ny = this.py + d[1] * step;
     if (nx < 0 || ny < 0 || nx >= this.mapPxW() || ny >= this.mapPxH()) return false;
