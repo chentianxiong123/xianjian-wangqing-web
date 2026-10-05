@@ -40,9 +40,9 @@ head('gameCfg scalars：10 在用 + 34 死键');
   const keys = Object.keys(scalars);
   ok(keys.length === 44, 'gameCfg scalars 共 44 个（管线增减即红）');
   const USED = ['初始场景地图文件', '主角动画文件', '明怪动画文件', '明怪视线半径',
-    '明怪追击半径', '明怪移动半径', '明怪移动速度', '帮助', '关于', '宝箱物品'];
+    '明怪追击半径', '明怪移动半径', '明怪移动速度', '帮助', '关于', '宝箱物品',
+    'NPC最小移动步数', 'NPC最大移动步数', 'NPC最短站立时间', 'NPC最长站立时间'];
   const deadExpected = ['ANT资源目录', 'BIN资源目录', 'MAP资源目录', 'MID资源目录',
-    'NPC最大移动步数', 'NPC最小移动步数', 'NPC最短站立时间', 'NPC最长站立时间',
     'NPC资源文件', 'STR资源目录', '一号配角配置文件', '主角资源文件', '主角配置文件',
     '二号配角配置文件', '初始场景元素动画', '初始场景元素资源', '初始场景地砖资源',
     '剧情黑边速度', '剧情黑边颜色', '卡马克卷轴', '头像资源文件', '对话框文字滚动速度',
@@ -50,7 +50,7 @@ head('gameCfg scalars：10 在用 + 34 死键');
     '明怪最短站立时间', '明怪最长站立时间', '系统提示框上下边距', '系统提示框左右边距',
     '自动绕路距离', '镜头跟随速度', '鸟视线半径'];
   const badUsed = USED.filter(k => keys.indexOf(k) < 0 || !used(k));
-  ok(badUsed.length === 0, '在用 10 键都在数据里且源码有读', badUsed.join(','));
+  ok(badUsed.length === 0, '在用 14 键都在数据里且源码有读', badUsed.join(','));
   const unclassified = keys.filter(k => USED.indexOf(k) < 0 && deadExpected.indexOf(k) < 0);
   ok(unclassified.length === 0, '无未分类 scalar（新增即红，先去总表定级）', unclassified.join(','));
   const resurrected = deadExpected.filter(k => keys.indexOf(k) >= 0 && used(k));
@@ -81,9 +81,9 @@ head('NPC def 字段分类');
   const unclassified = keys.filter(k => USED.indexOf(k) < 0 && REST.indexOf(k) < 0);
   ok(unclassified.length === 0, 'def 无未分类字段', unclassified.join(','));
   ok(USED.every(k => keys.indexOf(k) >= 0), '在用字段齐全');
-  // 缺口锁死（修了就改表+改测试）：名牌/游荡未实现
-  ok(!used('.nameHeight'), 'nameHeight 仍未用（NPC 名牌缺口 P2，修了改表）');
-  ok(!used('.moveUD') && !used('.moveLR'), 'moveUD/moveLR 仍未用（NPC 游荡缺口 P2）');
+  // ★ NPC 游荡 + 名牌已接（bl.java AI tick / bl.a 名牌）：轴锁与高度都有人读
+  ok(used('.moveUD') && used('.moveLR'), 'moveUD/moveLR 在用（游荡轴锁）');
+  ok(used('.nameHeight'), 'nameHeight 在用（名牌 y 偏移）');
 }
 
 // ============================================================ 4 roles 派生 vs 死键

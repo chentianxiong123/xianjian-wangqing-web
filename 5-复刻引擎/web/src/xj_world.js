@@ -311,6 +311,18 @@
       inScene: false,
       t: 0
     };
+    // ★ NPC 游荡轴锁（bl.i=左右移动/moveLR，bl.j=上下移动/moveUD，e.java:2325 传参顺序）；
+    //   ai 由 npc.setAiEnabled 写（e.java:2405 → bl.b(boolean) → C 标记）。
+    if (kind === 'npc') {
+      var defs = (XJ.data.npc && XJ.data.npc.defs) || {};
+      var dd = defs[String(id)] || null;
+      el.moveLR = !!(dd && dd.moveLR);
+      el.moveUD = !!(dd && dd.moveUD);
+      el.aiWaitUntil = 0;   // 站立计时（bk 定时器；到点掷步数方向）
+      el.aiSteps = 0;       // 剩余步数（w）
+      el.aiDir = null;      // 游荡方向
+      el.aiTx = null; el.aiTy = null;  // 当前步目标（像素）
+    }
     // ★ 宝箱开合由事件标记决定（ad 构造器：e(n) 已标记即开箱）
     if (kind === 'box') el.opened = !!this.events[id];
     // ★ 明怪家坐标（追击/返回用，ar.b/c）

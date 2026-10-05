@@ -289,6 +289,12 @@ head('trigger 矩形 = 碰撞盒');
   ok(!!wb.pausedBuild, 'ms_syt_1 build 后有暂停点（开场要按键推进）');
   wb.drainBuildPauses();
   ok(!wb.pausedBuild, 'drainBuildPauses 跑完');
+  // NPC 游荡轴锁来自 def（bl.i=左右/moveLR，bl.j=上下/moveUD，e.java:2325）
+  const wN = new W();
+  const el3 = wN.makeElement('npc', { raw_args: ['3', 'npc_3.ant'] }, [0, 100, 100]);
+  const el10 = wN.makeElement('npc', { raw_args: ['10', 'npc_10.ant'] }, [0, 100, 100]);
+  ok((el3.moveUD || el3.moveLR) && !el10.moveUD && !el10.moveLR,
+    '紫萱(3)可游荡、妖怪(10)双false不动（与 def 一致）');
 }
 
 // ============================================================

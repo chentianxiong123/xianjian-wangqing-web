@@ -617,6 +617,80 @@
     }
   };
 
+  /**
+   * NPC 自主游荡（bl.java AI tick + e.java:2405 setAiEnabled → C 标记）：
+   * 站 rand(最短,最长站立时间)ms → 走 rand(最小,最大移动步数)步（w%4 定向：
+   * 0下1上2右3左；moveUD(j)锁纵轴、moveLR(i)锁横轴；双 false 不动 bl.java:343）
+   * → 每步查碰撞盒，撞墙停 → 站。模态（战斗/过场/菜单）时冻结。
+   */
+  Scene.prototype.updateNpc = function () {
+    if (this.inBattle || this.cut || this.cutQueue.length || this.pausedRunner ||
+        this.menu || this.branch || (this.talk && this.talk.active) ||
+        (this.shop && this.shop.active)) return;
+    var cfg = (XJ.data.config.gameCfg && XJ.data.config.gameCfg.scalars) || {};
+    function N(k, d) { var v = parseInt(cfg[k], 10); return isNaN(v) ? d : v; }
+    var minStep = N('NPC最小移动步数', 3), maxStep = N('NPC最大移动步数', 10);
+    var minWait = N('NPC最短站立时间', 1000), maxWait = N('NPC最长站立时间', 3000);
+    var now = Date.now();
+    var DIRS4 = ['down', 'up', 'right', 'left'];
+    var DXY = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+    var step = (this.m && this.m.tw) || 16;
+    var els = this.world.elements || [];
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i];
+      if (!e || e.kind !== 'npc' || !e.ai || e.gone) continue;
+      if (!(e.moveUD || e.moveLR)) continue;
+      if (e.follow || e.moveTo) continue;
+      if (e.aiTx != null) {
+        // 走向当前步目标（4px/帧滑行；到点记一步；剩步数沿原方向继续，撞墙停）
+        var dx = e.aiTx - e.x, dy = e.aiTy - e.y;
+        var dd = Math.sqrt(dx * dx + dy * dy);
+        if (dd <= 4) {
+          e.x = e.aiTx; e.y = e.aiTy; e.aiTx = null; e.aiTy = null;
+          e.aiSteps--;
+          if (e.aiSteps <= 0) {
+            e.state = '站立';
+            e.aiWaitUntil = now + minWait + Math.random() * (maxWait - minWait);
+          } else {
+            var d2 = DXY[e.aiDir] || [0, 1];
+            var mx = e.x + d2[0] * step, my = e.y + d2[1] * step;
+            if (mx < 0 || my < 0 || mx >= this.mapPxW() || my >= this.mapPxH() ||
+                (this.world.solidAt && this.world.solidAt(mx, my))) {
+              e.aiSteps = 0;
+              e.state = '站立';
+              e.aiWaitUntil = now + minWait + Math.random() * (maxWait - minWait);
+            } else {
+              e.aiTx = mx; e.aiTy = my;
+              e.state = '走路';
+            }
+          }
+        } else {
+          e.x += Math.round(dx / dd * 4); e.y += Math.round(dy / dd * 4);
+          e.state = '走路';
+        }
+        continue;
+      }
+      if (!e.aiWaitUntil) e.aiWaitUntil = now + minWait + Math.random() * (maxWait - minWait);
+      if (now < e.aiWaitUntil) continue;
+      // 掷步数 + 方向
+      var w = minStep + ((Math.random() * (maxStep - minStep + 1)) | 0);
+      var roll = w % 4, dir;
+      if (e.moveUD && !e.moveLR) dir = DIRS4[roll % 2];
+      else if (!e.moveUD && e.moveLR) dir = DIRS4[2 + (roll % 2)];
+      else dir = DIRS4[roll];
+      var d = DXY[dir];
+      var nx = e.x + d[0] * step, ny = e.y + d[1] * step;
+      if (nx < 0 || ny < 0 || nx >= this.mapPxW() || ny >= this.mapPxH() ||
+          (this.world.solidAt && this.world.solidAt(nx, ny))) {
+        e.state = '站立';
+        e.aiWaitUntil = now + minWait + Math.random() * (maxWait - minWait);
+        continue;
+      }
+      e.dir = dir; e.aiDir = dir; e.aiSteps = w; e.aiTx = nx; e.aiTy = ny;
+      e.state = '走路';
+    }
+  };
+
   /** 接触明怪 → 按地图中文名组建遭遇（e.s() 取地图名 B） */
   Scene.prototype.touchMonsters = function () {
     var els = this.world.elements || [];
@@ -1077,6 +1151,7 @@
       }
     });
     if (!this.inBattle) this.updateMonsters();
+    if (!this.inBattle) this.updateNpc();
     // 落石演出
     if (this.rocks.length) {
       for (var i = this.rocks.length - 1; i >= 0; i--) {
