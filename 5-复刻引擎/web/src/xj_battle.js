@@ -323,8 +323,9 @@
     return u.c;
   };
 
-  /** ax.java:238  h()：回合结束后重置行动条 */
+  /** ax.java:238  h()：回合结束后重置行动条（死人不复位，防状态机撕裂） */
   Battle.prototype.resetGauge = function (u) {
+    if (u.isDead()) return;
     u.i = 0; u.j = false; u.t = STATE.STAND;
   };
 

@@ -391,6 +391,52 @@ head('范围攻击');
   ok(res[0].popup !== B.POPUP.EVADE, '攻击者本回合已行动过时不判闪避（弹=' + res[0].popup + '）');
 }
 
+// ============================================================ 全 Boss 可战胜（上下打通）
+head('10 boss 自动战斗到胜利（满级三人普攻，怪不还手只验可杀+结算）');
+{
+  // encounter 组装真怪（等级/血量/掉落全走配置），3 个满属性英雄普攻。
+  // 验：能打死（phase=1）+ settleWin 不抛 + 经验金钱>0。平衡性（同级能否过）另议。
+  function autoWin(key) {
+    const enc = B.encounter(key, 60, new SeqRand([5, 6, 7, 8, 9, 4, 3, 2, 1, 0]), null);
+    if (!enc || !enc.monsters.length) return { key, win: false, why: '组建空' };
+    const bb = new B.Battle({ rnd: new SeqRand([5, 6, 7, 8, 9, 4, 3, 2, 1, 0]) });
+    for (let i = 0; i < 3; i++) bb.add(mkHero({
+      name: ' hero' + i, hp: 99999, maxHp: 99999, atk: 8000, def: 500,
+      spd: 400, luk: 0, level: 60, gas: 100, maxGas: 100
+    }));
+    for (const m of enc.monsters) bb.add(m);
+    let frames = 0, win = false;
+    while (frames++ < 30000) {
+      const r = bb.tick();
+      for (const u of (r.began || [])) {
+        if (u.side !== 'hero' || u.isDead()) continue;
+        const foe = bb.foes.find(f => !f.isDead());
+        if (!foe) break;
+        bb.attack(u, null, [foe]);
+      }
+      // ★ 行动完复位行动条（view 在行动动画后调 resetGauge；怪不还手=单向验可杀）
+      // ★ 只复位活人：刚被打死的有 began 资格，复位会撕裂死亡状态（t 回 STAND 但 dead 仍 true）
+      for (const u of (r.began || [])) { if (!u.isDead()) bb.resetGauge(u); }
+      if (bb.checkOver() === 1) { win = true; break; }
+      if (bb.checkOver() === 2) break;
+    }
+    let settled = null;
+    if (win) {
+      try { settled = bb.settleWin(enc.exp, enc.gold); }
+      catch (e) { return { key, win: false, why: '结算抛错:' + e.message }; }
+    }
+    return { key, win, frames, exp: enc.exp, gold: enc.gold, settled: !!settled };
+  }
+  const keys = ['boss1', 'boss2', 'boss3', 'boss4', 'boss5', 'boss6', 'boss7', 'liyao', 'linglong', 'egui'];
+  const bad = [];
+  for (const k of keys) {
+    const r = autoWin(k);
+    if (!r.win) bad.push(k + ':' + (r.why || r.frames + '帧未胜'));
+    else if (!(r.exp > 0 && r.gold > 0 && r.settled)) bad.push(k + ':结算空');
+  }
+  ok(bad.length === 0, '10 boss 全部可战胜且结算正常', bad.join(' | '));
+}
+
 // ============================================================
 console.log('\n' + '='.repeat(50));
 console.log('  通过 ' + pass + ' / 失败 ' + fail);
