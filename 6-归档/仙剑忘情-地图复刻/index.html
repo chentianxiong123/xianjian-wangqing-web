@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>仙剑奇侠传-忘情篇 Web 复刻</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;color:#eee;font-family:"Microsoft YaHei",sans-serif;overflow:hidden}
+  #wrap{display:flex;flex-direction:column;align-items:center;height:100%}
+  #bar{width:100%;background:#222;padding:6px 12px;font-size:13px;display:flex;gap:16px;align-items:center;border-bottom:1px solid #444}
+  #bar select,#bar button{background:#06c;color:#fff;border:0;padding:4px 8px;font-size:12px;border-radius:3px;cursor:pointer}
+  #bar select{padding:4px}
+  #bar .info{color:#9cf}
+  #stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;width:100%}
+  canvas{image-rendering:pixelated;image-rendering:-moz-crisp-edges;background:#000;display:block;box-shadow:0 0 40px #0008}
+  #dlg{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:80%;max-width:600px;background:rgba(0,0,30,.92);border:2px solid #888;border-radius:8px;padding:12px 16px;color:#ffe;font-size:14px;line-height:1.6;display:none;box-shadow:0 4px 20px #000}
+  #dlg .name{color:#fc6;font-weight:bold;margin-bottom:4px}
+  #dlg .text{min-height:48px}
+  #dlg .hint{text-align:right;color:#888;font-size:11px;margin-top:4px}
+  #help{position:absolute;top:8px;right:12px;background:rgba(0,0,0,.6);color:#aaa;padding:8px 12px;font-size:11px;border-radius:4px;line-height:1.5}
+  kbd{background:#222;border:1px solid #555;padding:1px 5px;border-radius:3px;color:#fff}
+  /* UI 面板容器 */
+  #xj-overlay{position:absolute;inset:0;pointer-events:none;z-index:50}
+  .xj-panel{position:absolute;inset:0;z-index:100;pointer-events:auto;display:flex;align-items:center;justify-content:center}
+  .xj-panel.hidden{display:none}
+  .xj-panel-box{background:rgba(10,10,30,.95);border:2px solid #68a;border-radius:10px;padding:16px;color:#ffe;font-size:14px;max-width:90%;max-height:90%;overflow:auto;box-shadow:0 8px 40px #000c}
+  .xj-panel-box h3{margin:0 0 12px;color:#fc6;border-bottom:1px solid #468;padding-bottom:6px}
+  .xj-panel-box .close-btn{position:absolute;top:8px;right:12px;background:#933;color:#fff;border:0;width:24px;height:24px;border-radius:12px;cursor:pointer;font-size:14px}
+  .xj-item-row{display:flex;justify-content:space-between;padding:4px 8px;border-bottom:1px solid #234;cursor:pointer}
+  .xj-item-row:hover{background:#246}
+  .xj-item-row.disabled{color:#666;cursor:not-allowed}
+  .xj-item-row .price{color:#fc6}
+  .xj-tab-bar{display:flex;gap:2px;margin-bottom:12px}
+  .xj-tab{padding:6px 14px;background:#234;color:#aab;border:1px solid #345;border-radius:4px 4px 0 0;cursor:pointer;font-size:12px}
+  .xj-tab.active{background:#06c;color:#fff}
+  .xj-status-grid{display:grid;grid-template-columns:auto auto;gap:4px 16px;font-size:13px}
+  .xj-status-grid .label{color:#9af}
+  .xj-status-grid .value{color:#ffe}
+  #xj-money{position:absolute;top:8px;left:12px;background:rgba(0,0,0,.7);color:#fc6;padding:4px 10px;font-size:13px;border-radius:4px;z-index:60;font-weight:bold}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="bar">
+    <b>仙剑奇侠传-忘情篇</b>
+    <span class="info" id="mapName">加载中…</span>
+    <select id="mapSel"></select>
+    <span class="info" id="coord">player: (0,0)</span>
+    <span class="info" id="fps">--</span>
+  </div>
+  <div id="stage">
+    <canvas id="cv" width="240" height="320"></canvas>
+    <div id="help">
+      <kbd>↑↓←→</kbd>/<kbd>WASD</kbd> 移动<br>
+      <kbd>Space</kbd>/<kbd>Enter</kbd> 对话/交互<br>
+      <kbd>M</kbd> 切换地图菜单<br>
+      <kbd>Esc</kbd> 菜单 <kbd>I</kbd> 背包 <kbd>B</kbd> 状态<br>
+      <kbd>Tab</kbd> 任务 <kbd>Y</kbd> 合成<br>
+      <kbd>G</kbd> 显示NPC ID
+    </div>
+    <div id="dlg">
+      <div class="name" id="dlgName"></div>
+      <div class="text" id="dlgText"></div>
+      <div class="hint">空格继续 / Esc 关闭</div>
+    </div>
+    <div id="xj-money">¥ 300</div>
+    <div id="xj-overlay">
+      <div id="xj-panel-battle" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.hidePanel()">×</button><h3>战斗</h3><div id="battle-content">Agent-S3 实现中…</div></div></div>
+      <div id="xj-panel-shop" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.closeShop()">×</button><h3>商店</h3><div id="shop-content">Agent-S4 实现中…</div></div></div>
+      <div id="xj-panel-craft" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.closeCraft()">×</button><h3>合成</h3><div id="craft-content">Agent-S5 实现中…</div></div></div>
+      <div id="xj-panel-menu" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.closeMenu()">×</button><h3>菜单</h3><div id="menu-content">Agent-S7 实现中…</div></div></div>
+      <div id="xj-panel-quest" class="xj-panel hidden"><div class="xj-panel-box"><button class="close-btn" onclick="XJ.hidePanel()">×</button><h3>任务</h3><div id="quest-content">Agent-S6 实现中…</div></div></div>
+    </div>
+  </div>
+</div>
+<script src="data/bin_index.js"></script>
+<script src="data/maps.js"></script>
+<script src="data/npc_config.js"></script>
+<script src="data/talk_scripts.js"></script>
+<script src="data/npc_sprite_map.js"></script>
+<!-- 批次1 数据层（agent 完成后自动生效） -->
+<script src="data/shops.js?v=1"></script>
+<script src="data/items.js"></script>
+<script src="data/skills.js"></script>
+<script src="data/enemies.js"></script>
+<script src="data/recipes.js"></script>
+<script src="data/tasks.js"></script>
+<script src="data/chars.js"></script>
+<script src="data/fight_cfg.js"></script>
+<script src="data/game_cfg.js"></script>
+<script src="data/ants.js"></script>
+<!-- 系统层 -->
+<script src="src/state.js?v=1"></script>
+<script src="src/save.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/inventory.js"></script>
+<script src="src/quest.js"></script>
+<script src="src/shop.js"></script>
+<script src="src/craft.js"></script>
+<script src="src/battle.js"></script>
+<script src="src/menu.js"></script>
+<script>
+"use strict";
+// ============================================================
+//  仙剑奇侠传-忘情篇 Web 复刻引擎
+//  - 数据: window.MAPS (69 张地图, 真实解析)
+//  - 图集: data/tiles/<bin>/<idx>.png (311 张 PNG)
+//  - 渲染: Canvas 2D, 240x320 视口 (J2ME 原生分辨率)
+// ============================================================
+
+const TILE_BIN_LIST = ['cs.bin','ms.bin','sn.bin','yw.bin','chengshi.bin','renwu.bin','ui.bin','mishi.bin','shinei.bin','yewai.bin','portrait.bin','menu.bin','fight.bin','fight_beijing.bin','fight_skill.bin','fight_ui.bin','share.bin','chonglou.bin'];
+
+// ---- 资源缓存 ----
+const tileImgCache = {};  // bin -> [Image]
+const pendingLoads = [];
+
+function loadTileBin(binName){
+  if (tileImgCache[binName]) return Promise.resolve(tileImgCache[binName]);
+  const n = (window.BIN_INDEX && window.BIN_INDEX[binName]) || 0;
+  const arr = new Array(n);
+  const ps = [];
+  for (let i = 0; i < n; i++){
+    const idx = String(i).padStart(3,'0');
+    const url = `data/tiles/${binName.replace('.bin','')}/${idx}.png`;
+    const p = new Promise(res=>{
+      const img = new Image();
+      img.onload = ()=>{arr[i]=img; res()};
+      img.onerror = ()=>{arr[i]=null; res()};
+      img.src = url;
+    });
+    ps.push(p);
+  }
+  const P = Promise.all(ps).then(()=>{tileImgCache[binName]=arr; return arr});
+  tileImgCache[binName] = P;
+  return P;
+}
+
+// ---- 游戏状态（桥接到统一的全局 XJ_STATE） ----
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const state = window.XJ_STATE;   // ← 统一状态对象
+state._last = performance.now();
+state.camera.x = 0; state.camera.y = 0;
+state.player.x = 320; state.player.y = 240; state.player.dir = 'down'; state.player.speed = 2;
+
+// ---- 地图切换 ----
+async function loadMap(id){
+  const m = window.MAPS[id];
+  if (!m){ console.error('地图不存在', id); return; }
+  state.mapId = id;
+  state.map = m;
+  // 加载 tile 图集
+  state.tileBin = await loadTileBin(m.tileBin);
+  // 执行脚本里的 world.setName / setPosition / setDirection
+  runMapScript(m);
+  document.getElementById('mapName').textContent = `${m.setName} (${m.W}×${m.H}, tile=${m.tileW}×${m.tileH}, bin=${m.tileBin})`;
+  // 应用脚本里的玩家初始位置
+  const pm = m._scriptState;
+  if (pm.playerX !== undefined) state.player.x = pm.playerX;
+  if (pm.playerY !== undefined) state.player.y = pm.playerY;
+  if (pm.playerDir) state.player.dir = pm.playerDir;
+  // 居中相机
+  centerCamera();
+}
+
+function runMapScript(m){
+  // 简化的脚本执行: 提取初始状态
+  const s = m.script || '';
+  const st = {playerX: undefined, playerY: undefined, playerDir: null, name: m.setName};
+  // player.setPosition(X,Y)[!eventMarked(N)]
+  const pm = s.match(/player\.setPosition\((\d+),(\d+)\)/);
+  if (pm){ st.playerX = +pm[1]; st.playerY = +pm[2]; }
+  const dm = s.match(/player\.setDirection\((\w+)\)/);
+  if (dm){ st.playerDir = dm[1]; }
+  m._scriptState = st;
+}
+
+function centerCamera(){
+  const m = state.map;
+  const vw = cv.width, vh = cv.height;
+  let cx = state.player.x - vw/2;
+  let cy = state.player.y - vh/2;
+  cx = Math.max(0, Math.min(cx, m.W*m.tileW - vw));
+  cy = Math.max(0, Math.min(cy, m.H*m.tileH - vh));
+  state.camera.x = Math.round(cx);
+  state.camera.y = Math.round(cy);
+}
+
+// ---- 渲染 ----
+function render(){
+  const m = state.map;
+  if (!m || !state.tileBin){ return; }
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,cv.width,cv.height);
+
+  const tw = m.tileW, th = m.tileH;
+  const cx = state.camera.x, cy = state.camera.y;
+  // 只画视口内的 tile
+  const col0 = Math.floor(cx / tw);
+  const row0 = Math.floor(cy / th);
+  const col1 = Math.ceil((cx + cv.width) / tw);
+  const row1 = Math.ceil((cy + cv.height) / th);
+
+  // 多层叠加: 地砖 → 元素 → 遮挡(如果有tile)
+  for (let li = 0; li < m.layers.length; li++){
+    const layer = m.layers[li];
+    if (!layer.has_tile || !layer.tile) continue;
+    const tb = state.tileBin;
+    for (let j = row0; j < row1; j++){
+      if (j < 0 || j >= m.H) continue;
+      const row = layer.tile[j];
+      for (let i = col0; i < col1; i++){
+        if (i < 0 || i >= m.W) continue;
+        const idx = row[i];
+        if (idx < 0) continue;            // -1 = 无 tile
+        const img = tb[idx];
+        if (img){
+          ctx.drawImage(img, i*tw - cx, j*th - cy, tw, th);
+        }
+      }
+    }
+  }
+
+  // NPC (用 renwu.bin 当立绘占位 — 后续按真实映射修正)
+  drawNpcs();
+
+  // 玩家
+  drawPlayer();
+
+  // 调试网格
+  if (state.keys['g'] || state.keys['G']){
+    ctx.strokeStyle = 'rgba(255,255,0,.15)';
+    ctx.lineWidth = 1;
+    for (let i = col0; i <= col1; i++){
+      ctx.beginPath(); ctx.moveTo(i*tw-cx+.5, 0); ctx.lineTo(i*tw-cx+.5, cv.height); ctx.stroke();
+    }
+    for (let j = row0; j <= row1; j++){
+      ctx.beginPath(); ctx.moveTo(0, j*th-cy+.5); ctx.lineTo(cv.width, j*th-cy+.5); ctx.stroke();
+    }
+  }
+}
+
+function drawNpcs(){
+  const m = state.map;
+  const cx = state.camera.x, cy = state.camera.y;
+  // 取第一层的 NPC 列表作为本地图的 NPC
+  const layer = m.layers[0];
+  if (!layer || !layer.npcs) return;
+  const renwu = tileImgCache['renwu.bin'] || [];
+  const npcSpriteMap = window.NPC_SPRITE_MAP.npcToRenwu || {};
+  for (const n of layer.npcs){
+    const sx = n.x - cx, sy = n.y - cy;
+    if (sx < -32 || sx > cv.width+32 || sy < -32 || sy > cv.height+32) continue;
+    const spriteIdx = npcSpriteMap[String(n.id)];
+    const img = (typeof spriteIdx === 'number') ? renwu[spriteIdx] : renwu[n.id % renwu.length];
+    if (img){
+      // Assume sprite sheet with 4 horizontal frames, use first frame for standing pose
+      const sheetW = img.naturalWidth || 16, sheetH = img.naturalHeight || 16;
+      const frameW = sheetW / 4;
+      const frameH = sheetH;
+      const scale = 1;
+      ctx.drawImage(img, 0, 0, frameW, frameH, sx - frameW*scale/2, sy - frameH*scale, frameW*scale, frameH*scale);
+    } else {
+      ctx.fillStyle = '#ff0';
+      ctx.fillRect(sx-4, sy-8, 8, 16);
+    }
+    // NPC id 标签
+    if (state.keys['g'] || state.keys['G']){
+      ctx.fillStyle = '#fff';
+      ctx.font = '8px monospace';
+      ctx.fillText('#'+n.id, sx-8, sy+10);
+    }
+  }
+}
+
+function drawPlayer(){
+  const cx = state.camera.x, cy = state.camera.y;
+  const px = state.player.x - cx, py = state.player.y - cy;
+  // 用 renwu.bin[0] 作为玩家立绘 (主角 景天)
+  const renwu = tileImgCache['renwu.bin'] || [];
+  const img = renwu[0];
+  if (img){
+    const sheetW = img.naturalWidth || 16, sheetH = img.naturalHeight || 16;
+    const frameW = sheetW / 4, frameH = sheetH;
+    ctx.drawImage(img, 0, 0, frameW, frameH, px - frameW/2, py - frameH, frameW, frameH);
+  } else {
+    ctx.fillStyle = '#f44';
+    ctx.fillRect(px-6, py-12, 12, 12);
+  }
+  // 方向指示
+  ctx.fillStyle = '#ff0';
+  const dirs = {up:[0,-8], down:[0,8], left:[-8,0], right:[8,0]};
+  const d = dirs[state.player.dir] || [0,0];
+  ctx.fillRect(px + d[0]/2 - 1, py + d[1]/2 - 1, 2, 2);
+}
+
+// ---- 移动 / 碰撞 ----
+function tryMove(dx, dy){
+  const m = state.map;
+  if (!m) return;
+  const nx = state.player.x + dx;
+  const ny = state.player.y + dy;
+  // 地图边界
+  const mapW = m.W * m.tileW, mapH = m.H * m.tileH;
+  if (nx < 4 || nx > mapW - 4 || ny < 4 || ny > mapH - 4) return;
+  // 方向
+  if (dx < 0) state.player.dir = 'left';
+  else if (dx > 0) state.player.dir = 'right';
+  else if (dy < 0) state.player.dir = 'up';
+  else if (dy > 0) state.player.dir = 'down';
+  state.player.x = nx;
+  state.player.y = ny;
+  centerCamera();
+  checkTransitions();
+  checkNpcTouch();
+}
+
+function checkTransitions(){
+  const m = state.map;
+  // transitions 格式: [targetMap, tileBin, animBin, spriteBin, x, y, dir]
+  for (const t of (m.transitions||[])){
+    const tx = +t[4], ty = +t[5];
+    const dx = state.player.x - tx, dy = state.player.y - ty;
+    if (dx*dx + dy*dy < 12*12){
+      const targetId = t[0].replace('.map','');
+      if (window.MAPS[targetId]){
+        loadMap(targetId);
+        return;
+      }
+    }
+  }
+}
+
+function checkNpcTouch(){
+  if (state.dialog) return;
+  const m = state.map;
+  const layer = m.layers[0];
+  if (!layer || !layer.npcs) return;
+  for (const n of layer.npcs){
+    const dx = state.player.x - n.x, dy = state.player.y - n.y;
+    if (dx*dx + dy*dy < 14*14){
+      startNpcDialog(n.id);
+      return;
+    }
+  }
+}
+
+// ---- 真实对话引擎 (talk_*.str → 命令执行) ----
+function startNpcDialog(npcId){
+  // npcId 来自 map layer[0].npcs[].id
+  // 用 NPC_CONFIG 找到配置 (key 是字符串)
+  const cfg = window.NPC_CONFIG[String(npcId)];
+  if (!cfg){ showDialog('未知NPC','#'+npcId+''); return; }
+  const talkFile = cfg.talk_file;
+  const blocks = window.TALK_SCRIPTS[talkFile];
+  if (!blocks || !blocks.length){ showDialog(cfg.name,'（暂无对话）'); return; }
+  // 解析第一个 block 的所有 segments，检查条件 (eventMarked)
+  const block = blocks[0];
+  // 简单顺序执行: 找第一个无条件或条件满足的 segment
+  let segIdx = 0;
+  for (let i=0; i<block.length; i++){
+    if (!block[i].cond || checkEventCond(block[i].cond)) { segIdx=i; break; }
+  }
+  const seg = block[segIdx];
+  state.dialog = { cfg, talkFile, block, segIdx, dlgIdx: 0 };
+  showDialog(cfg.name, seg.dialogues);
+}
+
+function checkEventCond(cond){
+  // cond 格式: "!eventMarked(9),eventMarked(8)" 或 null
+  // 简单: 所有都要满足 (AND)；! 表示未标记
+  const marks = {};  // 从 localStorage 或 state
+  for (const c of cond.split(',')){
+    const m = c.trim().match(/(\!?)(?:eventMarked?|eventMark)\((\d+)\)/);
+    if (!m) continue;
+    const neg = m[1] === '!';
+    const id = m[2];
+    const set = localStorage.getItem('xj_event_'+id) === '1';
+    if (neg && set) return false;
+    if (!neg && !set) return false;
+  }
+  return true;
+}
+
+function advanceDialog(){
+  if (!state.dialog) return;
+  const d = state.dialog;
+  if (d.dlgIdx < d.seg.dialogues.length - 1){
+    d.dlgIdx++;
+    dlgTextEl && (dlgTextEl.textContent = d.seg.dialogues[d.dlgIdx].text);
+    return;
+  }
+  const block = d.block;
+  let nextIdx = d.segIdx + 1;
+  for (; nextIdx < block.length; nextIdx++){
+    if (!block[nextIdx].cond || checkEventCond(block[nextIdx].cond)) break;
+  }
+  if (nextIdx < block.length){
+    d.segIdx = nextIdx;
+    d.dlgIdx = 0;
+    const seg = block[nextIdx];
+    dlgNameEl && (dlgNameEl.textContent = seg.dialogues[0]?.speaker || d.cfg.name);
+    dlgTextEl && (dlgTextEl.textContent = seg.dialogues[0]?.text || '...');
+    return;
+  }
+  applyDialogEffects(d.seg);
+  dlgEl && (dlgEl.style.display = 'none');
+  state.dialog = null;
+}
+
+function applyDialogEffects(seg){
+  for (const id of seg.marks || []) localStorage.setItem('xj_event_'+id,'1');
+  for (const id of seg.unmarks || []) localStorage.removeItem('xj_event_'+id);
+  if (seg.trades?.length){
+    const items = seg.trades[0].split('|');
+    showDialog('物品列表', items.map(i=>'• '+i));
+  }
+}
+
+function showDialog(name, dialogues){
+  if (typeof dialogues === 'string') dialogues = [{speaker:name, text:dialogues}];
+  state.dialog = { cfg:{name}, block:null, segIdx:-1, dlgIdx:0, dialogues };
+  dlgNameEl && (dlgNameEl.textContent = dialogues[0]?.speaker || name);
+  dlgTextEl && (dlgTextEl.textContent = dialogues[0]?.text || '');
+  dlgEl && (dlgEl.style.display = 'block');
+}
+
+function closeDialog(){
+  state.dialog = null;
+  dlgEl && (dlgEl.style.display = 'none');
+}
+
+// ---- 输入 ----
+
+window.addEventListener('keydown', e=>{
+  state.keys[e.key.toLowerCase()] = true;
+  // 面板打开时，除 Esc 外不响应移动
+  const panelOpen = (state.runtime && state.runtime.ui !== 'map');
+  if (e.key === 'Escape'){
+    if (state.dialog){ closeDialog(); }
+    else if (window.XJ && panelOpen){ XJ.hidePanel(); }
+    else if (window.XJ){ XJ.openMenu(); }
+    return;
+  }
+  if (e.key === ' ' || e.key === 'Enter'){
+    e.preventDefault();
+    if (state.dialog){ advanceDialog(); return; }
+    if (panelOpen) return;
+    checkNpcTouch(); return;
+  }
+  // 系统快捷键
+  if (window.XJ && !panelOpen){
+    const k = e.key.toLowerCase();
+    if (k === 'i'){ XJ.openMenu('bag'); return; }
+    if (k === 'b'){ XJ.openMenu('status'); return; }
+    if (e.key === 'Tab'){ e.preventDefault(); XJ.openMenu('quest'); return; }
+    if (k === 'y'){ XJ.openCraft(); return; }
+    if (k === 'f9' || (e.ctrlKey && k === 's')){ e.preventDefault(); XJ.save(0); return; }
+    if (e.ctrlKey && k === 'l'){ e.preventDefault(); XJ.load(0); return; }
+  }
+  if (panelOpen) return;
+  // 移动键
+  const m = state.map;
+  if (!m || state.dialog) return;
+  if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') tryMove(0, -state.player.speed);
+  if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') tryMove(0, state.player.speed);
+  if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') tryMove(-state.player.speed, 0);
+  if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') tryMove(state.player.speed, 0);
+});
+window.addEventListener('keyup', e=>{ state.keys[e.key.toLowerCase()] = false; });
+
+// 连续移动 (按住)
+setInterval(()=>{
+  if (state.dialog) return;
+  if (state.runtime && state.runtime.ui !== 'map') return;
+  const s = state.player.speed;
+  if (state.keys['arrowup'] || state.keys['w']) tryMove(0, -s);
+  else if (state.keys['arrowdown'] || state.keys['s']) tryMove(0, s);
+  else if (state.keys['arrowleft'] || state.keys['a']) tryMove(-s, 0);
+  else if (state.keys['arrowright'] || state.keys['d']) tryMove(s, 0);
+}, 33);
+
+// ---- UI: 地图选择器 ----
+const sel = document.getElementById('mapSel');
+for (const id of Object.keys(window.MAPS).sort()){
+  const m = window.MAPS[id];
+  const opt = document.createElement('option');
+  opt.value = id;
+  opt.textContent = `${id} — ${m.setName}`;
+  sel.appendChild(opt);
+}
+sel.value = state.mapId;
+sel.addEventListener('change', ()=>loadMap(sel.value));
+
+// NPC_NAMES 已从 NPC_CONFIG 动态读取，无需硬编码
+
+// ---- 主循环 ----
+function loop(){
+  render();
+  // FPS
+  state._frames++;
+  const now = performance.now();
+  if (now - state._last > 500){
+    state.fps = Math.round(state._frames * 1000 / (now - state._last));
+    state._frames = 0; state._last = now;
+    document.getElementById('fps').textContent = state.fps + ' fps';
+    document.getElementById('coord').textContent = `player: (${state.player.x|0},${state.player.y|0}) dir=${state.player.dir}`;
+    const moneyEl = document.getElementById('xj-money');
+    if (moneyEl) moneyEl.textContent = '¥ ' + state.money;
+  }
+  requestAnimationFrame(loop);
+}
+
+// 对话框 DOM 引用（在 DOM ready 后赋值）
+let dlgEl = document.getElementById('dlg');
+let dlgNameEl = document.getElementById('dlgName');
+let dlgTextEl = document.getElementById('dlgText');
+
+// ---- 启动 ----
+(async ()=>{
+  // 预加载 cs.bin + renwu.bin
+  await loadTileBin('cs.bin');
+  await loadTileBin('renwu.bin');
+  await loadMap(state.mapId);
+  loop();
+})();
+</script>
+</body>
+</html>

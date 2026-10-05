@@ -1,0 +1,47 @@
+
+素材规范化处理完成报告
+========================
+
+日期: 2026/10/4 14:05:02
+
+1. ANT 动画文件
+   - 文件数量: 75
+   - 总帧数: 2532
+   - 原始大小: 69157 bytes
+   - 解压后大小: 258753 bytes
+
+2. PNG 素材文件
+   - 目录数量: 18
+   - 文件总数: 392
+   
+   目录分布:
+   - chengshi: 22 PNGs
+   - chonglou: 1 PNGs
+   - cs: 112 PNGs
+   - fight: 25 PNGs
+   - fight_beijing: 4 PNGs
+   - fight_skill: 1 PNGs
+   - fight_ui: 1 PNGs
+   - menu: 6 PNGs
+   - mishi: 6 PNGs
+   - ms: 31 PNGs
+   - portrait: 6 PNGs
+   - renwu: 34 PNGs
+   - share: 8 PNGs
+   - shinei: 8 PNGs
+   - sn: 29 PNGs
+   - ui: 10 PNGs
+   - yewai: 15 PNGs
+   - yw: 73 PNGs
+
+3. 文件生成
+   - ants.js: 527226 bytes
+   - bin_index.js: 已更新（18 BIN 类别）
+
+4. 验证结果
+   - JavaScript 语法: 通过
+   - JSON 结构完整性: 通过
+   - PNG 格式有效性: 通过
+   - 素材覆盖完整性: 通过
+
+状态: ✓ 所有素材规范化完成，可用于游戏开发
