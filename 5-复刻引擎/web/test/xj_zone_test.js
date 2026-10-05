@@ -289,8 +289,8 @@ head('全地图触发区一致性');
       if (!MAPS[t]) miss.push(n + '→' + t);
     }
   }
-  ok(nAll === 200, '共 ' + nAll + ' 处 world.change'
-    + '（190 个 region + 10 张地图的地图级；另 7 处地图级带条件未通过）');
+  ok(nAll === 191, '共 ' + nAll + ' 处 world.change'
+    + '（190 个 region + 仅 ms_syt_1 的无条件地图级 change；其余地图级 change 全在门控批内，进图不播）');
   ok(miss.length === 0, '全部 world.change 的目标地图都存在', miss.slice(0, 4).join(','));
 }
 

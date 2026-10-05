@@ -32,17 +32,24 @@ const W = window.XJWorld;
 // ============================================================ 1
 head('元素装配：cs_ss_d（Boss1 完整过场）');
 {
-  // ★ 地图级脚本是逐条条件执行的线性过场（批次门控只在触发区/战斗队列语境生效）：
-  //   进 cs_ss_d → boss1 开战 → 战后对话 → markEvent(4) → 切 yw_yl_3。
-  //   对象脚本里 remove[!ev3]/remove[ev4] 让剧情演员进图即离场（净 NPC 恒为 0）。
+  // ★ 地图级脚本的批次门控同样生效（runAll 跳门控批）：
+  //   事件全 0 → cs_ss_d 的战前批（#7：!401 && 3）整批跳过：无战、无切图、无标记。
+  //   备好 mark 3（前置剧情已走完）→ 战前过场 → boss1（H2:0）→ 战后批（#388：!4 && 401）
+  //   → mark 4 → 切 yw_yl_3。
   const w0 = new W();
   w0.buildFull('cs_ss_d', 300, 400);
-  const k0 = {}; w0.elements.forEach(e => { k0[e.kind] = (k0[e.kind] || 0) + 1; });
-  ok(!k0.npc, '事件全 0 时 NPC 进图即离场：' + JSON.stringify(k0));
-  ok(w0.pendingChange && w0.pendingChange.map === 'yw_yl_3',
-    '过场末尾切往 ' + (w0.pendingChange && w0.pendingChange.map));
-  ok(w0.events[401] === 1 && w0.events[4] === 1, 'markEvent(401/4) 即时落子（后续条件可见）');
-  const fx0 = w0.drainDeferred();
+  const fx00 = w0.drainDeferred();
+  ok(fx00.intents.filter(i => i.type === 'fight').length === 0, '门控未满足时无剧情战斗');
+  ok(!w0.pendingChange && !w0.events[401] && !w0.events[4], '门控未满足时无切图无标记');
+  const w1 = new W();
+  w1.events[3] = 1;
+  w1.buildFull('cs_ss_d', 300, 400);
+  const k0 = {}; w1.elements.forEach(e => { k0[e.kind] = (k0[e.kind] || 0) + 1; });
+  void k0;
+  ok(w1.pendingChange && w1.pendingChange.map === 'yw_yl_3',
+    '过场末尾切往 ' + (w1.pendingChange && w1.pendingChange.map));
+  ok(w1.events[401] === 1 && w1.events[4] === 1, 'markEvent(401/4) 即时落子（后续条件可见）');
+  const fx0 = w1.drainDeferred();
   const f0 = fx0.intents.filter(i => i.type === 'fight');
   ok(f0.length === 1 && f0[0].key === 'boss1' && f0[0].script === 0,
     '开战 boss1（H2 脚本行 0）：' + JSON.stringify(f0[0]));

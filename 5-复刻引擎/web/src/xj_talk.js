@@ -246,9 +246,12 @@
       case 'dialogBox':
         if (cmd === 'setText') {
           var darg = (n.args || [])[0] || {};
+          var dtxt = darg.value != null ? darg.value : String(a[0]);
+          // ★ 脚本字面 null = 无文本（见 xj_world deNull；原版不崩⇒空guard⇒空屏保留节奏）
+          if (dtxt === 'null') dtxt = '';
           this.dialog = {
             speaker: darg.speaker || null,
-            text: darg.value != null ? darg.value : String(a[0]),
+            text: dtxt,
             visible: true,
             portrait: null,
             type: null

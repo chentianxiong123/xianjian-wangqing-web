@@ -38,6 +38,7 @@
     this.cut = null;        // {text, mode} 字幕（black/verse），回车关闭
     this.cutQueue = [];     // 待显示的字幕队列
     this.pausedRunner = null; // ★ script.break/wait 暂停的脚本（e.java:990），回车/计时恢复
+    this.stashedRunner = null; // ★ 战前 H2 播出时暂存的地图 build 暂停（见 trackPause）
     this.waitKeys = null;   // {keys:[...], msg} 等待按键
     this.flicker = null;    // {until, color}
     this.shakeUntil = 0;    // 震屏截止时间
@@ -112,20 +113,48 @@
   Scene.prototype.trackPause = function (r, kind, preBattle) {
     if (!r || !r.paused) return r;
     var self = this, p = r.paused;
+    // ★ 战前 H2 暂停 + 地图 build 暂停同时存在时（进图即战：build 跑出 fight 意图→
+    //   H2 先暂停，build 随后也暂停）：build 暂停暂存，H2 播完→开战→战后 endBattle
+    //   再恢复它。直接覆盖会丢掉 H2 的恢复闭包，两边互相等——按回车永远没反应的死锁。
+    function stashIfBlocked(pr) {
+      if (self.pendingBattle && !pr.preBattle &&
+          self.pausedRunner && self.pausedRunner.preBattle) {
+        self.stashedRunner = pr;
+        if (p.waitMs) {
+          (function (token) {
+            setTimeout(function () {
+              if (self.stashedRunner === token) {
+                self.pausedRunner = self.stashedRunner;
+                self.stashedRunner = null;
+                self.resumeRunner();
+              }
+            }, Math.min(Math.max(p.waitMs, 0), 30000));
+          })(pr);
+        }
+        return true;
+      }
+      return false;
+    }
     if (kind === 'build') {
-      this.pausedRunner = { preBattle: false, waitMs: p.waitMs, resume: function () {
+      var bpr = { preBattle: false, waitMs: p.waitMs, resume: function () {
         var rr = self.world.continueBuild();
         self.drainWorldFx();
         self._followPendingChange();
         if (rr && rr.paused) self.trackPause({ paused: rr.paused }, 'build');
         return rr;
       } };
+      if (stashIfBlocked(bpr)) return r;
+      this.pausedRunner = bpr;
     } else {
-      this.pausedRunner = { preBattle: !!preBattle, waitMs: p.waitMs, resume: function () {
+      // ★ H2 播出中再次暂停（多 break）：pendingBattle 还在排队就是 H2 流，保住 preBattle
+      var keepPre = !!preBattle || !!(this.pendingBattle && this.pausedRunner && this.pausedRunner.preBattle);
+      var epr = { preBattle: keepPre, waitMs: p.waitMs, resume: function () {
         var r2 = self.world.execAst(p.nodes, p.pc);
-        self.playExecTail(r2, { moveTo: true, dialog: true });
+        self.playExecTail(r2, { moveTo: true, dialog: true, preBattle: keepPre });
         return r2;
       } };
+      if (stashIfBlocked(epr)) return r;
+      this.pausedRunner = epr;
     }
     if (p.waitMs) {
       var token = this.pausedRunner;
@@ -448,6 +477,11 @@
       _warped = !!this.goto(ag[0], ag[1], ag[2], ag[3], ag[4]);
     }
     // ★ 战后脚本自动继续（原版 fight 返回后 runner 继续跑；新图 warp 则等玩家按键）
+    //   战前 H2 暂存的地图 build 暂停在这里恢复（trackPause 注释里的死锁对付）。
+    if (this.stashedRunner && !this.pausedRunner) {
+      this.pausedRunner = this.stashedRunner;
+      this.stashedRunner = null;
+    }
     if (this.pausedRunner && !_warped) this.resumeRunner();
     // 切回地图 BGM
     this.audioMapBgm();
@@ -461,8 +495,8 @@
   };
 
   /** 检查玩家当前位置的触发区 */
-  Scene.prototype.checkZones = function () {
-    var zs = this.world.zonesAt(this.px, this.py);
+  Scene.prototype.checkZones = function (x0, y0) {
+    var zs = this.world.zonesAt(this.px, this.py, x0, y0);
     for (var i = 0; i < zs.length; i++) {
       if (this.fireZone(zs[i])) return true;
     }
@@ -543,8 +577,11 @@
     var ny = this.py + d[1] * step;
     if (nx < 0 || ny < 0 || nx >= this.mapPxW() || ny >= this.mapPxH()) return false;
     if (this.hitElement(nx, ny)) return false;
-    // ★ 碰撞盒（MAP trigger 矩形，ay.java:507）：撞墙停；带脚本的撞了还跑脚本
+    // ★ 碰撞盒（MAP trigger 矩形，ay.java:507）：撞墙停；带脚本的撞了还跑脚本。
+    //   点判 + 线段判（细墙 7~12px 按格跳会被跨过，穿过即撞）。
+    var ox = nx - d[0] * step, oy = ny - d[1] * step;
     var s = this.world.solidAt ? this.world.solidAt(nx, ny) : null;
+    if (!s && this.world.solidSeg) s = this.world.solidSeg(ox, oy, nx, ny);
     if (s) {
       if (s.ast && s.ast.length) {
         var r2 = this.world.execAst(s.ast);
@@ -555,7 +592,7 @@
     this.px = nx; this.py = ny;
     this.player.state = this.world.fly ? '飞行' : '走路';
     this.pushTrail(nx, ny);
-    this.checkZones();
+    this.checkZones(ox, oy);
     this.touchMonsters();
     return true;
   };
@@ -567,7 +604,7 @@
     if (nx < 0 || ny < 0 || nx >= this.mapPxW() || ny >= this.mapPxH()) return false;
     this.px = nx; this.py = ny;
     this.pushTrail(nx, ny);
-    this.checkZones();
+    this.checkZones(nx - d[0] * this.m.tw, ny - d[1] * this.m.th);
     return true;
   };
 

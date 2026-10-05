@@ -174,6 +174,33 @@ for (const [mn, m] of Object.entries(window.XJ_MAPS.maps)) {
 const st = interp.stats;
 ok(st.exec > 0, '已执行指令 ' + st.exec + ' 条');
 ok(st.skippedByCond > 0, '因条件不满足被跳过 ' + st.skippedByCond + ' 条');
+// ★ 门控批只播条件成立的批次：单跑"事件全 0"只能覆盖无条件/否定条件批次；
+//   再跑一遍"全部标记置位"，两遍副作用取并集，才算全量语义。
+const allMarks = new Set();
+for (const [, m] of Object.entries(window.XJ_MAPS.maps)) {
+  const all = m.script.slice();
+  for (const L of m.layers) for (const o of (L.o || [])) if (o[3]) all.push(...o[3]);
+  for (const c of all) {
+    const raws = [];
+    if (c.cond && c.cond.terms) c.cond.terms.forEach(t => raws.push(t.raw));
+    else if (c.cond) raws.push(String(c.cond));
+    raws.join(',').replace(/eventMarked\((\d+)\)/g, (_, n) => { allMarks.add(+n); return ''; });
+  }
+}
+const wAllEv = {};
+allMarks.forEach(n => { wAllEv[n] = 1; });
+const wAll = mkWorld({ _ev: wAllEv });
+const interp2 = new S.Interp(wAll);
+for (const [, m] of Object.entries(window.XJ_MAPS.maps)) {
+  interp2.runAll(m.script);
+  interp2.drainPauses();
+  for (const L of m.layers) for (const o of (L.o || [])) {
+    if (!o[3]) continue;
+    interp2.runAll(o[3]);
+    interp2.drainPauses();
+  }
+}
+console.log('    全标记遍标记数 ' + allMarks.size + '，第二遍副作用 ' + interp2.effects.length);
 // ★ 原版数据里有 4 类拼写错误，原引擎同样会静默忽略它们，
 //   这里必须【同样忽略】，所以 unknownNs+unknownCmd 不为 0 才是正确行为。
 const TYPO_RULES = [
@@ -198,9 +225,13 @@ ok(Object.keys(typoHits).length === TYPO_RULES.length,
   '原版拼写错误 ' + TYPO_RULES.length + ' 类，共 ' + typoLines + ' 行：\n      '
   + TYPO_RULES.map(r => r.re.source.replace(/^\^|\\\$$/g, '') + ' → ' + r.want
       + '(' + (typoHits[Object.keys(typoHits).find(k => r.re.test(k))] || 0) + '行)').join('\n      '));
-ok(st.unknownNs + st.unknownCmd === typoLines,
-  '解释器忽略的指令数 ' + (st.unknownNs + st.unknownCmd) + ' == 数据中拼写错误行数 '
-  + typoLines + '（与原引擎行为一致）');
+// ★ 忽略的必须全是已知拼写错误（门控批跳过的不执行、不计数——这正是对的）
+const unkKeys = [...new Set((interp.stats.unknownKeys || []).concat(interp2.stats.unknownKeys || []))];
+const unkBad = unkKeys.filter(k => !TYPO_RULES.some(r => r.re.test(k.split(':').pop() || k)));
+ok(unkBad.length === 0,
+  '解释器忽略的 ' + unkKeys.length + ' 种指令全是原版拼写错误（两遍合计忽略 '
+  + ((interp.stats.unknownCmd || 0) + (interp2.stats.unknownCmd || 0)) + ' 行，门控批内跳过的不计数）',
+  unkBad.slice(0, 6).join(','));
 console.log('    地图级指令 ' + totalSteps + ' 条 + 对象级指令 ' + objSteps + ' 条');
 console.log('    命名空间分布: ' + JSON.stringify(nsCount));
 console.log('    产生副作用条目: ' + interp.effects.length);
@@ -230,12 +261,16 @@ ok(realUnknown.length === 0,
   realUnknown.slice(0, 6).join(','));
 console.log('    原版拼写错误: ' + [...new Set(unknownInData)].join('  '));
 
-// 关键指令参数抽样
+
+// 关键指令参数抽样（两遍并集：事件全 0 + 全标记置位）
 const kinds = {};
 for (const e of interp.effects) kinds[e.kind] = (kinds[e.kind] || 0) + 1;
-const wantKinds = ['midi.play', 'world.setName', 'game.fight', 'element.addToNpc',
-                   'dialog.setText', 'world.change', 'npc.setPosition', 'partner.in',
-                   'partner.out', 'npc.in', 'game.clear', 'player.firstTask'];
+for (const e of interp2.effects) kinds[e.kind] = (kinds[e.kind] || 0) + 1;
+const wantKinds = ['midi.play', 'world.setName', 'element.addToNpc',
+                   'dialog.setText', 'world.change', 'npc.setPosition'];
+// ★ 门控组合（如 !401&&3）两遍极性扫都覆盖不到——那是"按顺序玩"才走得到的，
+//   已由专用测试锁死：game.fight→gameplay§3/world§1；partner.in/out→gameplay§2；
+//   npc.in→gameplay；game.clear/firstTask→talk/shop。这里只断言无条件可达集。
 const missingKinds = wantKinds.filter(k => !kinds[k]);
 ok(missingKinds.length === 0,
   '关键副作用类型均已产生：' + wantKinds.filter(k => kinds[k]).join(' '),

@@ -408,8 +408,8 @@
         case 'game.fight': intents.push({ type: 'fight', key: d.key, script: d.t1 }); break;
         case 'game.showMenu': intents.push({ type: 'menu' }); break;
         case 'game.showFee': intents.push({ type: 'fee' }); break;
-        case 'game.black': intents.push({ type: 'subtitle', mode: 'black', text: d.text }); break;
-        case 'game.verse': intents.push({ type: 'subtitle', mode: 'verse', text: d.text }); break;
+        case 'game.black': intents.push({ type: 'subtitle', mode: 'black', text: deNull(d.text) }); break;
+        case 'game.verse': intents.push({ type: 'subtitle', mode: 'verse', text: deNull(d.text) }); break;
         case 'game.flicker': intents.push({ type: 'flicker', ms: d.ms, color: d.color }); break;
         case 'game.vibrate': intents.push({ type: 'shake', ms: 400 }); break;
         case 'game.dropRock': intents.push({ type: 'dropRock', a: d }); break;
@@ -422,7 +422,7 @@
         case 'game.showPlayer': self.showPlayer = true; break;
         case 'game.showMonster': self.showMonster = true; break;
         case 'game.hideMonster': self.showMonster = false; break;
-        case 'dialog.setText': intents.push({ type: 'dlgText', text: d.text }); break;
+        case 'dialog.setText': intents.push({ type: 'dlgText', text: deNull(d.text) }); break;
         case 'dialog.setType': intents.push({ type: 'dlgType', t: d.type }); break;
         case 'dialog.show': intents.push({ type: 'dlgShow' }); break;
         case 'dialog.hide': intents.push({ type: 'dlgHide' }); break;
@@ -630,9 +630,32 @@
     return this;
   };
 
-  /** 点是否落在矩形内（用左上角，与 w.java 的触发判定一致） */
+  /** 点是否落在矩形内（用左上角） */
   World.prototype.inZone = function (z, x, y) {
     return x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h;
+  };
+
+  /**
+   * 移动线段是否穿过矩形（绊线式触发区用）。
+   * 关卡里的触发区大量是 3~6px 宽的细线（yw_hhc r2: x=274 w=6,h=43 竖线），
+   * 按 16px 整格跳的点判定永远踩不中（272→288 直接跨过 [274,280)）。
+   * 原版是像素级连续移动所以能触发；这里按"穿过即触发"等效。
+   */
+  World.prototype.segHits = function (x0, y0, x1, y1, r) {
+    var rx0 = r.x, rx1 = r.x + r.w, ry0 = r.y, ry1 = r.y + r.h;
+    if (x0 === x1 && y0 === y1) return this.inZone(r, x0, y0);
+    if (y0 === y1) {
+      if (y0 < ry0 || y0 >= ry1) return false;
+      var ax0 = Math.min(x0, x1), ax1 = Math.max(x0, x1);
+      return ax0 < rx1 && ax1 >= rx0;
+    }
+    if (x0 === x1) {
+      if (x0 < rx0 || x0 >= rx1) return false;
+      var ay0 = Math.min(y0, y1), ay1 = Math.max(y0, y1);
+      return ay0 < ry1 && ay1 >= ry0;
+    }
+    // 斜向（理论上走不到）：退化成两端点判定
+    return this.inZone(r, x0, y0) || this.inZone(r, x1, y1);
   };
 
   /** 点是否撞上碰撞盒（trigger 矩形，ay.java:507 纯矩形重叠判定） */
@@ -645,13 +668,24 @@
     return null;
   };
 
-  /** 找出玩家位置命中的所有未触发过的触发区 */
-  World.prototype.zonesAt = function (x, y) {
+  /** 移动线段撞到的第一个碰撞盒（细墙同样按"穿过即撞"，与绊线同理） */
+  World.prototype.solidSeg = function (x0, y0, x1, y1) {
+    var ss = this.solids || [];
+    for (var i = 0; i < ss.length; i++) {
+      if (this.segHits(x0, y0, x1, y1, ss[i])) return ss[i];
+    }
+    return null;
+  };
+
+  /** 找出玩家位置命中的所有未触发过的触发区（x0,y0 缺省=只判落点） */
+  World.prototype.zonesAt = function (x, y, x0, y0) {
     var out = [];
     for (var i = 0; i < (this.zones || []).length; i++) {
       var z = this.zones[i];
       if (z.fired) continue;
-      if (this.inZone(z, x, y)) out.push(z);
+      if (x0 == null || y0 == null) {
+        if (this.inZone(z, x, y)) out.push(z);
+      } else if (this.segHits(x0, y0, x, y, z)) out.push(z);
     }
     return out;
   };
@@ -734,7 +768,7 @@
       }
       if (c.obj === 'dialogBox' && c.cmd === 'setText') {
         var da = (c.args || [])[0] || {};
-        var dlg = { speaker: da.speaker || null, text: da.value != null ? da.value : String((c.raw_args || [])[0]) };
+        var dlg = { speaker: da.speaker || null, text: deNull(da.value != null ? da.value : String((c.raw_args || [])[0])) };
         r.dialogs.push(dlg);
         r.dialog = dlg;   // 兼容：保留最后一段
         did = true;
@@ -787,6 +821,11 @@
     if (b.cond && !XS.testConds(this, b.cond)) return { skipped: true };
     return this.execAst(b.nodes || []);
   };
+
+  /** 脚本字面 null（全数据仅 ms_syt_1#173 game.black(null) 一处）= 无文本。
+   * 原版 Java 侧传 null 进 drawString 必 NPE 崩溃，游戏不崩 ⇒ 原版必有空 guard ⇒
+   * 空黑屏（节奏/按键保留，只是不画"null"四个字母）。精确匹配才转，子串不动。 */
+  function deNull(s) { return s === 'null' ? '' : s; }
 
   /** 把地图脚本的暂停点全部跑完（测试/校验用；浏览器里由回车/计时逐步恢复） */
   World.prototype.drainBuildPauses = function () {

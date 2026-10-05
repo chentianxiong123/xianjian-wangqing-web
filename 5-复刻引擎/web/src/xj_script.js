@@ -298,6 +298,12 @@
     finally { this.log = _log; }
   };
 
+  // ★ 未知指令记账（键也留下，供测试验证"忽略的全是原版拼写错误"）
+  Interp.prototype.unk = function (ns, name) {
+    this.stats.unknownCmd++;
+    this.stats.unknownKeys = this.stats.unknownKeys || [];
+    this.stats.unknownKeys.push((ns || '<None>') + '.' + name);
+  };
   Interp.prototype._stepInner = function (ns, name, a) {
     var self = this;
     function E(i) { try { return self.w.expr(a[i]); } catch (e) { return 0; } }
@@ -324,7 +330,7 @@
           case 'removeAllMask':  return !!this.log('world.removeAllMask', {});
           case 'fadeOut':        return !!this.log('world.fadeOut', { ms: E(0) });
           case 'setFlyEnabled':  return !!this.log('world.setFlyEnabled', { on: S(0) === 'true' });
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- element ----------------
       case 'element':
@@ -339,7 +345,7 @@
           case 'addToTreasureBox':  return !!this.log('element.addToTreasureBox', { id: E(0) });
           case 'remove':            return !!this.log('element.remove', {});
           case 'setSequence':       return !!this.log('element.setSequence', { seq: S(0) });
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- npc ----------------
       case 'npc':
@@ -364,7 +370,7 @@
           case 'hideFace':           return !!this.log('npc.hideFace', {});
           case 'bindPlayer':         return !!this.log('npc.bindPlayer', {});
           case 'unbindPlayer':       return !!this.log('npc.unbindPlayer', {});
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- player ----------------
       case 'player':
@@ -394,7 +400,7 @@
           case 'addgod':            return !!this.log('player.addgod', { n: E(0) });
           case 'addhp':             return !!this.log('player.addhp', { n: E(0) });
           case 'addlove':           return !!this.log('player.addlove', { n: E(0) });
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- partner ----------------
       case 'partner':
@@ -405,15 +411,15 @@
           case 'in':   return !!this.log('partner.in', { who: S(0), delay: E(1) });
           // partner.out <队友> <延迟>：离开并播放立绘收回（e.java:2814）
           case 'out':  return !!this.log('partner.out', { who: S(0), delay: E(1) });
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- item / user ----------------
       case 'item':
         if (name === 'remove') return !!this.log('item.remove', {});
-        this.stats.unknownCmd++; return false;
+        this.unk(ns, name); return false;
       case 'user':
         if (name === 'addHP') return !!this.log('user.addHP', { n: E(0) });
-        this.stats.unknownCmd++; return false;
+        this.unk(ns, name); return false;
       // ---------------- camera ----------------
       case 'camera':
         switch (name) {
@@ -421,7 +427,7 @@
           case 'setFocusOnNpc':    return !!this.log('camera.setFocusOnNpc', { who: S(0) });
           case 'setPosition':      return !!this.log('camera.setPosition', { x: E(0), y: E(1) });
           case 'moveTo':           return !!this.log('camera.moveTo', { x: E(0), y: E(1) });
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- dialogBox ----------------
       case 'dialogBox':
@@ -433,13 +439,13 @@
           case 'showPlayerPortrait': return !!this.log('dialog.showPlayerPortrait', {});
           case 'showNpcPortrait':    return !!this.log('dialog.showNpcPortrait', {});
           case 'hidePortrait':       return !!this.log('dialog.hidePortrait', {});
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- guide ----------------
       case 'guide':
         if (name === 'setText')  return !!this.log('guide.setText', { text: S(0) });
         if (name === 'setTarget') return !!this.log('guide.setTarget', { t: S(0) });
-        this.stats.unknownCmd++; return false;
+        this.unk(ns, name); return false;
       // ---------------- script ----------------
       case 'script':
         switch (name) {
@@ -449,7 +455,7 @@
           case 'break':           return !!this.log('script.break', {});
           case 'load':            return !!this.log('script.load', { file: S(0) });
           case 'include':         return !!this.log('script.include', { file: S(0), line: E(1) });
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- game ----------------
       case 'game':
@@ -474,21 +480,21 @@
           case 'clear':           return !!this.log('game.clear', {});
           case 'showMonster':     return !!this.log('game.showMonster', {});
           case 'hideMonster':     return !!this.log('game.hideMonster', {});
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- countdownTimer ----------------
       case 'countdownTimer':
         // kinds 与指令名一致（宿主按 raw 取 file/line）
         if (name === 'setMillis') return !!this.log('countdownTimer.setMillis', { ms: E(0) });
         if (name === 'stop')      return !!this.log('countdownTimer.stop', {});
-        this.stats.unknownCmd++; return false;
+        this.unk(ns, name); return false;
       // ---------------- midi ----------------
       case 'midi':
         switch (name) {
           // 第二参数直接是 Player.setLoopCount，-1 = 无限循环
           case 'play': return !!this.log('midi.play', { file: S(0), loop: E(1) });
           case 'stop': return !!this.log('midi.stop', {});
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- system ----------------
       case 'system':
@@ -501,18 +507,18 @@
           case 'hideScreenMargin':   return !!this.log('system.hideScreenMargin', {});
           case 'markFee':            return !!this.log('system.markFee', { n: E(0) });
           case 'unmarkFee':          return !!this.log('system.unmarkFee', { n: E(0) });
-          default: this.stats.unknownCmd++; return false;
+          default: this.unk(ns, name); return false;
         }
       // ---------------- fee ----------------
       case 'fee':
         if (name === 'ybdx') return !!this.log('fee.ybdx', {});
-        this.stats.unknownCmd++; return false;
+        this.unk(ns, name); return false;
       // ---------------- 战斗侧 ----------------
       case 'attacker':
       case 'skill':
-        this.stats.unknownNs++; return false;
+        this.unk(ns, name); return false;
       default:
-        this.stats.unknownNs++;
+        this.unk(ns, name);
         return false;
     }
   };
@@ -530,6 +536,21 @@
     var pausedNow = false;
     for (var i = (from | 0); i < (ast || []).length; i++) {
       var cmd = ast[i];
+      // ★ 门控批（与 execAst 同语义）：open 条件不成立跳到配对 close，继续往后。
+      //   缺了这段，地图级脚本里所有批次体（条件只挂在 open 行上，体内行 cond 全空）
+      //   会在每次进图全播一遍：标记乱立、后批的 !mark 门再也打不开——剧情断裂根因。
+      if (cmd && cmd.obj === 'script' && cmd.cmd === 'openScriptList' && !this.condPass(cmd)) {
+        var depth = 1, j = i + 1;
+        while (j < (ast || []).length && depth > 0) {
+          var cc = ast[j];
+          if (cc && cc.obj === 'script' && cc.cmd === 'openScriptList') depth++;
+          if (cc && cc.obj === 'script' && cc.cmd === 'closeScriptList') depth--;
+          j++;
+        }
+        if (onStep) onStep(cmd, false);
+        i = j - 1;
+        continue;
+      }
       if (cmd && cmd.obj === 'script' && (cmd.cmd === 'break' || cmd.cmd === 'wait')) {
         if (!this.condPass(cmd)) continue;
         var ms = 0;

@@ -67,7 +67,9 @@ head('队友与宝箱事件');
 // ============================================================ 3 剧情战斗意图
 head('剧情战斗意图');
 {
+  // ★ 门控批（cs_ss_d#7：!401 && 3）：备好 mark 3 再进图，否则整批跳过
   const w = new W();
+  w.events[3] = 1;
   w.buildFull('cs_ss_d');
   const fx = w.drainDeferred();
   const fights = (fx.intents || []).filter(i => i.type === 'fight');
@@ -151,7 +153,9 @@ head('外部脚本行（branch/倒计时）');
   ok(w.runScriptEntry('xuanze.str', 999) === null, '不存在的条目返回 null');
   ok(w.runScriptEntry('不存在.str', 0) === null, '不存在的文件返回 null');
   // cs_sz_2 地图级 countdownTimer.setMillis(60000,xuanze.str,0)
+  // ★ 在门控批内（cs_sz_2#10：2204 && !2205），备好前置标记
   const w2 = new W();
+  w2.events[2204] = 1;
   w2.buildFull('cs_sz_2', 0, 0);
   const fx2 = w2.drainDeferred();
   const cd = (fx2.intents || []).filter(i => i.type === 'countdown')[0];
@@ -281,10 +285,14 @@ head('开机开场：81 段暂停、7 拍文本、顺序与 jar 一致');
     w.continueBuild();
   }
   ok(n === 81, '开场分 81 段（暂停点全在）');
-  // ★ 第 7 拍是 jar 原文 game.black(null)（e.java:3026 无空判断，原版真机同样显示"null"）——如实复刻，不"修正"
-  const want = ['S:不老不死', 'D:/紫萱/：这就是', 'D:/紫萱/：苍生为重', 'D:/紫萱/：青儿', 'D:/紫萱/：重楼', 'S:重楼耗尽魔力', 'S:null'];
+  // ★ 第 7 拍是 jar 原文 game.black(null)：全数据唯一一处字面 null。
+  //   原版 e.java:3026 把 null 直接进 drawString 会 NPE 崩溃 —— 真机不崩 ⇒ 原版必有空
+  //   guard ⇒ 那一拍是"无文本黑屏"（节奏/按键保留），不显示 "null" 四个字母。
+  //   按熵增原则（编译不可逆，我们看不到那个 guard），取"游戏能跑"这一侧。
+  const want = ['S:不老不死', 'D:/紫萱/：这就是', 'D:/紫萱/：苍生为重', 'D:/紫萱/：青儿', 'D:/紫萱/：重楼', 'S:重楼耗尽魔力'];
   ok(seq.length === want.length && seq.every((s, i) => s.indexOf(want[i]) === 0),
-    '文本顺序与 jar 一致（含原版 black(null)）：' + seq.join(' → '));
+    '文本顺序与 jar 一致（black(null) 按原版空 guard → 空拍不落字）：' + seq.join(' → '));
+  ok(seq.filter(s => /null/i.test(s)).length === 0, '无任何 "null" 字样漏到屏幕');
   ok(w.pendingChange && w.pendingChange.map === 'yw_syc', '末尾切往 yw_syc');
 }
 
